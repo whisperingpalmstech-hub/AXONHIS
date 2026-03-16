@@ -2,11 +2,19 @@ from typing import Annotated
 import uuid
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response, status
+from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
 from app.core.patients.patients.schemas import PatientCreate, PatientUpdate, PatientOut
 from app.core.patients.patients.services import PatientService
 from app.dependencies import CurrentUser, DBSession
+
+
+class DuplicateCheckRequest(BaseModel):
+    first_name: str
+    last_name: str
+    date_of_birth: str
+    phone: str | None = None
 
 router = APIRouter(prefix="/patients", tags=["patients"])
 
@@ -50,18 +58,15 @@ async def update_patient(patient_id: uuid.UUID, data: PatientUpdate, db: DBSessi
     return await service.update_patient(patient, data)
 
 @router.post("/detect-duplicates", status_code=status.HTTP_200_OK)
-async def detect_duplicates(
-    first_name: str, last_name: str, date_of_birth: str, db: DBSession, _: CurrentUser, phone: str = Query(None)
-):
-    """Check for duplicate records during registration workflow."""
+async def detect_duplicates(data: DuplicateCheckRequest, db: DBSession, _: CurrentUser):
+    """Check for duplicate records during registration workflow. Accepts JSON body."""
     service = PatientService(db)
-    duplicates = await service.detect_duplicates(first_name, last_name, date_of_birth, phone)
-    
-    # We map back into PatientOut with a score
+    duplicates = await service.detect_duplicates(
+        data.first_name, data.last_name, data.date_of_birth, data.phone
+    )
+
     res = []
     for dup in duplicates:
-        # Re-fetch or rely on model dump (since the patient doesn't have loaded relationships here easily)
-        # For simplicity, we just return the basic info in duplicate result.
         res.append({
             "patient": {
                 "id": str(dup.patient.id),

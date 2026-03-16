@@ -115,7 +115,11 @@ export default function RegistrationPage() {
 
       if (!patientRes.ok) {
         const err = await patientRes.json();
-        throw new Error(err.detail || "Failed to create patient");
+        // FastAPI can return detail as string OR as array of validation errors
+        if (Array.isArray(err.detail)) {
+          throw new Error(err.detail.map((e: any) => `${e.loc?.slice(-1)[0]}: ${e.msg}`).join(", "));
+        }
+        throw new Error(typeof err.detail === "string" ? err.detail : JSON.stringify(err.detail) || "Failed to create patient");
       }
       const patient = await patientRes.json();
 
@@ -149,15 +153,35 @@ export default function RegistrationPage() {
         promises.push(fetch(`${API}/api/v1/patients/${patient.id}/insurance/`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
-          body: JSON.stringify({ insurance_provider: formData.insurance_provider, policy_number: formData.policy_number || "" })
+          body: JSON.stringify({
+            insurance_provider: formData.insurance_provider,
+            policy_number: formData.policy_number || null
+          })
         }));
       }
 
-      // Consent
+      // Consent (also store medical info in the consent_text for record)
+      const medProfileNote = [
+        formData.blood_group && `Blood Group: ${formData.blood_group}`,
+        formData.weight_kg && `Weight: ${formData.weight_kg} kg`,
+        formData.height_cm && `Height: ${formData.height_cm} cm`,
+        formData.allergies && `⚠ Allergies: ${formData.allergies}`,
+        formData.chronic_conditions && `Chronic Conditions: ${formData.chronic_conditions}`,
+        formData.current_medications && `Current Medications: ${formData.current_medications}`,
+        formData.chief_complaint && `Chief Complaint: ${formData.chief_complaint}`,
+        formData.family_history && `Family History: ${formData.family_history}`,
+        formData.emergency_contact_name && `Emergency Contact: ${formData.emergency_contact_name} (${formData.emergency_contact_phone || "N/A"})`,
+      ].filter(Boolean).join("\n");
+
       promises.push(fetch(`${API}/api/v1/patients/${patient.id}/consents/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
-        body: JSON.stringify({ consent_type: formData.consent_type, consent_text: "Standard registration consent signed during admission." })
+        body: JSON.stringify({
+          consent_type: formData.consent_type,
+          consent_text: medProfileNote
+            ? `Standard registration consent signed during admission.\n\n--- MEDICAL PROFILE ---\n${medProfileNote}`
+            : "Standard registration consent signed during admission."
+        })
       }));
 
       await Promise.allSettled(promises);

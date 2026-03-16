@@ -12,7 +12,7 @@ class PatientInsurance(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
     insurance_provider = Column(String(150), nullable=False)
-    policy_number = Column(String(100), nullable=False, index=True)
+    policy_number = Column(String(100), nullable=True, index=True)
     coverage_type = Column(String(100), nullable=True)
     valid_from = Column(Date, nullable=True)
     valid_to = Column(Date, nullable=True)

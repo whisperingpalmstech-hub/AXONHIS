@@ -1,17 +1,29 @@
 """Orders router – create, approve, cancel, list orders."""
 import uuid
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from app.core.billing.services import BillingService
 from app.core.events.models import EventType
 from app.core.events.services import EventService
+from app.core.orders.catalog import search_catalog
 from app.core.orders.schemas import OrderApprove, OrderCancel, OrderCreate, OrderOut
 from app.core.orders.services import OrderService
 from app.core.tasks.services import TaskService
 from app.dependencies import CurrentUser, DBSession
+from app.core.orders.templates.router import router as templates_router
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+router.include_router(templates_router)
+
+@router.get("/catalog/search")
+async def search_order_catalog(
+    q: str = Query(..., min_length=2),
+    order_type: str | None = Query(None),
+    _: CurrentUser = None
+):
+    """Search clinical catalog for lab tests, medications, imaging, and procedures."""
+    return search_catalog(query=q, order_type=order_type)
 
 
 @router.post("", response_model=OrderOut, status_code=status.HTTP_201_CREATED)

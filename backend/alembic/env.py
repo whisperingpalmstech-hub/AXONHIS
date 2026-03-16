@@ -38,6 +38,7 @@ from app.core.tasks.models import Task  # noqa: F401
 from app.core.billing.models import BillingEntry, Tariff, Invoice, Payment  # noqa: F401
 from app.core.lab.models import LabTest, LabResult  # noqa: F401
 from app.core.pharmacy.models import Medication, Stock, Dispense  # noqa: F401
+from app.core.orders.templates.models import OrderTemplate, OrderTemplateItem, OrderSet, OrderSetItem  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

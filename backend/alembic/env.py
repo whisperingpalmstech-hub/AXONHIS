@@ -28,7 +28,11 @@ from app.core.patients.guardians.models import PatientGuardian  # noqa: F401
 from app.core.patients.insurance.models import PatientInsurance  # noqa: F401
 from app.core.patients.consents.models import PatientConsent  # noqa: F401
 from app.core.patients.appointments.models import Appointment  # noqa: F401
-from app.core.encounters.models import Encounter  # noqa: F401
+from app.core.encounters.encounters.models import Encounter  # noqa: F401
+from app.core.encounters.diagnoses.models import EncounterDiagnosis  # noqa: F401
+from app.core.encounters.notes.models import EncounterNote  # noqa: F401
+from app.core.encounters.timeline.models import EncounterTimeline  # noqa: F401
+from app.core.encounters.clinical_flags.models import ClinicalFlag  # noqa: F401
 from app.core.orders.models import Order, OrderItem  # noqa: F401
 from app.core.tasks.models import Task  # noqa: F401
 from app.core.billing.models import BillingEntry, Tariff, Invoice, Payment  # noqa: F401

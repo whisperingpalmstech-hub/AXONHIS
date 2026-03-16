@@ -1,0 +1,71 @@
+name: AXONHIS CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend-lint-test:
+    name: Backend – Lint & Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: axonhis
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: axonhis_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    env:
+      DATABASE_URL: postgresql+asyncpg://axonhis:testpass@localhost:5432/axonhis_test
+      REDIS_URL: redis://localhost:6379/0
+      SECRET_KEY: ci-test-secret-key-not-for-production
+      APP_ENV: development
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry
+        run: pip install poetry==1.8.3
+      - name: Install dependencies
+        working-directory: backend
+        run: poetry install --no-interaction
+      - name: Lint with ruff
+        working-directory: backend
+        run: poetry run ruff check app/ tests/
+      - name: Type check with mypy
+        working-directory: backend
+        run: poetry run mypy app/ --ignore-missing-imports
+      - name: Run tests
+        working-directory: backend
+        run: poetry run pytest tests/ -v --cov=app --cov-report=term-missing
+
+  frontend-build:
+    name: Frontend – Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+      - name: Build
+        working-directory: frontend
+        run: npm run build

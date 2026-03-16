@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: #f8f9fa;
+    --foreground: #212529;
+  }
+
+  .dark {
+    --background: #1a1b1e;
+    --foreground: #f8f9fa;
+  }
+
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] font-sans antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 text-white px-4 py-2 rounded-lg font-medium
+           hover:bg-primary-700 transition-colors duration-150
+           focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply bg-surface-200 text-surface-800 px-4 py-2 rounded-lg font-medium
+           hover:bg-surface-300 transition-colors duration-150;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white px-4 py-2 rounded-lg font-medium
+           hover:bg-red-700 transition-colors duration-150;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-surface-200 p-6;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 rounded-lg border border-surface-300
+           focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent
+           transition-colors duration-150;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-active {
+    @apply badge bg-accent-100 text-accent-800;
+  }
+
+  .badge-pending {
+    @apply badge bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-completed {
+    @apply badge bg-green-100 text-green-800;
+  }
+
+  .badge-cancelled {
+    @apply badge bg-red-100 text-red-800;
+  }
+}

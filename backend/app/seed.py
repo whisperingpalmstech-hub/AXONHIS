@@ -151,7 +151,7 @@ async def seed_database() -> None:
 
         # Create default admin user
         admin = User(
-            email="admin@axonhis.local",
+            email="admin@axonhis.com",
             password_hash=hash_password("Admin@123"),
             first_name="System",
             last_name="Administrator",
@@ -160,7 +160,7 @@ async def seed_database() -> None:
         await db.flush()
         db.add(UserRole(user_id=admin.id, role_id=role_map["administrator"].id))
         await db.flush()
-        print(f"  Created admin user: admin@axonhis.local / Admin@123")
+        print(f"  Created admin user: admin@axonhis.com / Admin@123")
 
         # Create default configuration
         for key, value, description, category in DEFAULT_CONFIG:

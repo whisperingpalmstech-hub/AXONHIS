@@ -2,7 +2,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, PostgresDsn, RedisDsn
+from pydantic import Field, PostgresDsn, RedisDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,7 +16,16 @@ class Settings(BaseSettings):
 
     # App
     app_env: Literal["development", "staging", "production"] = "development"
-    backend_cors_origins: list[str] = ["http://localhost:3000"]
+    backend_cors_origins: str | list[str] = ["http://localhost:3000", "http://localhost:9501"]
+
+    @field_validator("backend_cors_origins", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: str | list[str]) -> list[str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",") if i.strip()]
+        if isinstance(v, list):
+            return v
+        return v
 
     # Database
     database_url: PostgresDsn = Field(

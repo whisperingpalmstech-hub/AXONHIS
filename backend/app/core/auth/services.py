@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -29,18 +29,19 @@ from app.core.auth.models import (
 )
 from app.core.auth.schemas import UserCreate
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 MAX_FAILED_ATTEMPTS = 5
 LOCKOUT_DURATION_MINUTES = 30
 
 
 def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
+    return bcrypt.hashpw(plain.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
+    except ValueError:
+        return False
 
 
 def _hash_token(token: str) -> str:

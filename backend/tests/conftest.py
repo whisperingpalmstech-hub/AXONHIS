@@ -16,7 +16,9 @@ from app.core.auth.services import hash_password, AuthService
 from app.database import Base, get_db
 from app.main import app
 
-TEST_DATABASE_URL = str(settings.database_url).replace("/axonhis", "/axonhis_test")
+TEST_DATABASE_URL = str(settings.database_url)
+if TEST_DATABASE_URL.endswith("/axonhis"):
+    TEST_DATABASE_URL = TEST_DATABASE_URL[:-8] + "/axonhis_test"
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 TestSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -59,7 +61,6 @@ async def client(db: AsyncSession) -> AsyncIterator[AsyncClient]:
 async def doctor_user(db: AsyncSession) -> User:
     user = User(
         email="doctor@test.com",
-        full_name="Dr. Test",
         first_name="Dr.",
         last_name="Test",
         password_hash=hash_password("password123"),
@@ -86,6 +87,10 @@ async def nurse_user(db: AsyncSession) -> User:
 
 @pytest_asyncio.fixture
 async def auth_headers(doctor_user: User, db: AsyncSession) -> dict[str, str]:
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+    stmt = select(User).options(selectinload(User.user_roles)).where(User.id == doctor_user.id)
+    loaded_user = (await db.execute(stmt)).scalar_one()
     service = AuthService(db)
-    token = service.create_access_token(doctor_user)
+    token = service.create_access_token(loaded_user)
     return {"Authorization": f"Bearer {token}"}

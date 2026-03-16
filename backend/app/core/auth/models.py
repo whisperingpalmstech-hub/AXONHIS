@@ -61,7 +61,7 @@ class User(Base):
 
     # Relationships
     user_roles: Mapped[list["UserRole"]] = relationship(
-        "UserRole", back_populates="user", cascade="all, delete-orphan"
+        "UserRole", back_populates="user", cascade="all, delete-orphan", foreign_keys="UserRole.user_id"
     )
     sessions: Mapped[list["DeviceSession"]] = relationship(
         "DeviceSession", back_populates="user", cascade="all, delete-orphan"

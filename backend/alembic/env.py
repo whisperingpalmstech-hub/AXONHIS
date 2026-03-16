@@ -21,7 +21,13 @@ from app.core.notifications.models import Notification  # noqa: F401
 from app.core.config.models import Configuration  # noqa: F401
 
 # Phase 2+ – Clinical
-from app.core.patients.models import Patient  # noqa: F401
+from app.core.patients.patients.models import Patient  # noqa: F401
+from app.core.patients.identifiers.models import PatientIdentifier  # noqa: F401
+from app.core.patients.contacts.models import PatientContact  # noqa: F401
+from app.core.patients.guardians.models import PatientGuardian  # noqa: F401
+from app.core.patients.insurance.models import PatientInsurance  # noqa: F401
+from app.core.patients.consents.models import PatientConsent  # noqa: F401
+from app.core.patients.appointments.models import Appointment  # noqa: F401
 from app.core.encounters.models import Encounter  # noqa: F401
 from app.core.orders.models import Order, OrderItem  # noqa: F401
 from app.core.tasks.models import Task  # noqa: F401

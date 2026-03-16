@@ -10,10 +10,17 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from app.config import settings
 from app.database import Base
 
-# Import all models so Alembic sees them for autogenerate
-from app.core.auth.models import User  # noqa: F401
+# Import ALL models so Alembic sees them for autogenerate
+
+# Phase 1 – Core Platform
+from app.core.auth.models import User, Role, Permission, RolePermission, UserRole, DeviceSession  # noqa: F401
 from app.core.events.models import Event  # noqa: F401
 from app.core.audit.models import AuditLog  # noqa: F401
+from app.core.files.models import File  # noqa: F401
+from app.core.notifications.models import Notification  # noqa: F401
+from app.core.config.models import Configuration  # noqa: F401
+
+# Phase 2+ – Clinical
 from app.core.patients.models import Patient  # noqa: F401
 from app.core.encounters.models import Encounter  # noqa: F401
 from app.core.orders.models import Order, OrderItem  # noqa: F401

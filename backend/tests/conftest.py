@@ -1,15 +1,9 @@
 """
-Shared pytest fixtures for the AXONHIS test suite.
-
-Provides:
-- Async test DB session (uses test database)
-- FastAPI test client
-- Authenticated user fixtures per role
+Shared pytest fixtures for the AXONHIS test suite (Phase 1 enhanced).
 """
 import asyncio
 import uuid
 from collections.abc import AsyncIterator
-from typing import Any
 
 import pytest
 import pytest_asyncio
@@ -17,24 +11,18 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import settings
-from app.core.auth.models import User, UserRole
-from app.core.auth.services import AuthService, _hash_password
+from app.core.auth.models import User, UserStatus
+from app.core.auth.services import hash_password, AuthService
 from app.database import Base, get_db
 from app.main import app
 
-
-# Use a separate test database
 TEST_DATABASE_URL = str(settings.database_url).replace("/axonhis", "/axonhis_test")
-
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-TestSessionLocal = async_sessionmaker(
-    bind=test_engine, class_=AsyncSession, expire_on_commit=False
-)
+TestSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
 
 
 @pytest.fixture(scope="session")
 def event_loop():
-    """Provide a single event loop for all tests."""
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
@@ -42,7 +30,6 @@ def event_loop():
 
 @pytest_asyncio.fixture(autouse=True)
 async def setup_db():
-    """Create tables before each test and drop after."""
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
@@ -52,15 +39,12 @@ async def setup_db():
 
 @pytest_asyncio.fixture
 async def db() -> AsyncIterator[AsyncSession]:
-    """Provide a fresh DB session per test."""
     async with TestSessionLocal() as session:
         yield session
 
 
 @pytest_asyncio.fixture
 async def client(db: AsyncSession) -> AsyncIterator[AsyncClient]:
-    """Provide a test HTTP client with DB override."""
-
     async def _override_db() -> AsyncIterator[AsyncSession]:
         yield db
 
@@ -73,12 +57,13 @@ async def client(db: AsyncSession) -> AsyncIterator[AsyncClient]:
 
 @pytest_asyncio.fixture
 async def doctor_user(db: AsyncSession) -> User:
-    """Create a test doctor user."""
     user = User(
         email="doctor@test.com",
         full_name="Dr. Test",
-        hashed_password=_hash_password("password123"),
-        role=UserRole.DOCTOR,
+        first_name="Dr.",
+        last_name="Test",
+        password_hash=hash_password("password123"),
+        status=UserStatus.ACTIVE,
     )
     db.add(user)
     await db.flush()
@@ -87,12 +72,12 @@ async def doctor_user(db: AsyncSession) -> User:
 
 @pytest_asyncio.fixture
 async def nurse_user(db: AsyncSession) -> User:
-    """Create a test nurse user."""
     user = User(
         email="nurse@test.com",
-        full_name="Nurse Test",
-        hashed_password=_hash_password("password123"),
-        role=UserRole.NURSE,
+        first_name="Nurse",
+        last_name="Test",
+        password_hash=hash_password("password123"),
+        status=UserStatus.ACTIVE,
     )
     db.add(user)
     await db.flush()
@@ -100,8 +85,7 @@ async def nurse_user(db: AsyncSession) -> User:
 
 
 @pytest_asyncio.fixture
-async def auth_headers(doctor_user: User) -> dict[str, str]:
-    """Return Authorization header for the doctor user."""
-    service_stub = type("FakeDB", (), {})()
-    token = AuthService(service_stub).create_access_token(doctor_user)
+async def auth_headers(doctor_user: User, db: AsyncSession) -> dict[str, str]:
+    service = AuthService(db)
+    token = service.create_access_token(doctor_user)
     return {"Authorization": f"Bearer {token}"}

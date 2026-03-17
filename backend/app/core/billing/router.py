@@ -1,31 +1,17 @@
-"""Billing router – view entries, invoices, payments."""
-import uuid
-
-from fastapi import APIRouter, status
-from pydantic import BaseModel
-
-from app.core.billing.services import BillingService
-from app.dependencies import CurrentUser, DBSession
+from fastapi import APIRouter
+from app.core.billing.services.routes import router as services_router
+from app.core.billing.tariffs.routes import router as tariffs_router
+from app.core.billing.billing_entries.routes import router as billing_entries_router
+from app.core.billing.invoices.routes import router as invoices_router
+from app.core.billing.payments.routes import router as payments_router
+from app.core.billing.insurance.routes import router as insurance_router
+from app.core.billing.discounts.routes import router as discounts_router
 
 router = APIRouter(prefix="/billing", tags=["billing"])
-
-
-class BillingEntryOut(BaseModel):
-    id: uuid.UUID
-    encounter_id: uuid.UUID
-    order_id: uuid.UUID
-    description: str
-    amount: float
-    status: str
-    reversal_of: uuid.UUID | None
-    created_at: str
-
-    model_config = {"from_attributes": True}
-
-
-@router.get("/encounter/{encounter_id}", response_model=list[BillingEntryOut])
-async def list_billing_entries(
-    encounter_id: uuid.UUID, db: DBSession, _: CurrentUser
-) -> list[BillingEntryOut]:
-    entries = await BillingService(db).get_entries_for_encounter(encounter_id)
-    return [BillingEntryOut.model_validate(e) for e in entries]
+router.include_router(services_router)
+router.include_router(tariffs_router)
+router.include_router(billing_entries_router)
+router.include_router(invoices_router)
+router.include_router(payments_router)
+router.include_router(insurance_router)
+router.include_router(discounts_router)

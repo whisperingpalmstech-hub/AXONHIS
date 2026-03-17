@@ -35,7 +35,13 @@ from app.core.encounters.timeline.models import EncounterTimeline  # noqa: F401
 from app.core.encounters.clinical_flags.models import ClinicalFlag  # noqa: F401
 from app.core.orders.models import Order, OrderItem  # noqa: F401
 from app.core.tasks.models import Task  # noqa: F401
-from app.core.billing.models import BillingEntry, Tariff, Invoice, Payment  # noqa: F401
+from app.core.billing.services.models import BillingService  # noqa: F401
+from app.core.billing.tariffs.models import ServiceTariff  # noqa: F401
+from app.core.billing.billing_entries.models import BillingEntry, BillingReversal, FinancialAuditLog  # noqa: F401
+from app.core.billing.insurance.models import InsuranceProvider, InsurancePolicy, InsuranceClaim  # noqa: F401
+from app.core.billing.discounts.models import DiscountRule  # noqa: F401
+from app.core.billing.invoices.models import Invoice  # noqa: F401
+from app.core.billing.payments.models import Payment  # noqa: F401
 from app.core.lab.models import LabTest, LabOrder, LabSample, LabResult, LabValidation, LabProcessing  # noqa: F401
 from app.core.pharmacy.models import Medication, Stock, Dispense  # noqa: F401
 from app.core.orders.templates.models import OrderTemplate, OrderTemplateItem, OrderSet, OrderSetItem  # noqa: F401

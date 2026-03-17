@@ -3,7 +3,7 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from app.core.billing.services import BillingService
+from app.core.billing.billing_entries.services import BillingEntryService as BillingService
 from app.core.events.models import EventType
 from app.core.events.services import EventService
 from app.core.orders.catalog import search_catalog

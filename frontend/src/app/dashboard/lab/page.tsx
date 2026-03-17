@@ -343,10 +343,10 @@ export default function LabPage() {
                   <div className="flex gap-2 flex-1 w-full sm:w-auto">
                     <div className="relative flex-1 max-w-sm">
                       <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
-                      <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                      <input value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
                         placeholder="Search by name or code…" className="input-field pl-9" />
                     </div>
-                    <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="input-field w-auto">
+                    <select value={categoryFilter} onChange={(e: any) => setCategoryFilter(e.target.value)} className="input-field w-auto">
                       <option value="">All Categories</option>
                       {CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                     </select>
@@ -430,10 +430,10 @@ export default function LabPage() {
                 <div className="flex gap-2">
                   <div className="relative flex-1 max-w-sm">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
-                    <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                    <input value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
                       placeholder="Search by barcode…" className="input-field pl-9" />
                   </div>
-                  <select value={sampleStatusFilter} onChange={e => setSampleStatusFilter(e.target.value)} className="input-field w-auto">
+                  <select value={sampleStatusFilter} onChange={(e: any) => setSampleStatusFilter(e.target.value)} className="input-field w-auto">
                     <option value="">All Statuses</option>
                     {Object.entries(SAMPLE_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
@@ -596,7 +596,7 @@ export default function LabPage() {
       {/* ═══ ADD TEST MODAL ═══ */}
       {showAddTest && (
         <div className="modal-overlay" onClick={() => setShowAddTest(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="font-semibold flex items-center gap-2">
                 <FlaskConical size={18} className="text-[var(--accent-primary)]" />
@@ -611,24 +611,24 @@ export default function LabPage() {
                 <div>
                   <label className="input-label">Test Code</label>
                   <input className="input-field" placeholder="e.g. CBC" value={newTest.code}
-                    onChange={e => setNewTest(p => ({ ...p, code: e.target.value }))} />
+                    onChange={(e: any) => setNewTest((p: any) => ({ ...p, code: e.target.value }))} />
                 </div>
                 <div>
                   <label className="input-label">Test Name</label>
                   <input className="input-field" placeholder="Complete Blood Count" value={newTest.name}
-                    onChange={e => setNewTest(p => ({ ...p, name: e.target.value }))} />
+                    onChange={(e: any) => setNewTest((p: any) => ({ ...p, name: e.target.value }))} />
                 </div>
                 <div>
                   <label className="input-label">Category</label>
                   <select className="input-field" value={newTest.category}
-                    onChange={e => setNewTest(p => ({ ...p, category: e.target.value }))}>
+                    onChange={(e: any) => setNewTest((p: any) => ({ ...p, category: e.target.value }))}>
                     {CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="input-label">Sample Type</label>
                   <select className="input-field" value={newTest.sample_type}
-                    onChange={e => setNewTest(p => ({ ...p, sample_type: e.target.value }))}>
+                    onChange={(e: any) => setNewTest((p: any) => ({ ...p, sample_type: e.target.value }))}>
                     {["blood","urine","serum","plasma","csf","stool","sputum","swab"].map(s => (
                       <option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>
                     ))}
@@ -637,37 +637,37 @@ export default function LabPage() {
                 <div>
                   <label className="input-label">Unit</label>
                   <input className="input-field" placeholder="e.g. g/dL" value={newTest.unit}
-                    onChange={e => setNewTest(p => ({ ...p, unit: e.target.value }))} />
+                    onChange={(e: any) => setNewTest((p: any) => ({ ...p, unit: e.target.value }))} />
                 </div>
                 <div>
                   <label className="input-label">Reference Range</label>
                   <input className="input-field" placeholder="e.g. 12-16 g/dL" value={newTest.reference_range}
-                    onChange={e => setNewTest(p => ({ ...p, reference_range: e.target.value }))} />
+                    onChange={(e: any) => setNewTest((p: any) => ({ ...p, reference_range: e.target.value }))} />
                 </div>
                 <div>
                   <label className="input-label">Normal Low</label>
                   <input className="input-field" type="number" step="any" placeholder="12" value={newTest.normal_range_low}
-                    onChange={e => setNewTest(p => ({ ...p, normal_range_low: e.target.value }))} />
+                    onChange={(e: any) => setNewTest((p: any) => ({ ...p, normal_range_low: e.target.value }))} />
                 </div>
                 <div>
                   <label className="input-label">Normal High</label>
                   <input className="input-field" type="number" step="any" placeholder="16" value={newTest.normal_range_high}
-                    onChange={e => setNewTest(p => ({ ...p, normal_range_high: e.target.value }))} />
+                    onChange={(e: any) => setNewTest((p: any) => ({ ...p, normal_range_high: e.target.value }))} />
                 </div>
                 <div>
                   <label className="input-label">Critical Low</label>
                   <input className="input-field" type="number" step="any" placeholder="5" value={newTest.critical_low}
-                    onChange={e => setNewTest(p => ({ ...p, critical_low: e.target.value }))} />
+                    onChange={(e: any) => setNewTest((p: any) => ({ ...p, critical_low: e.target.value }))} />
                 </div>
                 <div>
                   <label className="input-label">Critical High</label>
                   <input className="input-field" type="number" step="any" placeholder="20" value={newTest.critical_high}
-                    onChange={e => setNewTest(p => ({ ...p, critical_high: e.target.value }))} />
+                    onChange={(e: any) => setNewTest((p: any) => ({ ...p, critical_high: e.target.value }))} />
                 </div>
                 <div>
                   <label className="input-label">Price</label>
                   <input className="input-field" type="number" step="any" placeholder="0" value={newTest.price}
-                    onChange={e => setNewTest(p => ({ ...p, price: e.target.value }))} />
+                    onChange={(e: any) => setNewTest((p: any) => ({ ...p, price: e.target.value }))} />
                 </div>
               </div>
             </div>
@@ -684,7 +684,7 @@ export default function LabPage() {
       {/* ═══ ENTER RESULT MODAL ═══ */}
       {showResultModal && (
         <div className="modal-overlay" onClick={() => setShowResultModal(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="font-semibold flex items-center gap-2">
                 <FileText size={18} className="text-[var(--accent-primary)]" />
@@ -709,9 +709,9 @@ export default function LabPage() {
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="input-label">Select Test <span className="text-red-500">*</span></label>
-                  <select className="input-field" value={resultForm.test_id} onChange={e => {
-                    const test = tests.find(t => t.id === e.target.value);
-                    setResultForm(p => ({ 
+                  <select className="input-field" value={resultForm.test_id} onChange={(e: any) => {
+                    const test = tests.find((t: any) => t.id === e.target.value);
+                    setResultForm((p: any) => ({ 
                       ...p, 
                       test_id: e.target.value,
                       unit: test?.unit || "",
@@ -719,7 +719,7 @@ export default function LabPage() {
                     }));
                   }}>
                     <option value="">-- Choose Test --</option>
-                    {tests.filter(t => t.sample_type === showResultModal.sample_type).map((t: any) => (
+                    {tests.filter((t: any) => t.sample_type === showResultModal.sample_type).map((t: any) => (
                       <option key={t.id} value={t.id}>{t.name} ({t.code})</option>
                     ))}
                   </select>
@@ -729,12 +729,12 @@ export default function LabPage() {
                   <div>
                     <label className="input-label">Result Value (Text) <span className="text-red-500">*</span></label>
                     <input className="input-field" placeholder="e.g. 14.5 or Positive" value={resultForm.value}
-                      onChange={e => setResultForm(p => ({ ...p, value: e.target.value }))} />
+                      onChange={(e: any) => setResultForm((p: any) => ({ ...p, value: e.target.value }))} />
                   </div>
                   <div>
                     <label className="input-label">Numeric Value (Optional)</label>
                     <input className="input-field" type="number" step="any" placeholder="For triggers" value={resultForm.numeric_value}
-                      onChange={e => setResultForm(p => ({ ...p, numeric_value: e.target.value }))} />
+                      onChange={(e: any) => setResultForm((p: any) => ({ ...p, numeric_value: e.target.value }))} />
                   </div>
                 </div>
 
@@ -742,19 +742,19 @@ export default function LabPage() {
                   <div>
                     <label className="input-label">Unit</label>
                     <input className="input-field" placeholder="e.g. g/dL" value={resultForm.unit}
-                      onChange={e => setResultForm(p => ({ ...p, unit: e.target.value }))} />
+                      onChange={(e: any) => setResultForm((p: any) => ({ ...p, unit: e.target.value }))} />
                   </div>
                   <div>
                     <label className="input-label">Reference Range</label>
                     <input className="input-field" placeholder="e.g. 12-16" value={resultForm.reference_range}
-                      onChange={e => setResultForm(p => ({ ...p, reference_range: e.target.value }))} />
+                      onChange={(e: any) => setResultForm((p: any) => ({ ...p, reference_range: e.target.value }))} />
                   </div>
                 </div>
 
                 <div>
                   <label className="input-label">Notes / Remarks</label>
                   <textarea className="input-field min-h-[80px]" placeholder="Add any clinical remarks..." value={resultForm.notes}
-                    onChange={e => setResultForm(p => ({ ...p, notes: e.target.value }))}></textarea>
+                    onChange={(e: any) => setResultForm((p: any) => ({ ...p, notes: e.target.value }))}></textarea>
                 </div>
               </div>
             </div>

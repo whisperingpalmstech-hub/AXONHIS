@@ -5,7 +5,7 @@ import { Receipt, DollarSign, FileText, ArrowLeft, Activity, ShieldCheck, AlertC
 import Link from "next/link";
 import { TopNav } from "@/components/ui/TopNav";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
 
 function authHeaders() {
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;

@@ -21,7 +21,7 @@ export function TopNav({ title }: TopNavProps) {
       return;
     }
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/me`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500"}/api/v1/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => {

@@ -43,7 +43,12 @@ from app.core.billing.discounts.models import DiscountRule  # noqa: F401
 from app.core.billing.invoices.models import Invoice  # noqa: F401
 from app.core.billing.payments.models import Payment  # noqa: F401
 from app.core.lab.models import LabTest, LabOrder, LabSample, LabResult, LabValidation, LabProcessing  # noqa: F401
-from app.core.pharmacy.models import Medication, Stock, Dispense  # noqa: F401
+from app.core.pharmacy.medications.models import Medication  # noqa: F401
+from app.core.pharmacy.prescriptions.models import Prescription, PrescriptionItem  # noqa: F401
+from app.core.pharmacy.dispensing.models import DispensingRecord  # noqa: F401
+from app.core.pharmacy.inventory.models import InventoryItem, ControlledDrugLog  # noqa: F401
+from app.core.pharmacy.batches.models import DrugBatch  # noqa: F401
+from app.core.pharmacy.drug_interactions.models import DrugInteraction  # noqa: F401
 from app.core.orders.templates.models import OrderTemplate, OrderTemplateItem, OrderSet, OrderSetItem  # noqa: F401
 
 config = context.config

@@ -4,7 +4,7 @@
  * All API calls go through this module for consistency and auth handling.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
 const API_PREFIX = "/api/v1";
 
 class ApiError extends Error {

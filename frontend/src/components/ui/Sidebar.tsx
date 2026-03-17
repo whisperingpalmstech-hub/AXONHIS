@@ -60,6 +60,15 @@ const NAV_ITEMS = [
     ),
   },
   {
+    label: "Pharmacy",
+    href: "/dashboard/pharmacy",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    ),
+  },
+  {
     label: "Billing",
     href: "/dashboard/billing",
     icon: (
@@ -126,7 +135,9 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="sidebar-nav">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = item.href === "/dashboard"
+            ? pathname === "/dashboard"
+            : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
@@ -142,7 +153,7 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="px-4 py-4 border-t border-slate-700">
-        <p className="text-xs text-slate-500 text-center">v0.7.0 — Phase 7</p>
+        <p className="text-xs text-slate-500 text-center">v0.8.0 — Phase 8</p>
       </div>
     </aside>
   );

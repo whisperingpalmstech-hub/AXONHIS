@@ -110,7 +110,10 @@ class AuthService:
         count = (await self.db.execute(select(func.count(User.id)))).scalar_one()
         result = await self.db.execute(
             select(User)
-            .options(selectinload(User.user_roles).selectinload(UserRole.role))
+            .options(
+                selectinload(User.user_roles).selectinload(UserRole.role)
+                .selectinload(Role.role_permissions).selectinload(RolePermission.permission)
+            )
             .offset(skip).limit(limit).order_by(User.created_at.desc())
         )
         return list(result.scalars().all()), count

@@ -28,7 +28,7 @@ from app.core.lab.router import router as lab_router
 from app.core.pharmacy.router import router as pharmacy_router
 from app.core.billing.router import router as billing_router
 from app.core.ai.router import router as ai_router
-
+from app.core.analytics.router import router as analytics_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -76,6 +76,7 @@ def create_app() -> FastAPI:
     app.include_router(pharmacy_router, prefix=api)
     app.include_router(billing_router, prefix=api)
     app.include_router(ai_router, prefix=api)
+    app.include_router(analytics_router, prefix=api)
 
     # ── Health Check ──────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])

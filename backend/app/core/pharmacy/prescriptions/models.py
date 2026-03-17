@@ -15,6 +15,8 @@ class Prescription(Base):
     prescription_time = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     status = Column(String(50), nullable=False, default="pending")  # pending, approved, dispensed, cancelled
 
+    items = relationship("PrescriptionItem", back_populates="prescription", cascade="all, delete-orphan")
+
 class PrescriptionItem(Base):
     __tablename__ = "prescription_items"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -24,3 +26,5 @@ class PrescriptionItem(Base):
     frequency = Column(String(100), nullable=False)
     duration = Column(String(100), nullable=False)
     instructions = Column(String(500), nullable=True)
+
+    prescription = relationship("Prescription", back_populates="items")

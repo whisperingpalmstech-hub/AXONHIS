@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.config import settings
 from app.core.auth.models import User, UserStatus
 from app.core.auth.services import hash_password, AuthService
+from app.core.patients.patients.models import Patient
+from app.core.encounters.encounters.models import Encounter
 from app.database import Base, get_db
 from app.main import app
 
@@ -94,3 +96,32 @@ async def auth_headers(doctor_user: User, db: AsyncSession) -> dict[str, str]:
     service = AuthService(db)
     token = service.create_access_token(loaded_user)
     return {"Authorization": f"Bearer {token}"}
+
+@pytest_asyncio.fixture
+async def test_patient(db: AsyncSession) -> Patient:
+    from datetime import date
+    patient = Patient(
+        patient_uuid=str(uuid.uuid4())[:8],
+        first_name="Jane",
+        last_name="Doe",
+        date_of_birth=date(1980, 1, 1),
+        gender="F",
+    )
+    db.add(patient)
+    await db.flush()
+    return patient
+
+@pytest_asyncio.fixture
+async def test_encounter(db: AsyncSession, test_patient: Patient, doctor_user: User) -> Encounter:
+    import uuid
+    encounter = Encounter(
+        encounter_uuid=str(uuid.uuid4())[:8],
+        patient_id=test_patient.id,
+        encounter_type="IPD",
+        doctor_id=doctor_user.id,
+        department="General Medicine",
+        status="scheduled"
+    )
+    db.add(encounter)
+    await db.flush()
+    return encounter

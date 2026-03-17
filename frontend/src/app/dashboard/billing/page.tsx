@@ -38,12 +38,14 @@ export default function BillingDashboard() {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
+  const [showProviderModal, setShowProviderModal] = useState(false);
   const [showInvoiceDetail, setShowInvoiceDetail] = useState<any>(null);
 
   // Form states
   const [invoiceForm, setInvoiceForm] = useState({ patient_id: "", encounter_id: "" });
   const [paymentForm, setPaymentForm] = useState({ invoice_id: "", payment_method: "cash", amount: "" });
   const [claimForm, setClaimForm] = useState({ invoice_id: "", provider_id: "", claim_amount: "" });
+  const [providerForm, setProviderForm] = useState({ provider_name: "", contact_details: "", policy_rules: "" });
 
   // Search
   const [searchTerm, setSearchTerm] = useState("");
@@ -159,6 +161,23 @@ export default function BillingDashboard() {
       } else {
         const err = await res.json();
         alert(err.detail ? JSON.stringify(err.detail) : "Error submitting claim");
+      }
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const handleRegisterProvider = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/billing/insurance/providers`, {
+        method: "POST", headers: authHeaders(),
+        body: JSON.stringify(providerForm)
+      });
+      if (res.ok) {
+        setShowProviderModal(false);
+        setProviderForm({ provider_name: "", contact_details: "", policy_rules: "" });
+        fetchData();
+      } else {
+        const err = await res.json();
+        alert(err.detail ? JSON.stringify(err.detail) : "Error registering provider");
       }
     } catch (e: any) { alert(e.message); }
   };
@@ -425,9 +444,14 @@ export default function BillingDashboard() {
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold flex items-center gap-2"><ShieldCheck size={18} className="text-violet-600" /> Insurance Claims</h3>
-                  <button onClick={() => setShowClaimModal(true)} className="btn-primary">
-                    <FileText size={16} /> Submit Claim
-                  </button>
+                  <div className="flex gap-3">
+                    <button onClick={() => setShowProviderModal(true)} className="btn-secondary">
+                      <Plus size={16} /> Register Provider
+                    </button>
+                    <button onClick={() => setShowClaimModal(true)} className="btn-primary">
+                      <FileText size={16} /> Submit Claim
+                    </button>
+                  </div>
                 </div>
 
                 {claims.length > 0 ? (
@@ -675,6 +699,41 @@ export default function BillingDashboard() {
               <button onClick={() => setShowClaimModal(false)} className="btn-secondary">Cancel</button>
               <button onClick={handleSubmitClaim} className="btn bg-violet-600 text-white hover:bg-violet-700">
                 <FileText size={16} /> Submit Claim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ REGISTER PROVIDER MODAL ═══ */}
+      {showProviderModal && (
+        <div className="modal-overlay" onClick={() => setShowProviderModal(false)}>
+          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="font-semibold flex items-center gap-2"><Building2 size={18} className="text-violet-600" /> Register Insurance Provider</h3>
+              <button onClick={() => setShowProviderModal(false)} className="btn-ghost p-1 rounded"><X size={18} /></button>
+            </div>
+            <div className="modal-body space-y-4">
+              <div>
+                <label className="input-label">Provider Name <span className="text-red-500">*</span></label>
+                <input className="input-field" type="text" placeholder="e.g. Blue Cross Blue Shield" value={providerForm.provider_name}
+                  onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, provider_name: e.target.value }))} />
+              </div>
+              <div>
+                <label className="input-label">Contact Details</label>
+                <input className="input-field" type="text" placeholder="Email or Phone" value={providerForm.contact_details}
+                  onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, contact_details: e.target.value }))} />
+              </div>
+              <div>
+                <label className="input-label">Policy Rules</label>
+                <textarea className="input-field min-h-[80px]" placeholder="Specific claim rules or coverage limits" value={providerForm.policy_rules}
+                  onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, policy_rules: e.target.value }))} />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setShowProviderModal(false)} className="btn-secondary">Cancel</button>
+              <button onClick={handleRegisterProvider} className="btn bg-violet-600 text-white hover:bg-violet-700" disabled={!providerForm.provider_name}>
+                <CheckCircle2 size={16} /> Register Provider
               </button>
             </div>
           </div>

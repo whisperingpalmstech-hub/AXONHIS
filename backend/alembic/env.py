@@ -51,6 +51,15 @@ from app.core.pharmacy.batches.models import DrugBatch  # noqa: F401
 from app.core.pharmacy.drug_interactions.models import DrugInteraction  # noqa: F401
 from app.core.orders.templates.models import OrderTemplate, OrderTemplateItem, OrderSet, OrderSetItem  # noqa: F401
 
+# Phase 9 – AI Platform
+from app.core.ai.models import AISummary, ClinicalInsight, RiskAlert, VoiceCommand, AIAgentTask  # noqa: F401
+
+# Phase 10 - Analytics
+from app.core.analytics.clinical_metrics.models import DailyClinicalMetric  # noqa: F401
+from app.core.analytics.financial_metrics.models import DailyFinancialMetric  # noqa: F401
+from app.core.analytics.operational_metrics.models import DailyOperationalMetric  # noqa: F401
+from app.core.analytics.predictive_models.models import HospitalPrediction  # noqa: F401
+
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

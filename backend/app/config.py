@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4o"
     stt_provider: Literal["whisper", "deepgram"] = "whisper"
 
+    # Phase 9 – Grok / Groq LLM
+    grok_api_key: str = "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"
+    grok_model: str = "llama-3.3-70b-versatile"
+    grok_base_url: str = "https://api.groq.com/openai/v1"
+
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"

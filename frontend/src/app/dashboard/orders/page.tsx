@@ -955,7 +955,7 @@ export default function OrdersPage() {
                     <div key={set.id} className="card hover:shadow-lg transition-all overflow-hidden group">
                       {/* Multi-color top bar */}
                       <div className="h-1.5 w-full flex">
-                        {uniqueTypes.map((t: string, i: number) => {
+                        {uniqueTypes.map((t: any, i: number) => {
                           const info = ORDER_TYPES.find(o => o.value === t);
                           return <div key={i} className="flex-1" style={{ background: info?.color || "#94A3B8" }} />;
                         })}
@@ -974,7 +974,7 @@ export default function OrdersPage() {
                         </div>
                         {/* Type summary icons */}
                         <div className="flex items-center gap-2 mb-3">
-                          {uniqueTypes.map((t: string, i: number) => {
+                          {uniqueTypes.map((t: any, i: number) => {
                             const info = ORDER_TYPES.find(o => o.value === t);
                             const Icon = info?.icon || Zap;
                             const count = set.items?.filter((it: any) => it.order_type === t).length;

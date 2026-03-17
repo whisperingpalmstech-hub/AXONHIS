@@ -28,13 +28,21 @@ export function TopNav({ title }: TopNavProps) {
         if (!r.ok) throw new Error("Unauthorized");
         return r.json();
       })
-      .then((data) => setUserName(data.full_name || data.email))
-      .catch(() => router.push("/login"));
+      .then((data) => {
+        setUserName(data.full_name || data.email);
+        localStorage.setItem("user", JSON.stringify(data));
+      })
+      .catch(() => {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("user");
+        router.push("/login");
+      });
   }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user");
     router.push("/login");
   };
 

@@ -69,7 +69,7 @@ async def approve_order(
     order = await service.approve(order, approved_by=user.id, notes=data.notes)
 
     # Trigger task generation and billing in sequence
-    await TaskService(db).generate_tasks(order)
+    await TaskService(db).generate_tasks_for_order(order, user_id=user.id)
     await BillingService(db).create_entry_from_order(order)
 
     await EventService(db).emit(

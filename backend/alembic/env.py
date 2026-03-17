@@ -58,6 +58,10 @@ from app.core.ai.models import AISummary, ClinicalInsight, RiskAlert, VoiceComma
 from app.core.analytics.clinical_metrics.models import DailyClinicalMetric  # noqa: F401
 from app.core.analytics.financial_metrics.models import DailyFinancialMetric  # noqa: F401
 from app.core.analytics.operational_metrics.models import DailyOperationalMetric  # noqa: F401
+
+# Phase 11 - System
+from app.core.system.logging.models import SystemLog  # noqa: F401
+from app.core.system.monitoring.models import TrackedError, PerformanceMetric  # noqa: F401
 from app.core.analytics.predictive_models.models import HospitalPrediction  # noqa: F401
 
 config = context.config

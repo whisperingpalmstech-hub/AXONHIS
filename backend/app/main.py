@@ -6,11 +6,15 @@ All configuration, middleware, and routers are registered here.
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+import time
 
 from app.config import settings
-from app.database import engine
+from app.database import engine, get_db
+from app.core.system.monitoring.services import MonitoringService
+from app.core.system.security.middleware import SecurityHeadersMiddleware
 
 # Phase 1 routers
 from app.core.auth.router import router as auth_router
@@ -29,6 +33,11 @@ from app.core.pharmacy.router import router as pharmacy_router
 from app.core.billing.router import router as billing_router
 from app.core.ai.router import router as ai_router
 from app.core.analytics.router import router as analytics_router
+
+# Phase 11 - Production
+from app.core.system.health_checks.routes import router as system_router
+from app.core.system.logging.routes import router as system_logging_router
+from app.core.system.monitoring.routes import router as system_monitoring_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -57,6 +66,47 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # ── Security Headers Phase 11 ─────────────────────────────────────────
+    app.add_middleware(SecurityHeadersMiddleware)
+
+    # ── Exception Handler Phase 11 ────────────────────────────────────────
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        # We need an ad-hoc session since this is an exception
+        try:
+            async for db in get_db():
+                monitoring = MonitoringService(db)
+                req_payload = None
+                try:
+                    req_payload = await request.json()
+                except Exception:
+                    pass
+                
+                await monitoring.log_error(
+                    error_type="api",
+                    message=str(exc),
+                    exc=exc,
+                    user_context=getattr(request, "user", None), # Basic contextual tracking
+                    request_payload=req_payload
+                )
+                break # Just run once
+        except Exception:
+            pass # Failsafe if DB logging fails
+            
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal Server Error"},
+        )
+
+    # ── Performance Monitoring Phase 11 ───────────────────────────────────
+    @app.middleware("http")
+    async def add_process_time_header(request: Request, call_next):
+        start_time = time.time()
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        response.headers["X-Process-Time"] = str(process_time)
+        return response
+
     # ── API Routers ───────────────────────────────────────────────────────
     api = "/api/v1"
 
@@ -77,6 +127,11 @@ def create_app() -> FastAPI:
     app.include_router(billing_router, prefix=api)
     app.include_router(ai_router, prefix=api)
     app.include_router(analytics_router, prefix=api)
+
+    # Phase 11 - Deployments & Systems
+    app.include_router(system_router, prefix=api)
+    app.include_router(system_logging_router, prefix=api)
+    app.include_router(system_monitoring_router, prefix=api)
 
     # ── Health Check ──────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])

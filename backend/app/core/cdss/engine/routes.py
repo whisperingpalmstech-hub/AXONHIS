@@ -8,7 +8,7 @@ import uuid
 from app.database import get_db
 from app.dependencies import get_current_user
 
-from .schemas import MedicationCheckRequest, CDSSCheckResponse, CDSSAlertResponse
+from .schemas import MedicationCheckRequest, CDSSCheckResponse, CDSSAlertResponse, PatientContext
 from .services import CDSSEngineService
 from .models import CDSSAlert
 
@@ -30,6 +30,29 @@ async def check_medication_safety(
     Checks: Drug Interactions, Allergy Conflicts, Dose Validation, Duplicate Therapy, Contraindications.
     """
     service = CDSSEngineService()
+    return await service.run_medication_checks(db, request)
+
+
+@router.post("/check-medication-smart", response_model=CDSSCheckResponse)
+async def check_medication_safety_smart(
+    medication_id: str,
+    encounter_id: uuid.UUID,
+    patient_id: uuid.UUID,
+    dose: float | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Run full CDSS safety checks with automatic context harvesting.
+    """
+    service = CDSSEngineService()
+    context = await service.get_patient_context(db, patient_id, encounter_id)
+    
+    request = MedicationCheckRequest(
+        patient_context=context,
+        new_medication_id=medication_id,
+        dose=dose
+    )
     return await service.run_medication_checks(db, request)
 
 

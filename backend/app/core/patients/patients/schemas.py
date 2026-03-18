@@ -12,6 +12,11 @@ class PatientBase(BaseModel):
     gender: str = Field(min_length=1, max_length=20)
     primary_phone: str | None = None
     email: EmailStr | None = None
+    address: str | None = None
+    blood_group: str | None = None
+    allergies: str | None = None
+    emergency_contact_name: str | None = None
+    emergency_contact_phone: str | None = None
 
 class PatientCreate(PatientBase):
     pass
@@ -24,6 +29,11 @@ class PatientUpdate(BaseModel):
     primary_phone: str | None = None
     email: EmailStr | None = None
     status: str | None = None
+    address: str | None = None
+    blood_group: str | None = None
+    allergies: str | None = None
+    emergency_contact_name: str | None = None
+    emergency_contact_phone: str | None = None
 
 from typing import List
 from app.core.patients.identifiers.schemas import PatientIdentifierOut
@@ -36,6 +46,7 @@ from app.core.patients.appointments.schemas import AppointmentOut
 class PatientOut(PatientBase):
     id: uuid.UUID
     patient_uuid: str
+    mrn: str | None = None
     status: str
     created_at: datetime
     updated_at: datetime

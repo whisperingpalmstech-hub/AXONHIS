@@ -6,7 +6,7 @@ import asyncio
 from datetime import date
 from celery import shared_task
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import async_session_maker
+from app.database import AsyncSessionLocal
 
 from app.core.analytics.clinical_metrics.services import ClinicalMetricService
 from app.core.analytics.financial_metrics.services import FinancialMetricService
@@ -15,7 +15,7 @@ from app.core.analytics.predictive_models.services import PredictiveModelService
 
 async def _aggregate_all_metrics():
     """Async helper to crunch metrics."""
-    async with async_session_maker() as db:
+    async with AsyncSessionLocal() as db:
         cs = ClinicalMetricService(db)
         fs = FinancialMetricService(db)
         os = OperationalMetricService(db)

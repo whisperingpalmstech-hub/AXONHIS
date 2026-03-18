@@ -43,6 +43,21 @@ from app.core.cdss.engine.routes import router as cdss_router
 # Phase 13 - Blood Bank
 from app.core.blood_bank.router import router as blood_bank_router
 
+# Phase 10 - Ward & Bed Management
+from app.core.wards.router import router as wards_router
+
+# Phase 11 - Radiology & Imaging Management
+from app.core.radiology.router import router as radiology_router
+
+# Phase 14 - Operating Theatre Management
+from app.core.ot.router import router as ot_router
+
+# Phase 15 - Hospital Communication Platform
+from app.core.communication.routes import communication_router
+
+# Phase 16 - Patient Portal & Telemedicine
+from app.core.patient_portal.router import portal_router
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Startup / shutdown lifecycle."""
@@ -131,6 +146,7 @@ def create_app() -> FastAPI:
     app.include_router(billing_router, prefix=api)
     app.include_router(ai_router, prefix=api)
     app.include_router(analytics_router, prefix=api)
+    app.include_router(communication_router, prefix=api)
 
     # Phase 11 - Deployments & Systems
     app.include_router(system_health_router, prefix=api)     # exposes /api/v1/system/*
@@ -142,6 +158,18 @@ def create_app() -> FastAPI:
 
     # Phase 13 - Blood Bank
     app.include_router(blood_bank_router, prefix="/api/v1")
+
+    # Phase 10 - Ward & Bed Management
+    app.include_router(wards_router, prefix="/api/v1")
+
+    # Phase 11 - Radiology & Imaging Management
+    app.include_router(radiology_router, prefix="/api/v1")
+
+    # Phase 14 - Operating Theatre Management
+    app.include_router(ot_router, prefix="/api/v1")
+
+    # Phase 16 - Patient Portal
+    app.include_router(portal_router, prefix="/api/v1")
 
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])

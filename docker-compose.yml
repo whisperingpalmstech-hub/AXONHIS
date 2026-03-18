@@ -79,5 +79,23 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
 
+  patient_portal:
+    build:
+      context: ./apps/patient-portal
+      dockerfile: Dockerfile
+    container_name: axonhis_patient_portal
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./apps/patient-portal:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "9502:3000"
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+
 volumes:
   postgres_data:

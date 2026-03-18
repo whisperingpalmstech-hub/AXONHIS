@@ -81,6 +81,40 @@ from app.core.blood_bank.transfusion_orders.models import TransfusionOrder, Bloo
 from app.core.blood_bank.compatibility_tests.models import CrossmatchTest  # noqa: F401
 from app.core.blood_bank.transfusions.models import Transfusion  # noqa: F401
 from app.core.blood_bank.transfusion_reactions.models import TransfusionReaction  # noqa: F401
+from app.core.communication.messages.models import Message  # noqa: F401
+from app.core.communication.channels.models import Channel, ChannelMember, ChannelMessage  # noqa: F401
+from app.core.communication.alerts.models import ClinicalAlert  # noqa: F401
+from app.core.communication.notifications.models import CommunicationNotification  # noqa: F401
+from app.core.communication.escalations.models import TaskEscalation  # noqa: F401
+from app.core.communication.patient_threads.models import PatientThread  # noqa: F401
+
+# Phase 10 - Ward & Bed Management
+from app.core.wards.models import Ward, Room, Bed, BedAssignment, BedTransfer, BedCleaningTask  # noqa: F401
+
+# Phase 11 - Radiology & Imaging Management
+from app.core.radiology.imaging_orders.models import ImagingOrder  # noqa: F401
+from app.core.radiology.imaging_studies.models import ImagingStudy  # noqa: F401
+from app.core.radiology.imaging_schedule.models import ImagingSchedule  # noqa: F401
+from app.core.radiology.dicom_metadata.models import DICOMMetadata  # noqa: F401
+from app.core.radiology.radiology_reports.models import RadiologyReport  # noqa: F401
+from app.core.radiology.radiology_results.models import RadiologyResult  # noqa: F401
+
+# Phase 14 - Operating Theatre
+from app.core.ot.operating_rooms.models import OperatingRoom  # noqa: F401
+from app.core.ot.surgical_procedures.models import SurgicalProcedure  # noqa: F401
+from app.core.ot.surgery_schedule.models import SurgerySchedule  # noqa: F401
+from app.core.ot.surgical_teams.models import SurgicalTeam  # noqa: F401
+from app.core.ot.anesthesia_records.models import AnesthesiaRecord  # noqa: F401
+from app.core.ot.surgery_events.models import SurgeryEvent  # noqa: F401
+from app.core.ot.surgery_notes.models import SurgeryNote  # noqa: F401
+from app.core.ot.postoperative_events.models import PostoperativeEvent  # noqa: F401
+
+# Phase 16 - Patient Portal
+from app.core.patient_portal.patient_accounts.models import PatientAccount  # noqa: F401
+from app.core.patient_portal.appointments.models import Appointment as PortalAppointment, DoctorAvailability  # noqa: F401
+from app.core.patient_portal.teleconsultations.models import Teleconsultation  # noqa: F401
+from app.core.patient_portal.medical_records.models import PatientDocument  # noqa: F401
+from app.core.patient_portal.patient_payments.models import PatientPayment  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

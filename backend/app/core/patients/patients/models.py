@@ -12,6 +12,7 @@ class Patient(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_uuid = Column(String(50), unique=True, index=True, nullable=False)
+    mrn = Column(String(50), unique=True, index=True, nullable=True) # For backward compatibility
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     date_of_birth = Column(Date, nullable=False)
@@ -19,6 +20,13 @@ class Patient(Base):
     primary_phone = Column(String(50), nullable=True)
     email = Column(String(100), nullable=True)
     status = Column(String(50), default="active", nullable=False)
+    
+    # Fields from old model
+    address = Column(String(255), nullable=True)
+    blood_group = Column(String(10), nullable=True)
+    allergies = Column(String(500), nullable=True)
+    emergency_contact_name = Column(String(100), nullable=True)
+    emergency_contact_phone = Column(String(20), nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

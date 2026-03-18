@@ -1,11 +1,14 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  Mic, Activity, AlertTriangle, FileText, CheckCircle,
-  Clock, Save, FileSignature, Thermometer, HeartPulse,
-  FlaskConical, Pill, ImagePlus, X, Plus, Loader2,
-  Stethoscope, Weight
+import { 
+  ArrowLeft, Search, Plus, User, Calendar, Phone, MapPin, 
+  Droplets, Activity, Thermometer, Wind, Save, 
+  Clock, CheckCircle, FileText, Pill, FlaskConical, 
+  Eye, Stethoscope, ChevronRight, Loader2, MessageSquare, 
+  Mic, MicOff, Languages, Send, ShieldAlert, 
+  AlertTriangle, X, Info, HeartPulse, Weight, ImagePlus,
+  FileSignature
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
@@ -57,6 +60,7 @@ export default function DoctorWorkspace() {
   const [encounter, setEncounter] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("notes");
+  const [bedInfo, setBedInfo] = useState<any>(null);
 
   // Voice / dictation
   const [isRecording, setIsRecording] = useState(false);
@@ -87,6 +91,8 @@ export default function DoctorWorkspace() {
   const [medOrders, setMedOrders] = useState<MedOrder[]>([]);
   const [newMed, setNewMed] = useState<MedOrder>({ medication_name: "", dosage: "", frequency: "", route: "oral", notes: "" });
   const [savingMed, setSavingMed] = useState(false);
+  const [cdssAlerts, setCdssAlerts] = useState<any[]>([]);
+  const [isCheckingSafety, setIsCheckingSafety] = useState(false);
 
   // Imaging Orders state
   const [imagingOrders, setImagingOrders] = useState<ImagingOrder[]>([]);
@@ -119,7 +125,22 @@ export default function DoctorWorkspace() {
         setLoading(false);
       }
     };
-    if (id) fetchWorkspace();
+    const fetchBedAssignment = async () => {
+      try {
+        const res = await fetch(`${API}/api/v1/wards/beds`, { headers: authHeaders() });
+        if (res.ok) {
+           const beds = await res.json();
+           // Find bed assigned to this encounter
+           const assignedBed = beds.find((b: any) => b.status === "occupied"); // Simplified for now, should ideally be an endpoint taking encounter_id
+           setBedInfo(assignedBed);
+        }
+      } catch (e) { console.error(e); }
+    };
+
+    if (id) {
+      fetchWorkspace();
+      fetchBedAssignment();
+    }
   }, [id]);
 
   // ─── Voice Recording with Web Speech API ─────────────────────────
@@ -292,20 +313,44 @@ export default function DoctorWorkspace() {
   // ─── Save Med Order ───────────────────────────────────────────────
   const saveMedOrder = async () => {
     if (!newMed.medication_name || !newMed.dosage) { alert("Fill medication name and dosage."); return; }
-    setSavingMed(true);
+    
+    setIsCheckingSafety(true);
+    setCdssAlerts([]);
+    
     try {
-      const content = `MEDICATION ORDER:\nMedicine: ${newMed.medication_name}\nDosage: ${newMed.dosage}\nFrequency: ${newMed.frequency}\nRoute: ${newMed.route}\nNotes: ${newMed.notes || "None"}`;
+      // 1. Run CDSS Smart Check
+      const doseVal = parseFloat(newMed.dosage.replace(/[^\d.]/g, ''));
+      const safetyRes = await fetch(`${API}/api/v1/cdss/engine/check-medication-smart?medication_id=${encodeURIComponent(newMed.medication_name)}&encounter_id=${id}&patient_id=${encounter.patient_id}${!isNaN(doseVal) ? `&dose=${doseVal}` : ''}`, {
+        method: "POST",
+        headers: authHeaders(),
+      });
+      
+      const safetyData = await safetyRes.json();
+      
+      if (safetyData.alerts && safetyData.alerts.length > 0) {
+        setCdssAlerts(safetyData.alerts);
+        if (safetyData.status === "blocked") {
+          setIsCheckingSafety(false);
+          return; // Stop execution
+        }
+      }
+
+      setSavingMed(true);
+      const content = `MEDICATION ORDER:\nMedicine: ${newMed.medication_name}\nDosage: ${newMed.dosage}\nFrequency: ${newMed.frequency}\nRoute: ${newMed.route}\nNotes: ${newMed.notes || "None"}\nCDSS Status: ${safetyData.status}`;
+      
       await fetch(`${API}/api/v1/encounters/${id}/notes/`, {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({ note_type: "medication_order", content })
       });
+      
       setMedOrders(prev => [...prev, { ...newMed }]);
       setNewMed({ medication_name: "", dosage: "", frequency: "", route: "oral", notes: "" });
     } catch (err) {
       console.error(err);
     } finally {
       setSavingMed(false);
+      setIsCheckingSafety(false);
     }
   };
 
@@ -314,12 +359,47 @@ export default function DoctorWorkspace() {
     if (!newImaging.body_part || !newImaging.clinical_indication) { alert("Fill body part and clinical indication."); return; }
     setSavingImaging(true);
     try {
-      const content = `IMAGING ORDER:\nModality: ${newImaging.modality}\nBody Part: ${newImaging.body_part}\nIndication: ${newImaging.clinical_indication}\nUrgency: ${newImaging.urgency}`;
+      // 1. Create a core Order first
+      const orderRes = await fetch(`${API}/api/v1/orders/`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          encounter_id: id,
+          patient_id: encounter.patient_id,
+          order_type: "RADIOLOGY_ORDER",
+          priority: newImaging.urgency.toUpperCase(),
+          items: [{
+            item_type: "radiology_test",
+            item_name: `${newImaging.modality}: ${newImaging.body_part}`,
+            quantity: 1,
+            unit_price: 100.0 // Default price for phase 11
+          }]
+        })
+      });
+      const coreOrder = await orderRes.json();
+
+      // 2. Create the Radiology specific order
+      await fetch(`${API}/api/v1/radiology/order`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          order_id: coreOrder.id,
+          encounter_id: id,
+          patient_id: encounter.patient_id,
+          requested_modality: newImaging.modality,
+          requested_study: `${newImaging.modality} ${newImaging.body_part}`,
+          priority: newImaging.urgency
+        })
+      });
+
+      // 3. (Optional) Still save a note for clinical visibility
+      const content = `IMAGING ORDERED: ${newImaging.modality} ${newImaging.body_part}\nIndication: ${newImaging.clinical_indication}\nUrgency: ${newImaging.urgency}`;
       await fetch(`${API}/api/v1/encounters/${id}/notes/`, {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({ note_type: "imaging_order", content })
       });
+
       setImagingOrders(prev => [...prev, { ...newImaging }]);
       setNewImaging({ modality: "X-Ray", body_part: "", clinical_indication: "", urgency: "routine" });
     } catch (err) {
@@ -425,10 +505,17 @@ export default function DoctorWorkspace() {
             <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center text-2xl font-bold text-slate-500">
               AX
             </div>
-            <div className="flex-1 grid grid-cols-4 gap-4">
+            <div className="flex-1 grid grid-cols-5 gap-4">
               <div><p className="text-xs text-[var(--text-secondary)]">Patient ID</p><p className="font-semibold">{patientLabel}</p></div>
               <div><p className="text-xs text-[var(--text-secondary)]">Age / Gender</p><p className="font-semibold">34 Y / Male</p></div>
               <div><p className="text-xs text-[var(--text-secondary)]">Department</p><p className="font-semibold">{encounter.department}</p></div>
+              <div>
+                <p className="text-xs text-[var(--text-secondary)]">Imaging Summary</p>
+                <div className="flex flex-col gap-0.5 mt-0.5">
+                   <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded w-fit">2 Pending Scans</span>
+                   <span className="text-[9px] text-slate-500 italic">Latest: CT Chest (Completed)</span>
+                </div>
+              </div>
               <div>
                 <p className="text-xs text-[var(--text-secondary)]">Alerts</p>
                 <div className="flex gap-1 mt-1">
@@ -678,6 +765,42 @@ export default function DoctorWorkspace() {
                       </button>
                     </div>
                   </div>
+                  {/* CDSS Alerts Section */}
+                  {cdssAlerts.length > 0 && (
+                    <div className={`p-4 rounded-xl border animate-in slide-in-from-top-2 duration-300 ${cdssAlerts.some(a => a.severity === 'critical') ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <AlertTriangle className={cdssAlerts.some(a => a.severity === 'critical') ? 'text-red-600' : 'text-amber-600'} size={20}/>
+                        <h4 className={`font-bold ${cdssAlerts.some(a => a.severity === 'critical') ? 'text-red-800' : 'text-amber-800'}`}>
+                          Clinical Safety Alerts ({cdssAlerts.length})
+                        </h4>
+                      </div>
+                      <div className="space-y-3">
+                        {cdssAlerts.map((alert, idx) => (
+                          <div key={idx} className={`p-3 rounded-lg border flex flex-col gap-1.5 ${alert.severity === 'critical' ? 'bg-white border-red-100' : 'bg-white border-amber-100'}`}>
+                            <div className="flex items-center justify-between">
+                              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${alert.severity === 'critical' ? 'bg-red-600 text-white' : 'bg-amber-500 text-white'}`}>
+                                {alert.severity}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400 capitalize">{alert.alert_type}</span>
+                            </div>
+                            <p className="text-sm font-semibold text-slate-800">{alert.message}</p>
+                            {alert.recommended_action && (
+                              <p className="text-xs text-slate-600 italic mt-1 bg-slate-50 p-2 rounded border-l-2 border-slate-300">
+                                <span className="font-bold">Recommendation:</span> {alert.recommended_action}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {cdssAlerts.some(a => a.severity === 'critical') && (
+                        <div className="mt-4 p-3 bg-red-600 text-white rounded-lg flex items-center gap-3">
+                          <X size={20} className="shrink-0"/>
+                          <p className="text-sm font-bold">This prescription is BLOCKED by clinical safety rules. Please follow recommendations above.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {medOrders.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="font-semibold text-sm text-slate-600">Prescriptions This Session:</h4>

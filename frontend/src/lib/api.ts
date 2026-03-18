@@ -38,7 +38,9 @@ async function request<T>(
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new ApiError(body.detail || response.statusText, response.status);
+    let msg = body.detail || response.statusText;
+    if (typeof msg === "object") msg = JSON.stringify(msg, null, 2);
+    throw new ApiError(msg, response.status);
   }
 
   if (response.status === 204) return {} as T;

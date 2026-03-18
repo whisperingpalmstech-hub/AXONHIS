@@ -30,6 +30,7 @@ async def search_order_catalog(
 async def create_order(data: OrderCreate, db: DBSession, user: CurrentUser) -> OrderOut:
     service = OrderService(db)
     order = await service.create(data, ordered_by=user.id)
+    await db.commit() # Ensure core order is persisted for downstream RIS services
     await EventService(db).emit(
         EventType.ORDER_CREATED,
         summary=f"{order.order_type} order created",

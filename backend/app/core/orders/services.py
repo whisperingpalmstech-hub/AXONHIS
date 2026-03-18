@@ -16,6 +16,8 @@ from sqlalchemy.orm import selectinload
 
 from app.core.orders.models import Order, OrderItem, OrderStatus
 from app.core.orders.schemas import OrderCreate
+from app.core.cdss.engine.services import CDSSEngineService
+from app.core.cdss.engine.schemas import MedicationCheckRequest, PatientContext
 
 
 class OrderService:
@@ -58,7 +60,6 @@ class OrderService:
             .order_by(Order.created_at.desc())
         )
         return list(result.scalars().all())
-
     async def approve(self, order: Order, approved_by: uuid.UUID, notes: str | None = None) -> Order:
         """Approve an order — triggers task generation and billing."""
         if order.status != OrderStatus.PENDING_APPROVAL:
@@ -66,6 +67,43 @@ class OrderService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Cannot approve order in status '{order.status}'",
             )
+
+        # --- CDSS Check for Medications ---
+        if order.order_type == "MEDICATION_ORDER":
+            cdss = CDSSEngineService()
+            context = await cdss.get_patient_context(self.db, order.patient_id, order.encounter_id)
+            
+            for item in order.items:
+                if item.item_type == "medication":
+                    # Parse dose if possible
+                    dose_val = None
+                    try:
+                        if item.dose:
+                            import re
+                            match = re.search(r"(\d+(\.\d+)?)", item.dose)
+                            if match:
+                                dose_val = float(match.group(1))
+                    except:
+                        pass
+
+                    check_req = MedicationCheckRequest(
+                        patient_context=context,
+                        new_medication_id=str(item.item_id) if item.item_id else item.item_name,
+                        dose=dose_val
+                    )
+                    cdss_res = await cdss.run_medication_checks(self.db, check_req)
+                    
+                    if cdss_res.status == "blocked":
+                        # Fetch the specific critical messages
+                        critical_msgs = [a.message for a in cdss_res.alerts if a.severity == "critical"]
+                        raise HTTPException(
+                            status_code=status.HTTP_403_FORBIDDEN,
+                            detail={
+                                "message": "Order blocked by Clinical Decision Support System (CDSS)",
+                                "alerts": critical_msgs
+                            }
+                        )
+
         order.status = OrderStatus.APPROVED
         order.approved_by = approved_by
         order.approved_at = datetime.now(timezone.utc)

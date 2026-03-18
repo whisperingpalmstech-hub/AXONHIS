@@ -18,7 +18,7 @@ function authHeaders() {
   };
 }
 
-type TabKey = "overview" | "invoices" | "payments" | "claims" | "services";
+type TabKey = "overview" | "invoices" | "payments" | "claims" | "services" | "insurance" | "preauth";
 
 export default function BillingDashboard() {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
@@ -31,6 +31,8 @@ export default function BillingDashboard() {
   const [patients, setPatients] = useState<any[]>([]);
   const [encounters, setEncounters] = useState<any[]>([]);
   const [providers, setProviders] = useState<any[]>([]);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [preAuths, setPreAuths] = useState<any[]>([]);
   const [billingServices, setBillingServices] = useState<any[]>([]);
   const [entries, setEntries] = useState<any[]>([]);
 
@@ -39,13 +41,17 @@ export default function BillingDashboard() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [showProviderModal, setShowProviderModal] = useState(false);
+  const [showPackageModal, setShowPackageModal] = useState(false);
+  const [showPreAuthModal, setShowPreAuthModal] = useState(false);
   const [showInvoiceDetail, setShowInvoiceDetail] = useState<any>(null);
 
   // Form states
   const [invoiceForm, setInvoiceForm] = useState({ patient_id: "", encounter_id: "" });
   const [paymentForm, setPaymentForm] = useState({ invoice_id: "", payment_method: "cash", amount: "" });
   const [claimForm, setClaimForm] = useState({ invoice_id: "", provider_id: "", claim_amount: "" });
-  const [providerForm, setProviderForm] = useState({ provider_name: "", contact_details: "", policy_rules: "" });
+  const [providerForm, setProviderForm] = useState({ provider_name: "", provider_code: "", contact_details: "", billing_address: "" });
+  const [packageForm, setPackageForm] = useState({ provider_id: "", package_name: "", default_co_pay_percent: "0", default_deductible: "0" });
+  const [preAuthForm, setPreAuthForm] = useState({ patient_id: "", provider_id: "", service_id: "", request_amount: "", clinical_notes: "" });
 
   // Search
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,13 +62,15 @@ export default function BillingDashboard() {
     setLoading(true);
     const headers = authHeaders();
     try {
-      const [invRes, payRes, claimRes, patRes, encRes, provRes, svcRes, entRes] = await Promise.all([
+      const [invRes, payRes, claimRes, patRes, encRes, provRes, packRes, authRes, svcRes, entRes] = await Promise.all([
         fetch(`${API_URL}/api/v1/billing/invoices`, { headers }),
         fetch(`${API_URL}/api/v1/billing/payments`, { headers }),
         fetch(`${API_URL}/api/v1/billing/insurance/claims`, { headers }),
         fetch(`${API_URL}/api/v1/patients`, { headers }),
         fetch(`${API_URL}/api/v1/encounters`, { headers }),
         fetch(`${API_URL}/api/v1/billing/insurance/providers`, { headers }),
+        fetch(`${API_URL}/api/v1/billing/insurance/packages`, { headers }),
+        fetch(`${API_URL}/api/v1/billing/insurance/pre-auth`, { headers }),
         fetch(`${API_URL}/api/v1/billing/services`, { headers }),
         fetch(`${API_URL}/api/v1/billing/entries`, { headers }),
       ]);
@@ -76,6 +84,8 @@ export default function BillingDashboard() {
       }
       if (encRes.ok) setEncounters(await encRes.json());
       if (provRes.ok) setProviders(await provRes.json());
+      if (packRes.ok) setPackages(await packRes.json());
+      if (authRes.ok) setPreAuths(await authRes.json());
       if (svcRes.ok) setBillingServices(await svcRes.json());
       if (entRes.ok) setEntries(await entRes.json());
     } catch (err) {
@@ -150,9 +160,22 @@ export default function BillingDashboard() {
 
   const handleSubmitClaim = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/v1/billing/insurance/claim`, {
+      const selectedInvoice = invoices.find(i => i.id === claimForm.invoice_id);
+      const invEntries = entries.filter(e => e.encounter_id === selectedInvoice?.encounter_id);
+      
+      const payload = {
+        ...claimForm,
+        claim_amount: parseFloat(claimForm.claim_amount),
+        items: invEntries.map(e => ({
+          billing_entry_id: e.id,
+          amount: parseFloat(e.total_price),
+          status: "pended"
+        }))
+      };
+
+      const res = await fetch(`${API_URL}/api/v1/billing/insurance/claims`, {
         method: "POST", headers: authHeaders(),
-        body: JSON.stringify({ ...claimForm, claim_amount: parseFloat(claimForm.claim_amount) })
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         setShowClaimModal(false);
@@ -173,7 +196,7 @@ export default function BillingDashboard() {
       });
       if (res.ok) {
         setShowProviderModal(false);
-        setProviderForm({ provider_name: "", contact_details: "", policy_rules: "" });
+        setProviderForm({ provider_name: "", provider_code: "", contact_details: "", billing_address: "" });
         fetchData();
       } else {
         const err = await res.json();
@@ -182,12 +205,55 @@ export default function BillingDashboard() {
     } catch (e: any) { alert(e.message); }
   };
 
+  const handleRegisterPackage = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/billing/insurance/packages`, {
+        method: "POST", headers: authHeaders(),
+        body: JSON.stringify({
+          ...packageForm,
+          default_co_pay_percent: parseFloat(packageForm.default_co_pay_percent),
+          default_deductible: parseFloat(packageForm.default_deductible)
+        })
+      });
+      if (res.ok) {
+        setShowPackageModal(false);
+        setPackageForm({ provider_id: "", package_name: "", default_co_pay_percent: "0", default_deductible: "0" });
+        fetchData();
+      } else {
+        const err = await res.json();
+        alert(err.detail ? JSON.stringify(err.detail) : "Error registering package");
+      }
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const handleCreatePreAuth = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/billing/insurance/pre-auth`, {
+        method: "POST", headers: authHeaders(),
+        body: JSON.stringify({
+          ...preAuthForm,
+          request_amount: parseFloat(preAuthForm.request_amount)
+        })
+      });
+      if (res.ok) {
+        setShowPreAuthModal(false);
+        setPreAuthForm({ patient_id: "", provider_id: "", service_id: "", request_amount: "", clinical_notes: "" });
+        fetchData();
+      } else {
+        const err = await res.json();
+        alert(err.detail ? JSON.stringify(err.detail) : "Error creating pre-auth");
+      }
+    } catch (e: any) { alert(e.message); }
+  };
+
   const TABS: { key: TabKey; label: string; icon: any; count?: number }[] = [
     { key: "overview", label: "Dashboard", icon: BarChart3 },
     { key: "invoices", label: "Invoices", icon: Receipt, count: invoices.length },
+    { key: "insurance", label: "Insurance", icon: ShieldCheck, count: providers.length },
+    { key: "preauth", label: "Pre-Auth", icon: Clock, count: preAuths.length },
+    { key: "claims", label: "Claims", icon: FileText, count: claims.length },
     { key: "payments", label: "Payments", icon: Wallet, count: payments.length },
-    { key: "claims", label: "Insurance Claims", icon: ShieldCheck, count: claims.length },
-    { key: "services", label: "Service Catalog", icon: Stethoscope, count: billingServices.length },
+    { key: "services", label: "Catalog", icon: Stethoscope },
   ];
 
   return (
@@ -439,19 +505,109 @@ export default function BillingDashboard() {
               </div>
             )}
 
+            {/* ═══ INSURANCE TAB ═══ */}
+            {activeTab === "insurance" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold flex items-center gap-2"><ShieldCheck size={18} className="text-blue-600" /> Insurance Providers & Packages</h3>
+                  <div className="flex gap-3">
+                    <button onClick={() => setShowProviderModal(true)} className="btn-primary">
+                      <Plus size={16} /> Add Provider
+                    </button>
+                    <button onClick={() => setShowPackageModal(true)} className="btn-secondary">
+                      <ShieldCheck size={16} /> Add Package
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Providers List */}
+                  <div className="card">
+                    <div className="card-header"><h4 className="text-sm font-semibold">Registered Providers</h4></div>
+                    <div className="divide-y divide-[var(--border)] max-h-[500px] overflow-y-auto">
+                      {providers.map(p => (
+                        <div key={p.id} className="p-4 hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-slate-800">{p.provider_name}</span>
+                            <code className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold">{p.provider_code || "NO_CODE"}</code>
+                          </div>
+                          <p className="text-xs text-slate-500">{p.billing_address || "No address provided"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Packages List */}
+                  <div className="card">
+                    <div className="card-header"><h4 className="text-sm font-semibold">Coverage Packages</h4></div>
+                    <div className="divide-y divide-[var(--border)] max-h-[500px] overflow-y-auto">
+                      {packages.map(pkg => (
+                        <div key={pkg.id} className="p-4 hover:bg-slate-50 transition-colors">
+                          <p className="font-bold text-slate-800 mb-1">{pkg.package_name}</p>
+                          <div className="flex items-center gap-2 text-[10px]">
+                            <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold border border-blue-100">Co-pay: {pkg.default_co_pay_percent}%</span>
+                            <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-bold border border-emerald-100">Deductible: ${pkg.default_deductible}</span>
+                            <span className="text-slate-400 font-medium">Provider ID: {pkg.provider_id.substring(0,8)}...</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ═══ PRE-AUTH TAB ═══ */}
+            {activeTab === "preauth" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold flex items-center gap-2"><Clock size={18} className="text-amber-600" /> Pre-authorizations</h3>
+                  <button onClick={() => setShowPreAuthModal(true)} className="btn-primary">
+                    <Plus size={16} /> New Request
+                  </button>
+                </div>
+
+                {preAuths.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {preAuths.map((auth: any) => (
+                      <div key={auth.id} className="card card-body !p-5">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <p className="text-sm font-bold text-slate-800">{getPatientName(auth.patient_id)}</p>
+                            <p className="text-xs text-slate-500">Service ID: {auth.service_id.substring(0,8)}...</p>
+                          </div>
+                          <span className={`badge ${auth.status === 'approved' ? 'badge-success' : auth.status === 'denied' ? 'badge-error' : 'badge-warning'}`}>
+                            {auth.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-slate-50 rounded text-xs mb-3">
+                          <span className="text-slate-500">Requested</span>
+                          <span className="font-bold">${parseFloat(auth.request_amount).toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400">
+                          <span>Auth Code: {auth.auth_code || "PENDING"}</span>
+                          <span>{new Date(auth.request_date).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="card card-body text-center py-16">
+                    <Clock size={40} className="mx-auto mb-3 text-slate-300" />
+                    <p className="text-[var(--text-secondary)]">No pre-authorizations found.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ═══ CLAIMS TAB ═══ */}
             {activeTab === "claims" && (
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold flex items-center gap-2"><ShieldCheck size={18} className="text-violet-600" /> Insurance Claims</h3>
-                  <div className="flex gap-3">
-                    <button onClick={() => setShowProviderModal(true)} className="btn-secondary">
-                      <Plus size={16} /> Register Provider
-                    </button>
-                    <button onClick={() => setShowClaimModal(true)} className="btn-primary">
-                      <FileText size={16} /> Submit Claim
-                    </button>
-                  </div>
+                  <h3 className="font-semibold flex items-center gap-2"><FileText size={18} className="text-violet-600" /> Insurance Claims Tracking</h3>
+                  <button onClick={() => setShowClaimModal(true)} className="btn-primary">
+                    <FileText size={16} /> Submit New Claim
+                  </button>
                 </div>
 
                 {claims.length > 0 ? (
@@ -468,7 +624,7 @@ export default function BillingDashboard() {
                               </div>
                               <div>
                                 <p className="text-lg font-bold text-[var(--text-primary)]">${parseFloat(c.claim_amount).toFixed(2)}</p>
-                                <p className="text-xs text-[var(--text-secondary)]">{prov?.provider_name || "Unknown Provider"}</p>
+                                <p className="text-xs text-[var(--text-secondary)] truncate w-32">{prov?.provider_name || "Unknown"}</p>
                               </div>
                             </div>
                             <span className={`badge ${c.status === 'approved' ? 'badge-success' : c.status === 'rejected' ? 'badge-error' : 'badge-warning'}`}>
@@ -476,13 +632,13 @@ export default function BillingDashboard() {
                             </span>
                           </div>
                           <div className="space-y-2 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">Invoice</span>
-                              <span className="font-medium text-[var(--accent-primary)]">{inv?.invoice_number || "—"}</span>
+                            <div className="flex justify-between font-medium">
+                              <span className="text-slate-500">Claim #</span>
+                              <span className="text-[var(--accent-primary)]">{c.claim_number || "—"}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-slate-500">Submitted</span>
-                              <span className="font-medium">{new Date(c.submitted_at).toLocaleDateString()}</span>
+                              <span className="text-slate-500">Inv: {inv?.invoice_number || "—"}</span>
+                              <span className="text-slate-500">{new Date(c.submitted_at).toLocaleDateString()}</span>
                             </div>
                           </div>
                         </div>
@@ -491,7 +647,7 @@ export default function BillingDashboard() {
                   </div>
                 ) : (
                   <div className="card card-body text-center py-16">
-                    <ShieldCheck size={40} className="mx-auto mb-3 text-slate-300" />
+                    <FileText size={40} className="mx-auto mb-3 text-slate-300" />
                     <p className="text-[var(--text-secondary)]">No insurance claims filed yet.</p>
                   </div>
                 )}
@@ -720,14 +876,19 @@ export default function BillingDashboard() {
                   onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, provider_name: e.target.value }))} />
               </div>
               <div>
+                <label className="input-label">Provider Code</label>
+                <input className="input-field" type="text" placeholder="Internal/Reg Code" value={providerForm.provider_code}
+                  onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, provider_code: e.target.value }))} />
+              </div>
+              <div>
                 <label className="input-label">Contact Details</label>
                 <input className="input-field" type="text" placeholder="Email or Phone" value={providerForm.contact_details}
                   onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, contact_details: e.target.value }))} />
               </div>
               <div>
-                <label className="input-label">Policy Rules</label>
-                <textarea className="input-field min-h-[80px]" placeholder="Specific claim rules or coverage limits" value={providerForm.policy_rules}
-                  onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, policy_rules: e.target.value }))} />
+                <label className="input-label">Billing Address</label>
+                <textarea className="input-field min-h-[80px]" placeholder="Address for claim submissions" value={providerForm.billing_address}
+                  onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, billing_address: e.target.value }))} />
               </div>
             </div>
             <div className="modal-footer">
@@ -841,6 +1002,104 @@ export default function BillingDashboard() {
                   <DollarSign size={16} /> Record Payment
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ═══ ADD PACKAGE MODAL ═══ */}
+      {showPackageModal && (
+        <div className="modal-overlay" onClick={() => setShowPackageModal(false)}>
+          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="font-semibold flex items-center gap-2"><ShieldCheck size={18} className="text-blue-600" /> Define Insurance Package</h3>
+              <button onClick={() => setShowPackageModal(false)} className="btn-ghost p-1 rounded"><X size={18} /></button>
+            </div>
+            <div className="modal-body space-y-4">
+              <div>
+                <label className="input-label">Select Provider <span className="text-red-500">*</span></label>
+                <select className="input-field" value={packageForm.provider_id}
+                  onChange={(e: any) => setPackageForm(p => ({ ...p, provider_id: e.target.value }))}>
+                  <option value="">-- Choose Provider --</option>
+                  {providers.map(p => <option key={p.id} value={p.id}>{p.provider_name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="input-label">Package Name <span className="text-red-500">*</span></label>
+                <input className="input-field" type="text" placeholder="e.g. Corporate Gold Plan" value={packageForm.package_name}
+                  onChange={(e: any) => setPackageForm(p => ({ ...p, package_name: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="input-label">Default Co-pay (%)</label>
+                  <input className="input-field" type="number" value={packageForm.default_co_pay_percent}
+                    onChange={(e: any) => setPackageForm(p => ({ ...p, default_co_pay_percent: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="input-label">Default Deductible ($)</label>
+                  <input className="input-field" type="number" value={packageForm.default_deductible}
+                    onChange={(e: any) => setPackageForm(p => ({ ...p, default_deductible: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setShowPackageModal(false)} className="btn-secondary">Cancel</button>
+              <button onClick={handleRegisterPackage} className="btn-primary" disabled={!packageForm.provider_id || !packageForm.package_name}>
+                Confirm Package
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ NEW PRE-AUTH MODAL ═══ */}
+      {showPreAuthModal && (
+        <div className="modal-overlay" onClick={() => setShowPreAuthModal(false)}>
+          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="font-semibold flex items-center gap-2"><Clock size={18} className="text-amber-600" /> Pre-authorization Request</h3>
+              <button onClick={() => setShowPreAuthModal(false)} className="btn-ghost p-1 rounded"><X size={18} /></button>
+            </div>
+            <div className="modal-body space-y-4">
+              <div>
+                <label className="input-label">Patient <span className="text-red-500">*</span></label>
+                <select className="input-field" value={preAuthForm.patient_id}
+                  onChange={(e: any) => setPreAuthForm(p => ({ ...p, patient_id: e.target.value }))}>
+                  <option value="">-- Select Patient --</option>
+                  {patients.map(p => <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="input-label">Payer/Provider <span className="text-red-500">*</span></label>
+                <select className="input-field" value={preAuthForm.provider_id}
+                  onChange={(e: any) => setPreAuthForm(p => ({ ...p, provider_id: e.target.value }))}>
+                  <option value="">-- Select Provider --</option>
+                  {providers.map(p => <option key={p.id} value={p.id}>{p.provider_name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="input-label">Service <span className="text-red-500">*</span></label>
+                <select className="input-field" value={preAuthForm.service_id}
+                  onChange={(e: any) => setPreAuthForm(p => ({ ...p, service_id: e.target.value }))}>
+                  <option value="">-- Select Service --</option>
+                  {billingServices.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="input-label">Estimated Amount ($) <span className="text-red-500">*</span></label>
+                <input className="input-field" type="number" value={preAuthForm.request_amount}
+                  onChange={(e: any) => setPreAuthForm(p => ({ ...p, request_amount: e.target.value }))} />
+              </div>
+              <div>
+                <label className="input-label">Clinical Justification</label>
+                <textarea className="input-field" value={preAuthForm.clinical_notes}
+                  onChange={(e: any) => setPreAuthForm(p => ({ ...p, clinical_notes: e.target.value }))} />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setShowPreAuthModal(false)} className="btn-secondary">Cancel</button>
+              <button onClick={handleCreatePreAuth} className="btn bg-amber-600 text-white hover:bg-amber-700">
+                Submit Request
+              </button>
             </div>
           </div>
         </div>

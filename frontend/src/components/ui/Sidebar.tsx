@@ -69,6 +69,15 @@ const NAV_ITEMS = [
     ),
   },
   {
+    label: "Blood Bank",
+    href: "/dashboard/blood-bank",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C12 2 6 9 6 14a6 6 0 0012 0c0-5-6-12-6-12z" />
+      </svg>
+    ),
+  },
+  {
     label: "Billing",
     href: "/dashboard/billing",
     icon: (
@@ -186,7 +195,7 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="px-4 py-4 border-t border-slate-700">
-        <p className="text-xs text-slate-500 text-center">v0.9.0 — Phase 9 AI</p>
+        <p className="text-xs text-slate-500 text-center">v0.13.0 — Phase 13 Blood Bank</p>
       </div>
     </aside>
   );

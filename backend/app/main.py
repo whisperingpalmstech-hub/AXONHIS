@@ -35,9 +35,13 @@ from app.core.ai.router import router as ai_router
 from app.core.analytics.router import router as analytics_router
 
 # Phase 11 - Production
-from app.core.system.health_checks.routes import router as system_router
+from app.core.system.health_checks.routes import router as system_health_router
 from app.core.system.logging.routes import router as system_logging_router
 from app.core.system.monitoring.routes import router as system_monitoring_router
+from app.core.cdss.engine.routes import router as cdss_router
+
+# Phase 13 - Blood Bank
+from app.core.blood_bank.router import router as blood_bank_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -129,11 +133,17 @@ def create_app() -> FastAPI:
     app.include_router(analytics_router, prefix=api)
 
     # Phase 11 - Deployments & Systems
-    app.include_router(system_router, prefix=api)
-    app.include_router(system_logging_router, prefix=api)
-    app.include_router(system_monitoring_router, prefix=api)
+    app.include_router(system_health_router, prefix=api)     # exposes /api/v1/system/*
+    app.include_router(system_logging_router, prefix=api)    # exposes /api/v1/system/logs
+    app.include_router(system_monitoring_router, prefix=api) # exposes /api/v1/system/monitoring/*
 
-    # ── Health Check ──────────────────────────────────────────────────────
+    # Phase 12 - CDSS
+    app.include_router(cdss_router, prefix="/api/v1/cdss", tags=["Clinical Decision Support"])
+
+    # Phase 13 - Blood Bank
+    app.include_router(blood_bank_router, prefix="/api/v1")
+
+    # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])
     async def health_check() -> dict[str, str]:
         return {"status": "ok", "service": "axonhis-backend", "version": "0.1.0"}

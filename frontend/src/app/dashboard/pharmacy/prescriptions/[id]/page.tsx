@@ -51,17 +51,43 @@ export default function DispensePrescriptionPage() {
           setMedications(medData);
         }
 
-        // 4. Fetch Drug Interactions
-        const drugIds = rxData.items.map((i: any) => i.drug_id);
-        const interRes = await fetch(`${API}/api/v1/pharmacy/drug-interactions/check`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ drug_ids: drugIds })
-        });
-        if (interRes.ok) {
-          const interData = await interRes.json();
-          setDrugInteractions(interData);
+        // 4. Fetch Full CDSS Safety Checks
+        const activeMeds = rxData.items.map((i: any) => i.drug_id);
+        const cdssAlerts: any[] = [];
+        
+        for (const item of rxData.items) {
+          try {
+            const cdssRes = await fetch(`${API}/api/v1/cdss/check-medication`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                patient_context: {
+                  patient_id: rxData.patient_id,
+                  encounter_id: rxData.encounter_id,
+                  weight_kg: 70, // mocked for demo 
+                  age_years: 30, // mocked
+                  kidney_function_egfr: 90,
+                  allergies: ["penicillin"], // mocked allergy
+                  active_medications: activeMeds.filter((id: string) => id !== item.drug_id), // check against others on this Rx
+                  diagnoses: ["hypertension"] // mocked diagnosis
+                },
+                new_medication_id: item.drug_id,
+                dose: parseFloat(item.dosage) || 500
+              })
+            });
+            if (cdssRes.ok) {
+              const resData = await cdssRes.json();
+              if (resData.alerts?.length > 0) {
+                cdssAlerts.push(...resData.alerts);
+              }
+            }
+          } catch (e) {
+            console.error(e);
+          }
         }
+        // Deduplicate alerts by message
+        const uniqueAlerts = cdssAlerts.filter((v, i, a) => a.findIndex(t => (t.message === v.message)) === i);
+        setDrugInteractions(uniqueAlerts);
 
       } catch (error) {
         console.error("Failed to fetch rx data", error);
@@ -151,15 +177,23 @@ export default function DispensePrescriptionPage() {
             <ShieldAlert className="w-6 h-6 text-rose-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-rose-800">Drug Interaction Alert!</h3>
-            <p className="text-sm text-rose-600 mt-1">The prescribed combination triggers clinical warnings.</p>
+            <h3 className="font-semibold text-rose-800">CDSS Safety Alerts!</h3>
+            <p className="text-sm text-rose-600 mt-1">The CDSS Engine has detected clinical warnings for this prescription.</p>
             <ul className="mt-3 space-y-2">
               {drugInteractions.map((inter: any, idx) => (
-                <li key={idx} className="text-sm flex gap-2 items-start text-rose-700 px-3 py-2 bg-white/60 rounded">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>
-                    <strong>{inter.severity.toUpperCase()} Interaction:</strong> {inter.description || "Contraindicated mix. Consult prescriber immediately."}
-                  </span>
+                <li key={idx} className="text-sm flex gap-3 items-start text-rose-800 px-4 py-3 bg-white/70 border border-rose-100 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-rose-500" />
+                  <div>
+                    <strong className="uppercase bg-rose-100 text-rose-700 px-2 flex-inline rounded text-[10px] tracking-wider mb-1 block w-max">
+                      {inter.alert_type} ({inter.severity})
+                    </strong>
+                    <span>{inter.message}</span>
+                    {inter.recommended_action && (
+                      <p className="text-xs mt-1.5 font-medium text-rose-600 border-t border-rose-100 pt-1.5">
+                        <span className="font-bold">Action Required: </span>{inter.recommended_action}
+                      </p>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>

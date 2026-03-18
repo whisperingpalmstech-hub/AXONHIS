@@ -38,7 +38,7 @@ from app.core.tasks.models import Task  # noqa: F401
 from app.core.billing.services.models import BillingService  # noqa: F401
 from app.core.billing.tariffs.models import ServiceTariff  # noqa: F401
 from app.core.billing.billing_entries.models import BillingEntry, BillingReversal, FinancialAuditLog  # noqa: F401
-from app.core.billing.insurance.models import InsuranceProvider, InsurancePolicy, InsuranceClaim  # noqa: F401
+from app.core.billing.insurance.models import InsuranceProvider, InsurancePackage, InsurancePolicy, PreAuthorization, InsuranceClaim, ClaimItem  # noqa: F401
 from app.core.billing.discounts.models import DiscountRule  # noqa: F401
 from app.core.billing.invoices.models import Invoice  # noqa: F401
 from app.core.billing.payments.models import Payment  # noqa: F401
@@ -48,7 +48,7 @@ from app.core.pharmacy.prescriptions.models import Prescription, PrescriptionIte
 from app.core.pharmacy.dispensing.models import DispensingRecord  # noqa: F401
 from app.core.pharmacy.inventory.models import InventoryItem, ControlledDrugLog  # noqa: F401
 from app.core.pharmacy.batches.models import DrugBatch  # noqa: F401
-from app.core.pharmacy.drug_interactions.models import DrugInteraction  # noqa: F401
+# from app.core.pharmacy.drug_interactions.models import DrugInteraction  # noqa: F401
 from app.core.orders.templates.models import OrderTemplate, OrderTemplateItem, OrderSet, OrderSetItem  # noqa: F401
 
 # Phase 9 – AI Platform
@@ -63,6 +63,24 @@ from app.core.analytics.operational_metrics.models import DailyOperationalMetric
 from app.core.system.logging.models import SystemLog  # noqa: F401
 from app.core.system.monitoring.models import TrackedError, PerformanceMetric  # noqa: F401
 from app.core.analytics.predictive_models.models import HospitalPrediction  # noqa: F401
+
+# Phase 12 - CDSS
+from app.core.cdss.drug_interactions.models import DrugInteraction  # noqa: F401
+from app.core.cdss.allergy_checks.models import DrugAllergyMapping  # noqa: F401
+from app.core.cdss.dose_validation.models import DrugDosageGuideline  # noqa: F401
+from app.core.cdss.duplicate_therapy.models import DrugClass  # noqa: F401
+from app.core.cdss.contraindications.models import DrugContraindication  # noqa: F401
+from app.core.cdss.engine.models import CDSSAlert  # noqa: F401
+
+# Phase 13 - Blood Bank
+from app.core.blood_bank.blood_components.models import BloodComponent  # noqa: F401
+from app.core.blood_bank.blood_inventory.models import BloodStorageUnit  # noqa: F401
+from app.core.blood_bank.donors.models import BloodDonor, BloodCollection  # noqa: F401
+from app.core.blood_bank.blood_units.models import BloodUnit  # noqa: F401
+from app.core.blood_bank.transfusion_orders.models import TransfusionOrder, BloodAllocation  # noqa: F401
+from app.core.blood_bank.compatibility_tests.models import CrossmatchTest  # noqa: F401
+from app.core.blood_bank.transfusions.models import Transfusion  # noqa: F401
+from app.core.blood_bank.transfusion_reactions.models import TransfusionReaction  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

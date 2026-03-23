@@ -58,6 +58,24 @@ from app.core.communication.routes import communication_router
 # Phase 16 - Patient Portal & Telemedicine
 from app.core.patient_portal.router import portal_router
 
+# Enterprise Scheduling
+from app.core.scheduling.routes import router as scheduling_router
+
+# OPD Visit Intelligence Engine
+from app.core.opd_visits.routes import router as opd_visits_router
+
+# OPD Smart Queue & Flow Orchestration Engine
+from app.core.smart_queue.routes import router as smart_queue_router
+
+# OPD Nursing Clinical Triage Engine
+from app.core.nursing_triage.routes import router as nursing_triage_router
+
+# AI Doctor Desk & Intelligent EMR Engine
+from app.core.doctor_desk.routes import router as doctor_desk_router
+
+# Enterprise OPD Billing & Revenue Cycle Engine
+from app.core.rcm_billing.routes import router as rcm_billing_router
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Startup / shutdown lifecycle."""
@@ -170,6 +188,28 @@ def create_app() -> FastAPI:
 
     # Phase 16 - Patient Portal
     app.include_router(portal_router, prefix="/api/v1")
+
+    # Enterprise Scheduling
+    app.include_router(scheduling_router, prefix="/api/v1")
+
+    # OPD Visit Intelligence Engine
+    app.include_router(opd_visits_router, prefix="/api/v1")
+
+    # OPD Smart Queue & Flow Orchestration Engine
+    app.include_router(smart_queue_router, prefix="/api/v1")
+
+    # OPD Nursing Clinical Triage Engine
+    app.include_router(nursing_triage_router, prefix="/api/v1")
+
+    # AI Doctor Desk & Intelligent EMR Engine
+    app.include_router(doctor_desk_router, prefix="/api/v1")
+
+    # Enterprise OPD Billing & Revenue Cycle Engine
+    app.include_router(rcm_billing_router, prefix="/api/v1")
+
+    # Hospital Intelligence & Analytics Engine
+    from app.core.hospital_intelligence.routes import router as bi_router
+    app.include_router(bi_router, prefix="/api/v1")
 
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])

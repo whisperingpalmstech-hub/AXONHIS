@@ -64,6 +64,15 @@ from app.core.system.logging.models import SystemLog  # noqa: F401
 from app.core.system.monitoring.models import TrackedError, PerformanceMetric  # noqa: F401
 from app.core.analytics.predictive_models.models import HospitalPrediction  # noqa: F401
 
+# Hospital Intelligence & Analytics Engine
+from app.core.hospital_intelligence.models import (
+    AnalyticsPatientFlow,
+    AnalyticsDoctorProductivity,
+    AnalyticsRevenue,
+    AnalyticsClinicalStatistics,
+    AnalyticsCrowdPrediction
+)
+
 # Phase 12 - CDSS
 from app.core.cdss.drug_interactions.models import DrugInteraction  # noqa: F401
 from app.core.cdss.allergy_checks.models import DrugAllergyMapping  # noqa: F401
@@ -111,10 +120,91 @@ from app.core.ot.postoperative_events.models import PostoperativeEvent  # noqa: 
 
 # Phase 16 - Patient Portal
 from app.core.patient_portal.patient_accounts.models import PatientAccount  # noqa: F401
-from app.core.patient_portal.appointments.models import Appointment as PortalAppointment, DoctorAvailability  # noqa: F401
+from app.core.patient_portal.appointments.models import PortalAppointment, DoctorAvailability  # noqa: F401
 from app.core.patient_portal.teleconsultations.models import Teleconsultation  # noqa: F401
 from app.core.patient_portal.medical_records.models import PatientDocument  # noqa: F401
 from app.core.patient_portal.patient_payments.models import PatientPayment  # noqa: F401
+
+# Enterprise Registration (OPD FRD)
+from app.core.patients.registration.models import (  # noqa: F401
+    RegistrationSession,
+    IDScanRecord,
+    FaceEmbedding,
+    HealthCard,
+    RegistrationDocument,
+    RegistrationNotification,
+    AddressDirectory,
+)
+
+# Enterprise Scheduling
+from app.core.scheduling.models import (  # noqa: F401
+    DoctorCalendar,
+    CalendarSlot,
+    SlotBooking,
+    OverbookingConfig,
+    CyclicSchedule,
+    ModalityResource,
+    ModalitySlot,
+    AppointmentReminder,
+    FollowUpRule,
+    SchedulingAnalytics,
+)
+
+# OPD Visit Intelligence Engine
+from app.core.opd_visits.models import (  # noqa: F401
+    VisitMaster,
+    VisitComplaint,
+    VisitClassification,
+    VisitDoctorRecommendation,
+    VisitQuestionnaireTemplate,
+    VisitQuestionnaireResponse,
+    VisitContextSnapshot,
+    MultiVisitRule,
+    VisitAnalyticsSnapshot,
+)
+
+# OPD Smart Queue & Flow Orchestration Engine
+from app.core.smart_queue.models import (  # noqa: F401
+    QueueMaster,
+    QueuePatientPosition,
+    QueueEvent,
+    QueueNotification,
+    WayfindingNode,
+    RoomWayfindingMapping,
+    CrowdPredictionSnapshot,
+)
+
+# OPD Nursing Clinical Triage Engine
+from app.core.nursing_triage.models import (  # noqa: F401
+    NursingWorklist,
+    NursingVitals,
+    NursingAssessment,
+    NursingTemplate,
+    NursingDocumentUpload,
+    TriagePriorityUpdate,
+)
+
+# AI Doctor Desk & Intelligent EMR Engine
+from app.core.doctor_desk.models import (  # noqa: F401
+    DoctorWorklist,
+    ConsultationNote,
+    DoctorClinicalTemplate,
+    DoctorPrescription,
+    DoctorDiagnosticOrder,
+    DoctorClinicalSummary,
+    FollowUpRecord,
+)
+
+# Enterprise OPD Billing & Revenue Cycle Engine
+from app.core.rcm_billing.models import (  # noqa: F401
+    BillingMaster,
+    BillingService,
+    BillingPayment,
+    BillingDiscount,
+    BillingRefund,
+    BillingPayer,
+    BillingTariff,
+)
 
 config = context.config
 if config.config_file_name is not None:

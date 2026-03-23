@@ -7,6 +7,7 @@ from app.core.patients.insurance.router import router as insurance_router
 from app.core.patients.guardians.router import router as guardians_router
 from app.core.patients.contacts.router import router as contacts_router
 from app.core.patients.identifiers.router import router as identifiers_router
+from app.core.patients.registration.routes import router as registration_router
 
 router = APIRouter()
 
@@ -17,3 +18,4 @@ router.include_router(insurance_router)
 router.include_router(guardians_router)
 router.include_router(contacts_router)
 router.include_router(identifiers_router)
+router.include_router(registration_router)

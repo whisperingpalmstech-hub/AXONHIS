@@ -73,6 +73,94 @@ from app.core.hospital_intelligence.models import (
     AnalyticsCrowdPrediction
 )
 
+# LIS Test Order Management Engine
+from app.core.lab.test_order_engine.models import (
+    LISTestOrder, LISTestOrderItem, LISTestPanel, LISTestPanelItem,
+    LISBarcodeRegistry, LISOrderDocument, LISOrderAuditTrail
+)
+
+# LIS Phlebotomy & Sample Collection Engine
+from app.core.lab.phlebotomy_engine.models import (
+    PhlebotomyWorklist, SampleCollection, ConsentDocument,
+    RepeatSampleSchedule, SampleTransport, PhlebotomyAudit
+)
+
+# LIS Central Receiving & Specimen Tracking Engine
+from app.core.lab.central_receiving.models import (
+    CRReceipt, CRVerification, CRRejection, CRRouting,
+    CRStorage, CRChainOfCustody, CRAlert, CRAudit
+)
+
+# LIS Laboratory Processing & Result Entry Engine
+from app.core.lab.processing_engine.models import (
+    ProcessingWorklist, ResultEntry, ResultFlag, DeltaCheck,
+    QCResult, ResultComment, ProcessingAudit
+)
+
+# LIS Analyzer & Device Integration Engine
+from app.core.lab.analyzer_engine.models import (
+    AnalyzerDevice, AnalyzerWorklist, AnalyzerResult, ReagentUsage,
+    DeviceError, DeviceAudit
+)
+
+# LIS Result Validation & Approval Engine
+from app.core.lab.result_validation_engine.models import (
+    ValidationWorklist, ValidationRecord, ValidationFlag, ValidationRejection, ValidationAudit
+)
+
+# LIS Smart Reporting Engine
+from app.core.lab.reporting_engine.models import (
+    LabReport, ReportRelease, ReportVersion, ReportAuditLog, ReportCommentTemplate, ReportTemplate
+)
+
+# LIS Advanced Diagnostic Modules
+from app.core.lab.advanced_diagnostics.models import (
+    HistopathologySpecimen, HistopathologyBlock, HistopathologySlide,
+    MicrobiologyCulture, AntibioticSensitivity, CSSDSterilityTest, BloodBankInventory
+)
+
+# LIS Extended Services & Quality Management 
+from app.core.lab.extended_services.models import (
+    LisHomeCollectionRequest, LisPhlebotomistSchedule,
+    LisOutsourceLabMaster, LisExternalResult, LisQualityControl, LisEquipmentMaintenance
+)
+
+# IPD Admission & Bed Management Engine
+from app.core.ipd.models import (
+    IpdAdmissionRequest, IpdAdmissionRecord, IpdAdmissionAuditLog,
+    IpdCostEstimation, IpdAdmissionChecklist, IpdInsuranceDetails,
+    IpdProjectedBill, IpdDepositRecord, IpdPatientTransport, IpdAdmissionDocument,
+    IpdNursingWorklist, IpdNursingCoversheet, IpdPatientStatusMonitor,
+    IpdNursingNote, IpdCareAssignment, IpdNursingAuditLog,
+    IpdVitalsRecord, IpdNursingAssessment, IpdRiskAssessment,
+    IpdPainScore, IpdNutritionAssessment, IpdNursingObservation,
+    IpdDoctorWorklist, IpdDoctorCoversheet, IpdDiagnosis,
+    IpdTreatmentPlan, IpdProgressNote, IpdClinicalProcedure,
+    IpdConsultationRequest, IpdOrdersMaster, IpdLabOrder,
+    IpdRadiologyOrder, IpdMedicationOrder, IpdProcedureOrder,
+    IpdOrderStatusLog, IpdTransferRequest, IpdTransferRecord,
+    IpdBedMovement, IpdTransferHandover, IpdTransferNotification,
+    IpdTransferAuditLog, IpdDischargePlan, IpdDischargeChecklist,
+    IpdDischargeSummary, IpdDischargeNote, IpdDischargeNotification,
+    IpdDischargeAuditLog, IpdBillingMaster, IpdBillingService,
+    IpdBillingDeposit, IpdInsuranceClaim, IpdPaymentTransaction,
+    IpdRefundRecord, IpdBillingAuditLog, IpdVisitor, IpdVisitorPass,
+    IpdVisitorLog, IpdMlcCase, IpdMlcDocument, IpdSecurityNotification
+)
+
+# Phase 23 - RPIW (Role-Based Patient Interaction Workspace)
+from app.core.rpiw.models import (
+    RpiwUserRole, RpiwRolePermission, RpiwRoleWorkflow,
+    RpiwRoleSession, RpiwRoleComponent, RpiwRoleActivityLog
+)
+
+# Phase 24 - RPIW Patient Summary Engine
+from app.core.rpiw_summary.models import (
+    RpiwPatientSummary, RpiwSummarySource, RpiwSummaryAlert,
+    RpiwSummaryTask, RpiwSummaryVital, RpiwSummaryMedication
+)
+
+
 # Phase 12 - CDSS
 from app.core.cdss.drug_interactions.models import DrugInteraction  # noqa: F401
 from app.core.cdss.allergy_checks.models import DrugAllergyMapping  # noqa: F401

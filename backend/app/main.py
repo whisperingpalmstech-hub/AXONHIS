@@ -211,6 +211,54 @@ def create_app() -> FastAPI:
     from app.core.hospital_intelligence.routes import router as bi_router
     app.include_router(bi_router, prefix="/api/v1")
 
+    # LIS Test Order Management Engine
+    from app.core.lab.test_order_engine.routes import router as lis_order_router
+    app.include_router(lis_order_router, prefix="/api/v1")
+
+    # LIS Phlebotomy & Sample Collection Engine
+    from app.core.lab.phlebotomy_engine.routes import router as phlebotomy_router
+    app.include_router(phlebotomy_router, prefix="/api/v1")
+
+    # LIS Central Receiving & Specimen Tracking Engine
+    from app.core.lab.central_receiving.routes import router as cr_router
+    app.include_router(cr_router, prefix="/api/v1")
+
+    # LIS Laboratory Processing & Result Entry Engine
+    from app.core.lab.processing_engine.routes import router as proc_router
+    app.include_router(proc_router, prefix="/api/v1")
+
+    # LIS Analyzer & Device Integration Engine
+    from app.core.lab.analyzer_engine.routes import router as analyzer_router
+    app.include_router(analyzer_router, prefix="/api/v1")
+
+    # LIS Result Validation & Approval Engine
+    from app.core.lab.result_validation_engine.routes import router as validation_router
+    app.include_router(validation_router, prefix="/api/v1")
+
+    # LIS Smart Reporting & Report Release Engine
+    from app.core.lab.reporting_engine.routes import router as reporting_router
+    app.include_router(reporting_router, prefix="/api/v1")
+
+    # LIS Advanced Diagnostic Modules
+    from app.core.lab.advanced_diagnostics.routes import router as advanced_lab_router
+    app.include_router(advanced_lab_router, prefix="/api/v1")
+
+    # LIS Extended Services & Quality Management
+    from app.core.lab.extended_services.routes import router as extended_lab_router
+    app.include_router(extended_lab_router, prefix="/api/v1")
+
+    # IPD Admission & Bed Management Engine
+    from app.core.ipd.routes import router as ipd_router
+    app.include_router(ipd_router, prefix="/api/v1")
+
+    # Phase 23 - Role-Based Patient Interaction Workspace
+    from app.core.rpiw.routes import router as rpiw_router
+    app.include_router(rpiw_router)
+
+    # Phase 24 - RPIW Patient Summary Engine
+    from app.core.rpiw_summary.routes import router as rpiw_summary_router
+    app.include_router(rpiw_summary_router)
+
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])
     async def health_check() -> dict[str, str]:

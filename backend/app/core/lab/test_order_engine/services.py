@@ -198,6 +198,37 @@ class TestOrderCreationEngine:
         for item in order.items:
             item.status = TestOrderStatus.CONFIRMED
 
+        # Add to Phlebotomy Worklist
+        from app.core.patients.patients.models import Patient
+        from app.core.lab.phlebotomy_engine.models import PhlebotomyWorklist, SampleCollectionStatus
+        
+        pres = await self.db.execute(select(Patient).where(Patient.id == order.patient_id))
+        patient = pres.scalar_one_or_none()
+        patient_name = f"{patient.first_name} {patient.last_name}" if patient else "Unknown"
+        patient_uhid = patient.patient_uuid if patient else ""
+
+        for item in order.items:
+            pwl = PhlebotomyWorklist(
+                order_id=order.id,
+                order_item_id=item.id,
+                order_number=order.order_number,
+                patient_id=order.patient_id,
+                patient_name=patient_name,
+                patient_uhid=patient_uhid,
+                visit_id=order.visit_id,
+                test_code=item.test_code,
+                test_name=item.test_name,
+                sample_type=item.sample_type,
+                barcode=item.barcode,
+                priority=item.priority,
+                collection_location=item.collection_location or "OPD",
+                status=SampleCollectionStatus.PENDING_COLLECTION,
+                consent_required=False,
+                consent_uploaded=False,
+                is_repeat=False,
+            )
+            self.db.add(pwl)
+
         await self._log_audit(order.id, "ORDER_CONFIRMED", user_id)
         await self.db.commit()
         await self.db.refresh(order)

@@ -13,7 +13,7 @@ class Prescription(Base):
     encounter_id = Column(UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="RESTRICT"), nullable=False, index=True)
     prescribing_doctor_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True)
     prescription_time = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    status = Column(String(50), nullable=False, default="pending")  # pending, approved, dispensed, cancelled
+    status = Column(String(50), nullable=False, default="pending")
 
     items = relationship("PrescriptionItem", back_populates="prescription", cascade="all, delete-orphan")
 

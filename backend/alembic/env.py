@@ -43,11 +43,44 @@ from app.core.billing.discounts.models import DiscountRule  # noqa: F401
 from app.core.billing.invoices.models import Invoice  # noqa: F401
 from app.core.billing.payments.models import Payment  # noqa: F401
 from app.core.lab.models import LabTest, LabOrder, LabSample, LabResult, LabValidation, LabProcessing  # noqa: F401
-from app.core.pharmacy.medications.models import Medication  # noqa: F401
+from app.core.pharmacy.medications.models import (  # noqa: F401
+    Medication, PharmacyGenericMapping, PharmacyDrugInteraction,
+    PharmacyDrugSchedule, PharmacyDosageRule, PharmacyRolePermission,
+    PharmacyDrugMasterAudit
+)
 from app.core.pharmacy.prescriptions.models import Prescription, PrescriptionItem  # noqa: F401
 from app.core.pharmacy.dispensing.models import DispensingRecord  # noqa: F401
 from app.core.pharmacy.inventory.models import InventoryItem, ControlledDrugLog  # noqa: F401
 from app.core.pharmacy.batches.models import DrugBatch  # noqa: F401
+from app.core.pharmacy.sales.models import (  # noqa: F401
+    PharmacyWalkInSale, PharmacySaleItem, PharmacySalePayment,
+    PharmacyPrescriptionUpload, PharmacySalesAuditLog
+)
+from app.core.pharmacy.sales_worklist.models import (  # noqa: F401
+    PharmacySalesWorklist, PharmacyPrescription, PharmacyDispensingRecord,
+    PharmacyDispenseBatch, PharmacyDispenseLog
+)
+from app.core.pharmacy.sales_returns.models import (  # noqa: F401
+    PharmacySalesReturn, PharmacyReturnItem, PharmacyReturnReason,
+    PharmacyReturnRefund, PharmacyReturnLog
+)
+from app.core.pharmacy.ip_issues.models import (  # noqa: F401
+    PharmacyIPPendingIssue, PharmacyIPDispenseRecord, PharmacyIPDispenseBatch,
+    PharmacyIPBillingRecord, PharmacyIPOrderLog
+)
+from app.core.pharmacy.ip_returns.models import (  # noqa: F401
+    PharmacyIPReturn, PharmacyIPReturnItem, 
+    PharmacyIPBillingAdjustment, PharmacyIPReturnLog
+)
+from app.core.pharmacy.narcotics.models import (  # noqa: F401
+    PharmacyNarcoticsOrder, PharmacyNarcoticsDispense,
+    PharmacyNarcoticsAmpouleReturn, PharmacyNarcoticsInventory, PharmacyNarcoticsAuditLog
+)
+from app.core.pharmacy.inventory_intelligence.models import ( # noqa: F401
+    PharmacyInventoryBatch, PharmacyStockMovement, PharmacyItemKit,
+    PharmacyInventoryAlert, PharmacyInventoryAnalysis, PharmacyInventoryLog
+)
+from app.core.pharmacy.billing_compliance.models import PharmacyBillingRecord, PharmacyDiscountRecord, PharmacyPaymentTransaction, PharmacyRefundRecord, PharmacyFinancialReport, PharmacyBillingAuditLog
 # from app.core.pharmacy.drug_interactions.models import DrugInteraction  # noqa: F401
 from app.core.orders.templates.models import OrderTemplate, OrderTemplateItem, OrderSet, OrderSetItem  # noqa: F401
 
@@ -158,6 +191,18 @@ from app.core.rpiw.models import (
 from app.core.rpiw_summary.models import (
     RpiwPatientSummary, RpiwSummarySource, RpiwSummaryAlert,
     RpiwSummaryTask, RpiwSummaryVital, RpiwSummaryMedication
+)
+
+# Phase 25 - RPIW Clinical Action Engine
+from app.core.rpiw_actions.models import (
+    RpiwAction, RpiwClinicalNote, RpiwOrder,
+    RpiwPrescription, RpiwTask, RpiwActionLog
+)
+
+# Phase 26 - RPIW Role-Based AI Assistant Engine
+from app.core.rpiw_ai_assistant.models import (
+    RpiwAiContext, RpiwAiSuggestion, RpiwAiAlert,
+    RpiwAiFeedback, RpiwAiActivityLog
 )
 
 

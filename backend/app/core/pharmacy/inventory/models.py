@@ -16,7 +16,7 @@ class ControlledDrugLog(Base):
     __tablename__ = "controlled_drug_logs"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     drug_id = Column(UUID(as_uuid=True), ForeignKey("medications.id", ondelete="RESTRICT"), nullable=False, index=True)
-    transaction_type = Column(String(50), nullable=False)  # dispense, return, adjustment
+    transaction_type = Column(String(50), nullable=False)
     quantity = Column(Numeric(12, 2), nullable=False)
     performed_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

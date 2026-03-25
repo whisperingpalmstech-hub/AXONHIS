@@ -6,10 +6,10 @@ from pydantic import BaseModel, Field, EmailStr
 # or import them if strictly layered.
 
 class PatientBase(BaseModel):
-    first_name: str = Field(min_length=1, max_length=100)
-    last_name: str = Field(min_length=1, max_length=100)
+    first_name: str = Field(max_length=100)
+    last_name: str = Field(max_length=100)
     date_of_birth: date
-    gender: str = Field(min_length=1, max_length=20)
+    gender: str = Field(max_length=20)
     primary_phone: str | None = None
     email: EmailStr | None = None
     address: str | None = None

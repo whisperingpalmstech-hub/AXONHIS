@@ -78,7 +78,7 @@ export default function SmartQueuePage() {
     try {
       await smartQueueApi.addToQueue({
         queue_id: queueMaster.id,
-        visit_id: "00000000-0000-0000-0000-000000000000", // Would be linked in real integration
+        visit_id: crypto.randomUUID(), // Would be linked in real integration
         patient_id: mockPatientId,
         priority_level: priority
       });

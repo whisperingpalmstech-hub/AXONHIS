@@ -259,6 +259,17 @@ def create_app() -> FastAPI:
     from app.core.rpiw_summary.routes import router as rpiw_summary_router
     app.include_router(rpiw_summary_router)
 
+    # Phase 25 - RPIW Clinical Action Engine
+    from app.core.rpiw_actions.routes import router as rpiw_actions_router
+    app.include_router(rpiw_actions_router)
+
+    # Phase 26 - RPIW Role-Based AI Assistant Engine
+    from app.core.rpiw_ai_assistant.routes import router as rpiw_ai_router
+    app.include_router(rpiw_ai_router)
+
+    from app.core.pharmacy.sales.routes import router as pharmacy_sales_router
+    app.include_router(pharmacy_sales_router, prefix="/api/v1")
+
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])
     async def health_check() -> dict[str, str]:

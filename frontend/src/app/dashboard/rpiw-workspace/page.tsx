@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import PatientSummaryPanel from "./PatientSummaryPanel";
+import ClinicalActionPanel from "./ClinicalActionPanel";
+import AiAssistantPanel from "./AiAssistantPanel";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -160,6 +162,14 @@ export default function RpiwWorkspacePage() {
                 {activeWorkflow === "patient_summary" ? (
                   <div className="mt-4">
                     <PatientSummaryPanel patientUhid="UHID-TEST-001" />
+                  </div>
+                ) : activeWorkflow === "actions" ? (
+                  <div className="mt-4">
+                    <ClinicalActionPanel patientUhid="UHID-TEST-001" userRole={selectedRole} />
+                  </div>
+                ) : activeWorkflow === "ai_assistant" ? (
+                  <div className="mt-4">
+                    <AiAssistantPanel patientUhid="UHID-TEST-001" userRole={selectedRole} />
                   </div>
                 ) : (
                   <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">

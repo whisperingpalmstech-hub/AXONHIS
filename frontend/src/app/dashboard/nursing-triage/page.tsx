@@ -20,6 +20,7 @@ export default function NursingTriagePage() {
   const [patients, setPatients] = useState<any[]>([]);
   const [worklist, setWorklist] = useState<NursingWorklist[]>([]);
   const [activePatient, setActivePatient] = useState<any | null>(null);
+  const [simPatientId, setSimPatientId] = useState("");
   
   // Vitals State
   const [vitalsData, setVitalsData] = useState({
@@ -47,7 +48,7 @@ export default function NursingTriagePage() {
   const loadBaseData = async () => {
     setLoading(true);
     try {
-      const p = await api.get<any>("/patients");
+      const p = await api.get<any>("/patients/");
       setPatients(Array.isArray(p) ? p : p?.items || []);
       const wl = await nursingTriageApi.getWorklist();
       setWorklist(wl);
@@ -63,15 +64,16 @@ export default function NursingTriagePage() {
   };
   const getPatientUhid = (id: string) => {
     const pt = patients.find(p => p.id === id);
-    return pt ? pt.uhid : "---";
+    return pt ? (pt.uhid || pt.patient_uuid || "---") : "---";
   };
 
   const seedWorklist = async () => {
     if (patients.length === 0) return alert("Add patients first");
+    const targetId = simPatientId || patients[Math.max(0, patients.length - 1)].id;
     try {
       await nursingTriageApi.addWorklist({
         visit_id: "00000000-0000-0000-0000-000000000000",
-        patient_id: patients[0].id,
+        patient_id: targetId,
         priority_level: "normal"
       });
       loadBaseData();
@@ -200,7 +202,15 @@ export default function NursingTriagePage() {
         <div className="card p-0 overflow-hidden border border-slate-200">
           <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
             <h3 className="font-bold text-slate-700">Patients Pending Triage</h3>
-            <button onClick={seedWorklist} className="btn-secondary text-xs">Simulate Patient Arrival</button>
+            <div className="flex items-center gap-2">
+              <select className="border border-slate-300 rounded text-xs px-2 py-1.5 focus:border-teal-500 focus:outline-none" value={simPatientId} onChange={e => setSimPatientId(e.target.value)}>
+                <option value="">Latest Patient</option>
+                {patients.slice().reverse().map(p => (
+                  <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
+                ))}
+              </select>
+              <button onClick={seedWorklist} className="btn-secondary text-xs border border-slate-300">Simulate Patient Arrival</button>
+            </div>
           </div>
           <table className="w-full text-sm text-left">
             <thead className="bg-slate-50 text-slate-500 uppercase text-xs font-semibold border-b">

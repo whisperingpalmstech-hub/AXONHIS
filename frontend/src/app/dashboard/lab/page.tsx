@@ -7,6 +7,7 @@ import {
   Clock, Search, Plus, BarChart3, FileText, ArrowRight, Loader2,
   Pipette, Beaker, ShieldCheck, X, TrendingUp, RefreshCw, Filter
 } from "lucide-react";
+import { WorkflowPipeline } from "@/components/ui/WorkflowPipeline";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
 
@@ -196,7 +197,20 @@ export default function LabPage() {
   return (
     <div>
       <TopNav title="Laboratory Information System" />
-
+      <div className="p-6 pb-0">
+        <WorkflowPipeline 
+          title="Lab Pipeline" 
+          colorScheme="cyan"
+          steps={[
+            { label: "Order Created", status: "done" },
+            { label: "Phlebotomy", status: "done" },
+            { label: "Processing", status: "active" },
+            { label: "Analyzer", status: "pending" },
+            { label: "Validation", status: "pending" },
+            { label: "Report", status: "pending" }
+          ]} 
+        />
+      </div>
       <div className="p-6 space-y-6">
         {/* Tab Navigation */}
         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">

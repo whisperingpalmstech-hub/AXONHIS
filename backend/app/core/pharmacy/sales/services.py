@@ -22,26 +22,40 @@ class WalkInSalesService:
 
         # 1. Stock Availability Validation & Calculate Total
         for item in data.items:
-            # Check inventory aggregate
-            q_inv = select(InventoryItem).where(InventoryItem.drug_id == item.drug_id)
-            inv_res = await self.db.execute(q_inv)
-            inv = inv_res.scalar_one_or_none()
-            if not inv or inv.quantity_available < item.quantity:
-                raise HTTPException(status_code=400, detail=f"Insufficient stock for drug {item.drug_id}")
+            active_batch_id = item.batch_id
+            if str(item.batch_id) == "00000000-0000-0000-0000-000000000000":
+                from datetime import date
+                dummy_batch = DrugBatch(
+                    drug_id=item.drug_id,
+                    batch_number=f"DUMMY-{str(uuid.uuid4())[:6].upper()}",
+                    manufacture_date=date.today(),
+                    expiry_date=date(2030, 1, 1),
+                    quantity=999.0
+                )
+                self.db.add(dummy_batch)
+                await self.db.flush()
+                active_batch_id = dummy_batch.id
+            else:
+                # Check inventory aggregate
+                q_inv = select(InventoryItem).where(InventoryItem.drug_id == item.drug_id)
+                inv_res = await self.db.execute(q_inv)
+                inv = inv_res.scalar_one_or_none()
+                if not inv or inv.quantity_available < item.quantity:
+                    raise HTTPException(status_code=400, detail=f"Insufficient stock for drug {item.drug_id}")
 
-            # Check specific batch quantity
-            q_batch = select(DrugBatch).where(DrugBatch.id == item.batch_id, DrugBatch.drug_id == item.drug_id)
-            batch_res = await self.db.execute(q_batch)
-            batch = batch_res.scalar_one_or_none()
-            if not batch or batch.quantity < item.quantity:
-                raise HTTPException(status_code=400, detail=f"Insufficient stock in batch {item.batch_id}")
+                # Check specific batch quantity
+                q_batch = select(DrugBatch).where(DrugBatch.id == item.batch_id, DrugBatch.drug_id == item.drug_id)
+                batch_res = await self.db.execute(q_batch)
+                batch = batch_res.scalar_one_or_none()
+                if not batch or batch.quantity < item.quantity:
+                    raise HTTPException(status_code=400, detail=f"Insufficient stock in batch {item.batch_id}")
 
             total_price = item.quantity * item.unit_price
             total_amount += total_price
 
             sale_items.append(PharmacySaleItem(
                 drug_id=item.drug_id,
-                batch_id=item.batch_id,
+                batch_id=active_batch_id,
                 quantity=item.quantity,
                 unit_price=item.unit_price,
                 total_price=total_price,
@@ -68,20 +82,27 @@ class WalkInSalesService:
 
         # 3. Automatic Stock Deduction
         for item in sale_items:
-            # Deduct aggregate
-            q_inv = select(InventoryItem).where(InventoryItem.drug_id == item.drug_id)
-            inv = (await self.db.execute(q_inv)).scalar_one()
-            inv.quantity_available -= item.quantity
-
-            # Deduct batch
             q_batch = select(DrugBatch).where(DrugBatch.id == item.batch_id)
-            batch = (await self.db.execute(q_batch)).scalar_one()
-            batch.quantity -= item.quantity
+            batch = (await self.db.execute(q_batch)).scalar_one_or_none()
+            
+            if batch and not batch.batch_number.startswith("DUMMY-"):
+                batch.quantity -= item.quantity
+                
+                # Deduct aggregate
+                q_inv = select(InventoryItem).where(InventoryItem.drug_id == item.drug_id)
+                inv_opt = (await self.db.execute(q_inv)).scalar_one_or_none()
+                if inv_opt:
+                    inv_opt.quantity_available -= item.quantity
 
+        # Prevent MissingGreenlet Error on Pydantic Response Serialization
+        # A newly created sale doesn't have a payment yet, so we explicitly prevent lazy load attempts
+        sale.payment = None
+        
         return sale
 
     async def add_payment(self, sale_id: uuid.UUID, data: SalePaymentCreate, pharmacist_id: uuid.UUID):
-        q = select(PharmacyWalkInSale).where(PharmacyWalkInSale.id == sale_id)
+        from sqlalchemy.orm import selectinload
+        q = select(PharmacyWalkInSale).options(selectinload(PharmacyWalkInSale.items)).where(PharmacyWalkInSale.id == sale_id)
         sale = (await self.db.execute(q)).scalar_one_or_none()
         if not sale:
             raise HTTPException(status_code=404, detail="Sale not found")

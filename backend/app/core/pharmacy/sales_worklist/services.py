@@ -110,6 +110,22 @@ class SalesWorklistService:
         for rec in records_to_add:
             self.db.add(rec)
             
+        # RCM AUTO-BRIDGE: Push charges to billing
+        try:
+            from app.core.encounter_bridge import EncounterBridgeService
+            bridge = EncounterBridgeService(self.db)
+            for rec in records_to_add:
+                await bridge.push_pharmacy_charge_to_billing(
+                    patient_id=wl.patient_id,
+                    visit_id=wl.visit_id,
+                    medication_name=rec.medication_name,
+                    quantity=float(rec.quantity_dispensed),
+                    unit_price=float(rec.unit_price)
+                )
+        except Exception as bridge_err:
+            import logging
+            logging.getLogger(__name__).warning(f"Pharmacy-to-RCM bridge failed: {bridge_err}")
+
         wl.status = "Completed"
 
         # Audit Trail

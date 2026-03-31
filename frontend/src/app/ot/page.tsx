@@ -16,6 +16,7 @@ import {
   User,
   MapPin
 } from 'lucide-react';
+import { WorkflowPipeline } from "@/components/ui/WorkflowPipeline";
 
 const OTDashboard = () => {
   const router = useRouter();
@@ -143,6 +144,21 @@ const OTDashboard = () => {
             <span>Schedule Surgery</span>
           </button>
         </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-2">
+        <WorkflowPipeline 
+          title="Operating Theatre Pipeline" 
+          colorScheme="amber"
+          steps={[
+            { label: "Surgery Request", status: "done" },
+            { label: "OT Scheduling", status: "active" },
+            { label: "Pre-op Checklist", status: "pending" },
+            { label: "Blood Request", status: "pending" },
+            { label: "Surgery Execution", status: "pending" },
+            { label: "Post-op & Recovery", status: "pending" }
+          ]} 
+        />
       </div>
 
       {/* KPI Cards */}

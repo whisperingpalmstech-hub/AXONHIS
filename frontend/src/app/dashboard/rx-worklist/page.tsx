@@ -243,12 +243,7 @@ export default function RxWorklistPage() {
             update records.
           </p>
         </div>
-        <button
-          onClick={handleSeedMockData}
-          className="px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition-all shadow-sm"
-        >
-          + Seed Mock Prescription
-        </button>
+
       </div>
 
       {/* Stats Bar */}
@@ -363,7 +358,7 @@ export default function RxWorklistPage() {
                   />
                 </svg>
                 <p className="text-sm">No prescriptions in queue</p>
-                <p className="text-xs mt-1">Click &quot;Seed Mock Prescription&quot; to test</p>
+                <p className="text-xs mt-1 text-slate-400 font-medium italic">Waiting for new clinical orders from Doctor Desk...</p>
               </div>
             ) : (
               filteredWorklist.map((item) => (

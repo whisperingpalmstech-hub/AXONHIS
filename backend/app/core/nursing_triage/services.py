@@ -50,6 +50,7 @@ class VitalsCaptureEngine:
 
         vitals = NursingVitals(
             visit_id=data.visit_id, patient_id=data.patient_id,
+            org_id=data.org_id if hasattr(data, 'org_id') else None,
             blood_pressure_systolic=data.blood_pressure_systolic,
             blood_pressure_diastolic=data.blood_pressure_diastolic,
             heart_rate=data.heart_rate, respiratory_rate=data.respiratory_rate,
@@ -73,6 +74,7 @@ class VitalsCaptureEngine:
                 
             priority_update = TriagePriorityUpdate(
                 visit_id=data.visit_id, previous_priority=prev, new_priority="priority",
+                org_id=vitals.org_id,
                 trigger_reason=trigger, vitals_snapshot=data.model_dump(mode="json", exclude_none=True)
             )
             self.db.add(priority_update)
@@ -90,7 +92,8 @@ class NursingWorklistService:
 
     async def add_to_worklist(self, data: NursingWorklistCreate) -> NursingWorklist:
         wl = NursingWorklist(
-            visit_id=data.visit_id, patient_id=data.patient_id, priority_level=data.priority_level
+            visit_id=data.visit_id, patient_id=data.patient_id, priority_level=data.priority_level,
+            org_id=getattr(data, 'org_id', None)
         )
         self.db.add(wl)
         await self.db.commit()
@@ -119,6 +122,8 @@ class AssessmentHistoryService:
 
     async def save_assessment(self, data: NursingAssessmentCreate) -> NursingAssessment:
         assess = NursingAssessment(**data.model_dump())
+        if not assess.org_id and hasattr(data, 'org_id'):
+            assess.org_id = data.org_id
         self.db.add(assess)
         await self.db.commit()
         await self.db.refresh(assess)
@@ -137,6 +142,8 @@ class DocumentUploadSystem:
 
     async def register_document(self, data: DocumentUploadCreate) -> NursingDocumentUpload:
         doc = NursingDocumentUpload(**data.model_dump())
+        if not doc.org_id and hasattr(data, 'org_id'):
+            doc.org_id = data.org_id
         self.db.add(doc)
         await self.db.commit()
         await self.db.refresh(doc)

@@ -160,11 +160,15 @@ class WardService:
         return task
 
     @staticmethod
-    async def get_occupancy_stats(db: AsyncSession):
-        total_beds = await db.scalar(select(func.count(Bed.id)))
-        occupied = await db.scalar(select(func.count(Bed.id)).filter(Bed.status == "occupied"))
-        cleaning = await db.scalar(select(func.count(Bed.id)).filter(Bed.status == "cleaning"))
-        available = await db.scalar(select(func.count(Bed.id)).filter(Bed.status == "available"))
+    async def get_occupancy_stats(db: AsyncSession, org_id: uuid.UUID | None = None):
+        base_query = select(func.count(Bed.id))
+        if org_id:
+            base_query = base_query.where(Bed.org_id == org_id)
+
+        total_beds = await db.scalar(base_query)
+        occupied = await db.scalar(base_query.where(Bed.status == "occupied"))
+        cleaning = await db.scalar(base_query.where(Bed.status == "cleaning"))
+        available = await db.scalar(base_query.where(Bed.status == "available"))
         
         return {
             "total": total_beds or 0,

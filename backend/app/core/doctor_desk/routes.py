@@ -1,10 +1,11 @@
 """AI Doctor Desk & Intelligent EMR Engine — API Routes"""
 import uuid
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, and_, case
 from app.database import get_db
+from app.dependencies import CurrentUser, DBSession
 
 from .models import ConsultStatus
 from .schemas import (
@@ -32,10 +33,10 @@ async def get_doctor_worklist(doctor_id: uuid.UUID, db: AsyncSession = Depends(g
     return await svc.get_worklist(doctor_id)
 
 @router.post("/worklist", response_model=DoctorWorklistOut)
-async def seed_doctor_worklist(data: DoctorWorklistCreate, db: AsyncSession = Depends(get_db)):
+async def seed_doctor_worklist(data: DoctorWorklistCreate, db: DBSession, user: CurrentUser) -> DoctorWorklistOut:
     # Simulates Smart Queue -> Doctor Desk delegation
     svc = DoctorWorklistService(db)
-    return await svc.add_to_worklist(data)
+    return await svc.add_to_worklist(data, org_id=user.org_id)
 
 @router.put("/worklist/{wl_id}/status")
 async def update_consultation_status(wl_id: uuid.UUID, status: str, db: AsyncSession = Depends(get_db)):
@@ -54,9 +55,14 @@ async def fetch_historical_patient_timeline(patient_id: uuid.UUID, db: AsyncSess
 # ── 3. AI Clinical Scribe Engine ────────────────────────────────────────────
 
 @router.post("/scribe", response_model=ConsultationNoteOut)
-async def capture_clinical_assessment_note(data: ConsultationNoteInput, db: AsyncSession = Depends(get_db)):
+async def capture_clinical_assessment_note(data: ConsultationNoteInput, db: DBSession, user: CurrentUser) -> ConsultationNoteOut:
     svc = AIClinicalScribeEngine(db)
-    return await svc.save_note(data)
+    # Inject org_id into data for save_note
+    data_dict = data.model_dump()
+    data_dict['org_id'] = user.org_id
+    # We create a temporary object or just pass org_id differently
+    # For simplicity, I'll update save_note to take org_id
+    return await svc.save_note(data, org_id=user.org_id)
 
 @router.post("/scribe/transcribe")
 async def nlp_voice_transcription(data: ScribeAudioInput, db: AsyncSession = Depends(get_db)):
@@ -73,19 +79,108 @@ async def nlp_voice_transcription(data: ScribeAudioInput, db: AsyncSession = Dep
 # ── 4 & 8. Voice & Structured Prescription Engine ───────────────────────────
 
 @router.post("/prescriptions", response_model=PrescriptionOut)
-async def add_structured_medication(data: PrescriptionInput, db: AsyncSession = Depends(get_db)):
+async def add_structured_medication(data: PrescriptionInput, db: DBSession, user: CurrentUser) -> PrescriptionOut:
     # Standard manual save
     from .models import DoctorPrescription
-    rx = DoctorPrescription(**data.model_dump())
+    rx = DoctorPrescription(**data.model_dump(), org_id=user.org_id)
     db.add(rx)
     await db.commit()
     await db.refresh(rx)
+    
+    # AUTO-BRIDGE: Push to Pharmacy Worklist
+    try:
+        from app.core.encounter_bridge import EncounterBridgeService
+        from app.core.doctor_desk.models import DoctorWorklist
+        
+        # Simplified Lookup: Get the latest record for this doctor-visit pair
+        wl_stmt = select(DoctorWorklist.patient_id).where(
+            DoctorWorklist.visit_id == data.visit_id,
+            DoctorWorklist.doctor_id == data.doctor_id
+        ).order_by(DoctorWorklist.created_at.desc()).limit(1)
+        
+        patient_id = (await db.execute(wl_stmt)).scalars().first()
+        
+        if patient_id:
+            bridge = EncounterBridgeService(db)
+            await bridge.push_prescription_to_pharmacy(
+                patient_id=patient_id,
+                visit_id=data.visit_id,
+                medication_name=data.medicine_name,
+                dosage=data.dosage,
+                frequency=data.frequency,
+                duration=data.duration,
+                org_id=user.org_id,
+                doctor_id=data.doctor_id,
+            )
+            await db.commit()
+            import logging
+            logging.getLogger(__name__).info(f"[PHARMA-DEBUG] Pushed {data.medicine_name} for patient_id {patient_id}")
+        else:
+            import logging
+            logging.getLogger(__name__).warning(f"[PHARMA-DEBUG] No patient found for visit_id {data.visit_id}")
+            
+    except Exception as e:
+        import traceback
+        import logging
+        logging.getLogger(__name__).error(f"[PHARMA-BRIDGE-ERROR]: {str(e)}\n{traceback.format_exc()}")
+    
     return rx
 
+@router.get("/prescriptions", response_model=List[PrescriptionOut])
+async def get_prescriptions(visit_id: Optional[uuid.UUID] = None, patient_id: Optional[uuid.UUID] = None, db: AsyncSession = Depends(get_db)):
+    """Fetch prescriptions by visit_id. Used by RCM Billing to auto-capture pharmacy charges."""
+    from .models import DoctorPrescription, DoctorWorklist
+    if visit_id:
+        stmt = select(DoctorPrescription).where(DoctorPrescription.visit_id == visit_id)
+    elif patient_id:
+        # Find all visit_ids for this patient from worklist, then get prescriptions
+        wl_stmt = select(DoctorWorklist.visit_id).where(DoctorWorklist.patient_id == patient_id)
+        visit_ids = list((await db.execute(wl_stmt)).scalars().all())
+        if not visit_ids:
+            return []
+        stmt = select(DoctorPrescription).where(DoctorPrescription.visit_id.in_(visit_ids))
+    else:
+        stmt = select(DoctorPrescription).limit(50)
+    return list((await db.execute(stmt)).scalars().all())
+
 @router.post("/prescriptions/voice", response_model=PrescriptionOut)
-async def add_voice_prescription(visit_id: uuid.UUID, data: VoicePrescriptionInput, db: AsyncSession = Depends(get_db)):
+async def add_voice_prescription(visit_id: uuid.UUID, data: VoicePrescriptionInput, db: DBSession, user: CurrentUser) -> PrescriptionOut:
     svc = VoicePrescriptionEngine(db)
-    return await svc.parse_command(visit_id, data.doctor_id, data.voice_command_text)
+    rx = await svc.parse_command(visit_id, data.doctor_id, data.voice_command_text, org_id=user.org_id)
+    
+    # ─── AUTO-BRIDGE: Push AI-Parsed Rx to Pharmacy ───────────────────────
+    try:
+        from app.core.encounter_bridge import EncounterBridgeService
+        from app.core.doctor_desk.models import DoctorWorklist
+        
+        # Look up patient_id for this session
+        wl_stmt = select(DoctorWorklist.patient_id).where(
+            DoctorWorklist.visit_id == visit_id,
+            DoctorWorklist.doctor_id == data.doctor_id
+        ).order_by(DoctorWorklist.created_at.desc()).limit(1)
+        
+        patient_id = (await db.execute(wl_stmt)).scalars().first()
+        
+        if patient_id:
+            bridge = EncounterBridgeService(db)
+            await bridge.push_prescription_to_pharmacy(
+                patient_id=patient_id,
+                visit_id=visit_id,
+                medication_name=rx.medicine_name,
+                dosage=rx.dosage,
+                frequency=rx.frequency,
+                duration=rx.duration,
+                org_id=user.org_id,
+                doctor_id=data.doctor_id,
+            )
+            await db.commit()
+            import logging
+            logging.getLogger(__name__).info(f"[PHARMA-VOICE-DEBUG] Pushed {rx.medicine_name} for Anita ({patient_id})")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Voice Pharmacy bridge failed: {e}")
+        
+    return rx
 
 # ── 5. AI Diagnosis & Order Suggestion Engine ───────────────────────────────
 
@@ -97,9 +192,63 @@ async def query_diagnosis_decision_engine(data: AISuggestionEngineInput, db: Asy
 # ── 7. Diagnostic Ordering Engine ───────────────────────────────────────────
 
 @router.post("/orders", response_model=DiagnosticOrderOut)
-async def transmit_diagnostic_order(data: DiagnosticOrderInput, db: AsyncSession = Depends(get_db)):
+async def transmit_diagnostic_order(data: DiagnosticOrderInput, db: DBSession, user: CurrentUser) -> DiagnosticOrderOut:
     svc = DiagnosticOrderingEngine(db)
-    return await svc.place_order(data)
+    order = await svc.place_order(data, org_id=user.org_id)
+    
+    # ─── AUTO-BRIDGE: Push to LIS ──────────────────────────────────────────
+    try:
+        from app.core.encounter_bridge import EncounterBridgeService
+        from app.core.doctor_desk.models import DoctorWorklist
+        
+        # 1. Get Patient ID from worklist using visit_id
+        # We MUST prioritize the patient who is currently 'in_consultation' 
+        # to handle cases where multiple patients share a generic visit_id (like 0000... zero UUID)
+        wl_stmt = select(DoctorWorklist.patient_id).where(
+            and_(
+                DoctorWorklist.visit_id == data.visit_id,
+                DoctorWorklist.doctor_id == data.doctor_id
+            )
+        ).order_by(
+            # Smart Priority: 1. Current Patients, 2. Most Recent
+            case((DoctorWorklist.status == "in_consultation", 0), else_=1).asc(),
+            DoctorWorklist.created_at.desc()
+        ).limit(1)
+        
+        patient_id = (await db.execute(wl_stmt)).scalars().first()
+        
+        if patient_id:
+            bridge = EncounterBridgeService(db)
+            await bridge.push_diagnostic_to_lis(
+                patient_id=patient_id,
+                encounter_id=data.visit_id, # visit_id is encounter_id in this context
+                test_name=data.test_name,
+                doctor_id=data.doctor_id,
+                org_id=user.org_id,
+                priority=data.order_type # Using order_type as a priority proxy if needed
+            )
+            await db.commit()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"LIS bridge failed: {e}")
+        
+    return order
+
+@router.get("/orders", response_model=List[DiagnosticOrderOut])
+async def get_diagnostic_orders(visit_id: Optional[uuid.UUID] = None, patient_id: Optional[uuid.UUID] = None, db: AsyncSession = Depends(get_db)):
+    """Fetch diagnostic orders by visit_id or patient_id. Used by RCM Billing to auto-capture lab/radiology charges."""
+    from .models import DoctorDiagnosticOrder, DoctorWorklist
+    if visit_id:
+        stmt = select(DoctorDiagnosticOrder).where(DoctorDiagnosticOrder.visit_id == visit_id)
+    elif patient_id:
+        wl_stmt = select(DoctorWorklist.visit_id).where(DoctorWorklist.patient_id == patient_id)
+        visit_ids = list((await db.execute(wl_stmt)).scalars().all())
+        if not visit_ids:
+            return []
+        stmt = select(DoctorDiagnosticOrder).where(DoctorDiagnosticOrder.visit_id.in_(visit_ids))
+    else:
+        stmt = select(DoctorDiagnosticOrder).limit(50)
+    return list((await db.execute(stmt)).scalars().all())
 
 # ── 9. Clinical Summary Generator ───────────────────────────────────────────
 

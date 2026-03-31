@@ -34,13 +34,24 @@ async def get_current_user(
         )
     token = credentials.credentials
     user = await AuthService(db).get_user_from_token(token)
-    if user is None or not user.is_active:
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
+async def get_current_user_optional(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    db: DBSession,
+) -> User | None:
+    """Validate JWT bearer token if present; return None if not."""
+    if credentials is None:
+        return None
+    token = credentials.credentials
+    return await AuthService(db).get_user_from_token(token)
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]

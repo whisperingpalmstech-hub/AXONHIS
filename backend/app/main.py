@@ -1,5 +1,5 @@
 """
-AXONHIS Backend – Application Entry Point (Phase 1).
+AXONHIS Backend – Enterprise Application Entry Point.
 
 All configuration, middleware, and routers are registered here.
 """
@@ -16,14 +16,14 @@ from app.database import engine, get_db
 from app.core.system.monitoring.services import MonitoringService
 from app.core.system.security.middleware import SecurityHeadersMiddleware
 
-# Phase 1 routers
+# Core System & Auth Engine
 from app.core.auth.router import router as auth_router
 from app.core.audit.router import router as audit_router
 from app.core.files.router import router as files_router
 from app.core.notifications.router import router as notifications_router
 from app.core.config.router import router as config_router
 
-# Phase 2+ routers (included for forward-compatibility)
+# Clinical Entities & Medical Records
 from app.core.patients.router import router as patients_router
 from app.core.encounters.router import router as encounters_router
 from app.core.orders.router import router as orders_router
@@ -34,28 +34,18 @@ from app.core.billing.router import router as billing_router
 from app.core.ai.router import router as ai_router
 from app.core.analytics.router import router as analytics_router
 
-# Phase 11 - Production
+# Core Infrastructure Observability
 from app.core.system.health_checks.routes import router as system_health_router
 from app.core.system.logging.routes import router as system_logging_router
 from app.core.system.monitoring.routes import router as system_monitoring_router
 from app.core.cdss.engine.routes import router as cdss_router
 
-# Phase 13 - Blood Bank
+# Hospital Departments
 from app.core.blood_bank.router import router as blood_bank_router
-
-# Phase 10 - Ward & Bed Management
 from app.core.wards.router import router as wards_router
-
-# Phase 11 - Radiology & Imaging Management
 from app.core.radiology.router import router as radiology_router
-
-# Phase 14 - Operating Theatre Management
 from app.core.ot.router import router as ot_router
-
-# Phase 15 - Hospital Communication Platform
 from app.core.communication.routes import communication_router
-
-# Phase 16 - Patient Portal & Telemedicine
 from app.core.patient_portal.router import portal_router
 
 # Enterprise Scheduling
@@ -75,6 +65,9 @@ from app.core.doctor_desk.routes import router as doctor_desk_router
 
 # Enterprise OPD Billing & Revenue Cycle Engine
 from app.core.rcm_billing.routes import router as rcm_billing_router
+
+# Multi-Tenancy & Masters Engine
+from app.core.administration.tenants.routes import router as multitenancy_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -105,6 +98,10 @@ def create_app() -> FastAPI:
 
     # ── Security Headers Phase 11 ─────────────────────────────────────────
     app.add_middleware(SecurityHeadersMiddleware)
+    
+    # ── Rate Limiting (HIPAA Point 7) ────────────────────────────────────
+    from app.core.system.security.rate_limit import RateLimitMiddleware
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=200)
 
     # ── Exception Handler Phase 11 ────────────────────────────────────────
     @app.exception_handler(Exception)
@@ -148,6 +145,9 @@ def create_app() -> FastAPI:
     api = "/api/v1"
 
     # Phase 1 – Core Platform
+    from app.core.abdm.router import router as abdm_router
+    app.include_router(abdm_router, prefix=api)
+    
     app.include_router(auth_router, prefix=api)
     app.include_router(audit_router, prefix=api)
     app.include_router(files_router, prefix=api)
@@ -172,7 +172,7 @@ def create_app() -> FastAPI:
     app.include_router(system_monitoring_router, prefix=api) # exposes /api/v1/system/monitoring/*
 
     # Phase 12 - CDSS
-    app.include_router(cdss_router, prefix="/api/v1/cdss", tags=["Clinical Decision Support"])
+    app.include_router(cdss_router, prefix="/api/v1/cdss/engine", tags=["Clinical Decision Support"])
 
     # Phase 13 - Blood Bank
     app.include_router(blood_bank_router, prefix="/api/v1")
@@ -206,6 +206,7 @@ def create_app() -> FastAPI:
 
     # Enterprise OPD Billing & Revenue Cycle Engine
     app.include_router(rcm_billing_router, prefix="/api/v1")
+    app.include_router(multitenancy_router, prefix="/api/v1/administration")
 
     # Hospital Intelligence & Analytics Engine
     from app.core.hospital_intelligence.routes import router as bi_router

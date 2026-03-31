@@ -42,18 +42,18 @@ async def create_task_template(
 @router.get("", response_model=list[TaskOut])
 async def list_tasks(
     db: DBSession,
-    _: CurrentUser,
+    user: CurrentUser,
     encounter_id: uuid.UUID | None = None,
     role: str | None = None,
     status: str | None = None,
 ):
-    tasks = await TaskService(db).list_tasks(encounter_id, role, status)
+    tasks = await TaskService(db, user).list_tasks(encounter_id, role, status)
     return [TaskOut.model_validate(t) for t in tasks]
 
 
 @router.get("/my-tasks", response_model=list[TaskOut])
 async def list_my_tasks(db: DBSession, user: CurrentUser):
-    tasks = await TaskService(db).get_my_tasks(user.id)
+    tasks = await TaskService(db, user).get_my_tasks(user.id)
     return [TaskOut.model_validate(t) for t in tasks]
 
 

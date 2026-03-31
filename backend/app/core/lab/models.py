@@ -83,6 +83,7 @@ class LabTest(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
+    org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
 
 
 # ── Lab Order (links clinical order to lab workflow) ─────────────────────────
@@ -109,6 +110,7 @@ class LabOrder(Base):
     )
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True, nullable=True)
 
     # Relationships
     samples: Mapped[list["LabSample"]] = relationship("LabSample", back_populates="lab_order", cascade="all, delete-orphan")
@@ -137,6 +139,7 @@ class LabSample(Base):
     )
     received_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
 
     # Relationships
     lab_order: Mapped["LabOrder"] = relationship("LabOrder", back_populates="samples")
@@ -197,6 +200,7 @@ class LabResult(Base):
     entered_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
+    org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True, nullable=True)
 
     # Relationships
     sample: Mapped["LabSample"] = relationship("LabSample", back_populates="results")
@@ -221,5 +225,6 @@ class LabValidation(Base):
         String(20), nullable=False, default=ValidationStatus.PENDING
     )
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True, nullable=True)
 
     result: Mapped["LabResult"] = relationship("LabResult", back_populates="validation")

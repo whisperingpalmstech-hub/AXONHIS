@@ -19,6 +19,7 @@ class NursingWorklist(Base):
     __tablename__ = "nursing_worklist"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     visit_id = Column(UUID(as_uuid=True), nullable=False)
     patient_id = Column(UUID(as_uuid=True), nullable=False)
     assigned_nurse_id = Column(UUID(as_uuid=True), nullable=True)
@@ -42,6 +43,7 @@ class NursingVitals(Base):
     __tablename__ = "nursing_vitals"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     visit_id = Column(UUID(as_uuid=True), nullable=False)
     patient_id = Column(UUID(as_uuid=True), nullable=False)
     
@@ -74,6 +76,7 @@ class NursingAssessment(Base):
     __tablename__ = "nursing_assessment"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     visit_id = Column(UUID(as_uuid=True), nullable=False)
     patient_id = Column(UUID(as_uuid=True), nullable=False)
     template_used = Column(String(100), nullable=True)
@@ -94,6 +97,7 @@ class NursingTemplate(Base):
     __tablename__ = "nursing_templates"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     name = Column(String(100), nullable=False, unique=True)
     specialty = Column(String(100), nullable=True)
     
@@ -105,6 +109,7 @@ class NursingDocumentUpload(Base):
     __tablename__ = "nursing_document_uploads"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     visit_id = Column(UUID(as_uuid=True), nullable=False)
     patient_id = Column(UUID(as_uuid=True), nullable=False)
     
@@ -119,6 +124,7 @@ class TriagePriorityUpdate(Base):
     __tablename__ = "triage_priority_updates"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     visit_id = Column(UUID(as_uuid=True), nullable=False)
     
     previous_priority = Column(String(30), nullable=False)

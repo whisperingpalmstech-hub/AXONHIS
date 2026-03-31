@@ -18,43 +18,103 @@ from .schemas import (
 
 class AutomatedTariffSelectionEngine:
     """Core RCM pricing matrix algorithm"""
-    def __init__(self, db: AsyncSession):
+    
+    # Common service name aliases for tariff matching
+    SERVICE_ALIASES = {
+        "complete blood count": "CBC",
+        "complete blood count (cbc)": "CBC", 
+        "full blood count": "CBC",
+        "fbc": "CBC",
+        "basic metabolic panel": "BMP",
+        "blood glucose": "Blood Sugar",
+        "blood sugar fasting": "Blood Sugar",
+        "erythrocyte sedimentation rate": "ESR",
+        "liver function test": "LFT",
+        "renal function test": "RFT Kidney",
+        "kidney function test": "RFT Kidney",
+        "thyroid stimulating hormone": "Thyroid Panel",
+        "tsh": "Thyroid Panel",
+        "ct scan": "CT Scan",
+        "x-ray": "X-Ray",
+        "xray": "X-Ray",
+        "ultrasound": "Ultrasound",
+        "usg": "Ultrasound",
+        "ecg": "ECG",
+        "electrocardiogram": "ECG",
+        "mri": "MRI Scan",
+    }
+    
+    def __init__(self, db: AsyncSession, org_id: uuid.UUID = None):
         self.db = db
+        self.org_id = org_id
 
-    async def get_applicable_tariff(self, query: TariffMatchQuery) -> BillingTariff:
-        # 1. Match specific doctor/category combinations
-        filter_args = [BillingTariff.service_name.ilike(query.service_name), BillingTariff.is_active == True]
+    async def get_applicable_tariff(self, query: TariffMatchQuery, org_id: uuid.UUID = None) -> BillingTariff:
+        # Check if the service name has an alias
+        effective_org_id = org_id or self.org_id
+        service_name = query.service_name
+        alias = self.SERVICE_ALIASES.get(service_name.lower().strip())
+        search_names = [service_name]
+        if alias:
+            search_names.append(alias)
         
-        # 2. Tier rules
-        if query.insurance_plan: category = "insurance"
-        elif query.patient_category == "corporate": category = "corporate"
-        else: category = "standard"
-        
-        filter_args.append(BillingTariff.tariff_category == category)
-        
-        if query.doctor_grade:
-            filter_args.append(BillingTariff.doctor_grade == query.doctor_grade)
-
-        stmt = select(BillingTariff).where(and_(*filter_args)).limit(1)
-        tariff = (await self.db.execute(stmt)).scalars().first()
-        
-        # Fallback to standard generic service rate if complex matching fails natively
-        if not tariff:
-            fallback = select(BillingTariff).where(
-                and_(BillingTariff.service_name.ilike(query.service_name), BillingTariff.tariff_category == "standard")
-            ).limit(1)
-            tariff = (await self.db.execute(fallback)).scalars().first()
+        for svc in search_names:
+            svc_name = f"%{svc}%"
+            filter_args = [
+                BillingTariff.service_name.ilike(svc_name), 
+                BillingTariff.is_active == True,
+                BillingTariff.org_id == effective_org_id
+            ]
             
-        return tariff
+            # 2. Tier rules
+            cat = str(query.patient_category or "standard")
+            if query.insurance_plan: category = "insurance"
+            elif cat == "corporate": category = "corporate"
+            else: category = "standard"
+            
+            filter_args.append(BillingTariff.tariff_category == category)
+            
+            if query.doctor_grade:
+                filter_args.append(BillingTariff.doctor_grade == query.doctor_grade)
+
+            stmt = select(BillingTariff).where(and_(*filter_args)).limit(1)
+            tariff = (await self.db.execute(stmt)).scalars().first()
+            
+            # Fallback 1: standard category with fuzzy name
+            if not tariff:
+                fallback = select(BillingTariff).where(
+                    and_(
+                        BillingTariff.service_name.ilike(svc_name), 
+                        BillingTariff.tariff_category == "standard",
+                        BillingTariff.org_id == effective_org_id
+                    )
+                ).limit(1)
+                tariff = (await self.db.execute(fallback)).scalars().first()
+            
+            # Fallback 2: exact name match any category
+            if not tariff:
+                clean_name = svc.split(':')[0].strip()
+                fallback2 = select(BillingTariff).where(
+                    and_(
+                        BillingTariff.service_name.ilike(f"%{clean_name}%"), 
+                        BillingTariff.is_active == True,
+                        BillingTariff.org_id == effective_org_id
+                    )
+                ).limit(1)
+                tariff = (await self.db.execute(fallback2)).scalars().first()
+            
+            if tariff:
+                return tariff
+            
+        return None
 
 class PreConsultBillingIntelligence:
     """Frontgate patient cost estimator generated prior to admission step."""
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def generate_preview(self, query: TariffMatchQuery) -> BillingPreviewOut:
-        engine = AutomatedTariffSelectionEngine(self.db)
-        tariff = await engine.get_applicable_tariff(query)
+    async def generate_preview(self, query: TariffMatchQuery, org_id: uuid.UUID = None) -> BillingPreviewOut:
+        engine = AutomatedTariffSelectionEngine(self.db, org_id=org_id)
+        tariff = await engine.get_applicable_tariff(query, org_id=org_id)
         if not tariff:
             # Fake generate if not found strictly for demo logic / new installations
             return BillingPreviewOut(estimated_cost=Decimal("0.00"), service_name=query.service_name, tariff_applied="unavailable")
@@ -115,12 +175,13 @@ class ServiceBillingEngine:
         await self.db.refresh(bill)
         return bill
 
-    async def create_draft_bill(self, data: BillingMasterCreate, user_id: uuid.UUID) -> BillingMaster:
+    async def create_draft_bill(self, data: BillingMasterCreate, user_id: uuid.UUID, org_id: uuid.UUID = None) -> BillingMaster:
         # Create master
         bill_num = f"INV-{datetime.utcnow().strftime('%y%m%d%H%M%S')}"
         master = BillingMaster(
             visit_id=data.visit_id, patient_id=data.patient_id, 
-            bill_number=bill_num, status=BillStatus.draft, generated_by=user_id
+            bill_number=bill_num, status=BillStatus.draft, generated_by=user_id,
+            org_id=org_id
         )
         self.db.add(master)
         await self.db.flush()
@@ -153,8 +214,11 @@ class ServiceBillingEngine:
         master = await self._recalculate_bill(master)
         return master
         
-    async def append_post_consult_service(self, bill_id: uuid.UUID, data: BillingServiceCreate) -> BillingMaster:
-        master = (await self.db.execute(select(BillingMaster).where(BillingMaster.id == bill_id))).scalars().first()
+    async def append_post_consult_service(self, bill_id: uuid.UUID, data: BillingServiceCreate, org_id: uuid.UUID = None) -> BillingMaster:
+        stmt = select(BillingMaster).where(BillingMaster.id == bill_id)
+        if org_id:
+            stmt = stmt.where(BillingMaster.org_id == org_id)
+        master = (await self.db.execute(stmt)).scalars().first()
         if not master: return None
         
         tariff_engine = AutomatedTariffSelectionEngine(self.db)
@@ -179,8 +243,11 @@ class DiscountConcessionRuleEngine:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def apply_discount(self, bill_id: uuid.UUID, data: BillingDiscountCreate, admin_id: uuid.UUID) -> BillingMaster:
-        master = (await self.db.execute(select(BillingMaster).where(BillingMaster.id == bill_id))).scalars().first()
+    async def apply_discount(self, bill_id: uuid.UUID, data: BillingDiscountCreate, admin_id: uuid.UUID, org_id: uuid.UUID = None) -> BillingMaster:
+        stmt = select(BillingMaster).where(BillingMaster.id == bill_id)
+        if org_id:
+            stmt = stmt.where(BillingMaster.org_id == org_id)
+        master = (await self.db.execute(stmt)).scalars().first()
         
         # Process Rules (Mock Rule Checking)
         amount = Decimal("0.00")
@@ -207,13 +274,16 @@ class PaymentCollectionEngine:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def collect_payment(self, bill_id: uuid.UUID, data: BillingPaymentCreate, cashier_id: uuid.UUID) -> BillingMaster:
-        pmt = BillingPayment(bill_id=bill_id, collected_by=cashier_id, **data.model_dump())
+    async def collect_payment(self, bill_id: uuid.UUID, data: BillingPaymentCreate, cashier_id: uuid.UUID, org_id: uuid.UUID = None) -> BillingMaster:
+        pmt = BillingPayment(bill_id=bill_id, collected_by=cashier_id, org_id=org_id, **data.model_dump())
         self.db.add(pmt)
         await self.db.commit()
         
         billing = ServiceBillingEngine(self.db)
-        master = await billing._recalculate_bill((await self.db.execute(select(BillingMaster).where(BillingMaster.id == bill_id))).scalars().first())
+        stmt = select(BillingMaster).where(BillingMaster.id == bill_id)
+        if org_id:
+            stmt = stmt.where(BillingMaster.org_id == org_id)
+        master = await billing._recalculate_bill((await self.db.execute(stmt)).scalars().first())
         
         if master.balance_amount == 0:
             master.settled_at = datetime.utcnow()
@@ -225,22 +295,31 @@ class RefundCancellationEngine:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def issue_refund(self, bill_id: uuid.UUID, data: BillingRefundCreate, auth_id: uuid.UUID) -> BillingMaster:
+    async def issue_refund(self, bill_id: uuid.UUID, data: BillingRefundCreate, auth_id: uuid.UUID, org_id: uuid.UUID = None) -> BillingMaster:
         ref = BillingRefund(bill_id=bill_id, authorized_by=auth_id, **data.model_dump())
         self.db.add(ref)
         await self.db.commit()
         
         billing = ServiceBillingEngine(self.db)
-        return await billing._recalculate_bill((await self.db.execute(select(BillingMaster).where(BillingMaster.id == bill_id))).scalars().first())
+        stmt = select(BillingMaster).where(BillingMaster.id == bill_id)
+        if org_id:
+            stmt = stmt.where(BillingMaster.org_id == org_id)
+        return await billing._recalculate_bill((await self.db.execute(stmt)).scalars().first())
 
 class FinancialReportingIntegration:
     """Exports BI Revenue Pipelines representing Daily Aggregations"""
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_daily_revenue(self) -> Dict[str, Any]:
-        result = (await self.db.execute(select(func.sum(BillingPayment.amount)))).scalar() or Decimal("0.00")
-        outstanding = (await self.db.execute(select(func.sum(BillingMaster.balance_amount)))).scalar() or Decimal("0.00")
+    async def get_daily_revenue(self, org_id: uuid.UUID = None) -> Dict[str, Any]:
+        p_stmt = select(func.sum(BillingPayment.amount))
+        m_stmt = select(func.sum(BillingMaster.balance_amount))
+        if org_id:
+            p_stmt = p_stmt.where(BillingPayment.org_id == org_id)
+            m_stmt = m_stmt.where(BillingMaster.org_id == org_id)
+
+        result = (await self.db.execute(p_stmt)).scalar() or Decimal("0.00")
+        outstanding = (await self.db.execute(m_stmt)).scalar() or Decimal("0.00")
         return {
             "daily_revenue": float(result),
             "total_outstanding_ar": float(outstanding),

@@ -6,6 +6,7 @@ import {
   Stethoscope, Activity, FileText, Settings, Search, Edit2, Play, AlertCircle, RefreshCw, Calendar, CheckCircle2, Mic, Bot
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { WorkflowPipeline } from "@/components/ui/WorkflowPipeline";
 
 type TabTypes = "intake" | "queue" | "questionnaires" | "analytics";
 
@@ -179,6 +180,8 @@ export default function OpdVisitsPage() {
       </div>
 
       {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg flex items-center gap-2"><AlertCircle size={18} /> {error}</div>}
+
+      {/* Pipeline removed as requested by user -> it was static */}
 
       <div className="flex bg-white rounded-lg p-1 shadow-sm w-fit border border-slate-200">
         {[

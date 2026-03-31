@@ -3,6 +3,13 @@ import React, { useEffect, useState } from "react";
 import PatientSummaryPanel from "./PatientSummaryPanel";
 import ClinicalActionPanel from "./ClinicalActionPanel";
 import AiAssistantPanel from "./AiAssistantPanel";
+import VitalsRecordingPanel from "./VitalsRecordingPanel";
+import MedicationAdminPanel from "./MedicationAdminPanel";
+import TaskListPanel from "./TaskListPanel";
+import PatientMonitorPanel from "./PatientMonitorPanel";
+import SampleQueuePanel from "./SampleQueuePanel";
+import BarcodeScannerPanel from "./BarcodeScannerPanel";
+import CollectionStatusPanel from "./CollectionStatusPanel";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -159,7 +166,7 @@ export default function RpiwWorkspacePage() {
                 <p className="text-sm text-gray-500 mb-6">Active clinical workflow panel</p>
 
                 {/* Simulated workflow content */}
-                {activeWorkflow === "patient_summary" ? (
+                {activeWorkflow === "patient_summary" || activeWorkflow === "review_summary" ? (
                   <div className="mt-4">
                     <PatientSummaryPanel patientUhid="UHID-TEST-001" />
                   </div>
@@ -167,24 +174,52 @@ export default function RpiwWorkspacePage() {
                   <div className="mt-4">
                     <ClinicalActionPanel patientUhid="UHID-TEST-001" userRole={selectedRole} />
                   </div>
-                ) : activeWorkflow === "ai_assistant" ? (
+                ) : activeWorkflow === "ai_assistant" || activeWorkflow === "ai_suggestions_panel" ? (
                   <div className="mt-4">
                     <AiAssistantPanel patientUhid="UHID-TEST-001" userRole={selectedRole} />
                   </div>
+                ) : activeWorkflow === "record_vitals" || activeWorkflow === "vitals_recording_panel" ? (
+                  <div className="mt-4">
+                    <VitalsRecordingPanel patientUhid="UHID-TEST-001" />
+                  </div>
+                ) : activeWorkflow === "administer_meds" || activeWorkflow === "medication_admin_panel" ? (
+                  <div className="mt-4">
+                    <MedicationAdminPanel patientUhid="UHID-TEST-001" />
+                  </div>
+                ) : activeWorkflow === "monitor_patient" || activeWorkflow === "patient_monitor_panel" ? (
+                  <div className="mt-4">
+                    <PatientMonitorPanel patientUhid="UHID-TEST-001" />
+                  </div>
+                ) : activeWorkflow === "execute_tasks" || activeWorkflow === "task_list_panel" ? (
+                  <div className="mt-4">
+                    <TaskListPanel patientUhid="UHID-TEST-001" />
+                  </div>
+                ) : activeWorkflow === "view_pending" || activeWorkflow === "sample_queue_panel" ? (
+                  <div className="mt-4">
+                    <SampleQueuePanel patientUhid="UHID-TEST-001" />
+                  </div>
+                ) : activeWorkflow === "scan_barcode" || activeWorkflow === "barcode_scanner_panel" ? (
+                  <div className="mt-4">
+                    <BarcodeScannerPanel patientUhid="UHID-TEST-001" />
+                  </div>
+                ) : activeWorkflow === "transport_status" || activeWorkflow === "collection_status_panel" ? (
+                  <div className="mt-4">
+                    <CollectionStatusPanel patientUhid="UHID-TEST-001" />
+                  </div>
                 ) : (
-                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center text-slate-400">
                     <div className="text-4xl mb-3">
                       {ROLE_ICONS[workflows.find((w: any) => w.workflow_key === activeWorkflow)?.icon] || "📌"}
                     </div>
                     <p className="text-gray-600 font-medium">
                       {workflows.find((w: any) => w.workflow_key === activeWorkflow)?.workflow_label}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Route: {workflows.find((w: any) => w.workflow_key === activeWorkflow)?.route_path}
+                    <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">
+                       Route: {workflows.find((w: any) => w.workflow_key === activeWorkflow)?.route_path}
                     </p>
-                    <p className="text-xs text-gray-400 mt-4 italic">
-                      This workspace panel will be dynamically loaded based on the selected workflow.
-                      <br />Connect with existing AxonHIS modules (OPD, IPD, LIS, EHR).
+                    <p className="text-xs text-slate-400 mt-4 italic font-medium">
+                      This panel is linked to the {selectedRole} workspace module.
+                      <br />Ensuring live data synchronization with AxonHIS Core.
                     </p>
                   </div>
                 )}
@@ -212,8 +247,34 @@ export default function RpiwWorkspacePage() {
                       "bg-amber-50 text-amber-600"
                     }`}>{comp.component_type}</span>
                   </div>
-                  <div className="border border-dashed border-gray-200 rounded-lg p-4 text-center text-xs text-gray-400">
-                    <p>Dynamic component: <code className="bg-gray-100 px-1 rounded">{comp.component_key}</code></p>
+                  
+                  {/* Phase 23 - Real Component Linking */}
+                  <div className="mt-2">
+                    {comp.component_key === "patient_summary_panel" ? (
+                      <PatientSummaryPanel patientUhid="UHID-TEST-001" />
+                    ) : comp.component_key === "clinical_action_panel" ? (
+                      <ClinicalActionPanel patientUhid="UHID-TEST-001" userRole={selectedRole} />
+                    ) : comp.component_key === "ai_suggestions_panel" ? (
+                      <AiAssistantPanel patientUhid="UHID-TEST-001" userRole={selectedRole} />
+                    ) : comp.component_key === "vitals_recording_panel" ? (
+                      <VitalsRecordingPanel patientUhid="UHID-TEST-001" />
+                    ) : comp.component_key === "medication_admin_panel" ? (
+                      <MedicationAdminPanel patientUhid="UHID-TEST-001" />
+                    ) : comp.component_key === "task_list_panel" ? (
+                      <TaskListPanel patientUhid="UHID-TEST-001" />
+                    ) : comp.component_key === "patient_monitor_panel" ? (
+                      <PatientMonitorPanel patientUhid="UHID-TEST-001" />
+                    ) : comp.component_key === "sample_queue_panel" ? (
+                      <SampleQueuePanel patientUhid="UHID-TEST-001" />
+                    ) : comp.component_key === "barcode_scanner_panel" ? (
+                      <BarcodeScannerPanel patientUhid="UHID-TEST-001" />
+                    ) : comp.component_key === "collection_status_panel" ? (
+                      <CollectionStatusPanel patientUhid="UHID-TEST-001" />
+                    ) : (
+                      <div className="border border-dashed border-gray-200 rounded-lg p-4 text-center text-xs text-gray-400">
+                        <p>Dynamic component: <code className="bg-gray-100 px-1 rounded">{comp.component_key}</code></p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

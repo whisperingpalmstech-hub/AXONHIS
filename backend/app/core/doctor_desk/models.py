@@ -31,6 +31,7 @@ class DoctorWorklist(Base):
     started_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 class ConsultationNote(Base):
     """Structured clinical SOAP notes populated via AI or templates"""
@@ -52,6 +53,7 @@ class ConsultationNote(Base):
     
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 class DoctorClinicalTemplate(Base):
     """Reusable blocks per specialty (General, Cardiology, etc)"""
@@ -67,6 +69,7 @@ class DoctorClinicalTemplate(Base):
     plan_template = Column(Text, nullable=True)
     
     is_active = Column(Boolean, default=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 class DoctorPrescription(Base):
     """Independent prescription log managed by Doctor Desk"""
@@ -84,6 +87,7 @@ class DoctorPrescription(Base):
     instructions = Column(Text, nullable=True)
     
     prescribed_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 class DoctorDiagnosticOrder(Base):
     """Laboratory & Radiology orders dispatched from Doctor Desk"""
@@ -99,6 +103,7 @@ class DoctorDiagnosticOrder(Base):
     instructions = Column(Text, nullable=True)
     
     ordered_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 class DoctorClinicalSummary(Base):
     """Automatically compiled visit summary ready for export"""

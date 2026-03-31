@@ -10,7 +10,7 @@ from app.core.encounters.timeline.schemas import EncounterTimelineOut
 class EncounterBase(BaseModel):
     patient_id: uuid.UUID
     encounter_type: str = Field(min_length=1, max_length=50) # OP, IP, ER, FOLLOW_UP
-    doctor_id: uuid.UUID
+    doctor_id: Optional[uuid.UUID] = None
     department: str = Field(min_length=1, max_length=100)
     status: str = "scheduled"
 
@@ -26,8 +26,8 @@ class EncounterOut(EncounterBase):
     encounter_uuid: str
     start_time: Optional[datetime]
     end_time: Optional[datetime]
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     diagnoses: List[EncounterDiagnosisOut] = []
     notes: List[EncounterNoteOut] = []

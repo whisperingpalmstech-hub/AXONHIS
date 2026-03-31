@@ -2,17 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* ── Enterprise Light Mode Design System ─────────────────────────────── */
+/* ── Enterprise Clinical Design System ─────────────────────── */
 
 :root {
   --bg-primary: #F8FAFC;
   --bg-card: #FFFFFF;
-  --bg-sidebar: #1E293B;
+  --bg-sidebar: #0F172A;
+  --bg-sidebar-hover: #1E293B;
   --text-primary: #0F172A;
   --text-secondary: #64748B;
-  --text-sidebar: #CBD5E1;
+  --text-sidebar: #94A3B8;
   --text-sidebar-active: #FFFFFF;
   --accent-primary: #2563EB;
   --accent-primary-hover: #1D4ED8;
@@ -26,6 +27,9 @@
   --error-light: #FEE2E2;
   --info: #0EA5E9;
   --info-light: #E0F2FE;
+  --sidebar-width: 272px;
+  --sidebar-collapsed-width: 68px;
+  --topnav-height: 60px;
 }
 
 @layer base {
@@ -129,10 +133,98 @@
     @apply hover:bg-slate-50 transition-colors;
   }
 
-  /* ── Sidebar ─────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════════
+     ENTERPRISE SIDEBAR — Collapsible, grouped, role-based
+     ══════════════════════════════════════════════════════════════════ */
+  .sidebar-enterprise {
+    @apply fixed left-0 top-0 bottom-0 z-40
+           flex flex-col
+           bg-[var(--bg-sidebar)]
+           border-r border-slate-800
+           transition-all duration-300 ease-in-out;
+    width: var(--sidebar-width);
+  }
+  .sidebar-enterprise.sidebar-collapsed {
+    width: var(--sidebar-collapsed-width);
+  }
+
+  .sidebar-brand-enterprise {
+    @apply flex items-center gap-3 px-5 py-4 border-b border-slate-800/60;
+    min-height: var(--topnav-height);
+  }
+
+  .sidebar-nav-enterprise {
+    @apply flex-1 px-3 py-3 overflow-y-auto overflow-x-hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(71, 85, 105, 0.4) transparent;
+  }
+  .sidebar-nav-enterprise::-webkit-scrollbar {
+    width: 4px;
+  }
+  .sidebar-nav-enterprise::-webkit-scrollbar-thumb {
+    background: rgba(71, 85, 105, 0.4);
+    border-radius: 4px;
+  }
+
+  /* Group header (collapsible section) */
+  .sidebar-group-header {
+    @apply flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium
+           text-[var(--text-sidebar)]
+           hover:bg-[var(--bg-sidebar-hover)] hover:text-slate-200
+           transition-all duration-150 cursor-pointer;
+  }
+  .sidebar-group-active {
+    @apply text-slate-200;
+  }
+  .sidebar-group-icon {
+    @apply shrink-0 opacity-70;
+  }
+  .sidebar-group-label {
+    @apply flex-1 truncate;
+  }
+
+  /* Child items container */
+  .sidebar-children {
+    @apply ml-3 pl-3 border-l border-slate-700/50 mb-1;
+    animation: sidebarExpand 0.2s ease-out;
+  }
+  @keyframes sidebarExpand {
+    from { opacity: 0; max-height: 0; }
+    to { opacity: 1; max-height: 600px; }
+  }
+
+  /* Individual child link */
+  .sidebar-child-link {
+    @apply flex items-center gap-2 px-3 py-[7px] rounded-md text-[12.5px]
+           text-slate-500 hover:text-slate-200 hover:bg-slate-700/40
+           transition-all duration-150 cursor-pointer;
+  }
+  .sidebar-child-active {
+    @apply text-blue-300;
+    background-color: rgba(37, 99, 235, 0.15);
+  }
+  .sidebar-child-dot {
+    @apply w-1.5 h-1.5 rounded-full shrink-0 transition-colors;
+  }
+
+  /* Badge inside sidebar */
+  .sidebar-badge {
+    @apply text-[9px] font-bold px-1.5 py-0.5 rounded-full
+           bg-blue-500/20 text-blue-300 shrink-0;
+  }
+
+  .sidebar-footer-enterprise {
+    @apply px-4 py-3 border-t border-slate-800/60 text-center;
+  }
+
+  /* ─── Legacy sidebar compat (keep old class for existing pages using it) ─── */
   .sidebar {
-    @apply w-64 bg-[var(--bg-sidebar)] h-screen flex flex-col
-           fixed left-0 top-0 z-30;
+    @apply fixed left-0 top-0 bottom-0 z-40
+           flex flex-col
+           bg-[var(--bg-sidebar)]
+           border-r border-slate-800
+           transition-all duration-300 ease-in-out;
+    width: var(--sidebar-width);
   }
   .sidebar-brand {
     @apply px-6 py-5 flex items-center gap-3 border-b border-slate-700;
@@ -151,10 +243,68 @@
            text-white hover:bg-[var(--accent-primary-hover)];
   }
 
-  /* ── Top Navigation ──────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════════
+     ENTERPRISE TOP NAV — with centered global search
+     ══════════════════════════════════════════════════════════════════ */
+  .topnav-enterprise {
+    @apply bg-white border-b border-slate-200/80
+           px-6 flex items-center justify-between sticky top-0 z-30;
+    height: var(--topnav-height);
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  /* Legacy topnav compat */
   .topnav {
     @apply h-16 bg-[var(--bg-card)] border-b border-[var(--border)]
            px-6 flex items-center justify-between sticky top-0 z-20;
+  }
+
+  /* Search wrapper */
+  .topnav-search-wrapper {
+    @apply relative flex-1 max-w-xl mx-8 hidden md:block;
+  }
+  .topnav-search-container {
+    @apply relative;
+  }
+  .topnav-search-icon {
+    @apply absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400;
+  }
+  .topnav-search-input {
+    @apply w-full pl-10 pr-16 py-2 rounded-xl
+           bg-slate-100/80 border border-slate-200/60
+           text-sm text-slate-700 placeholder-slate-400
+           focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white focus:border-blue-300
+           transition-all duration-200;
+  }
+  .topnav-search-kbd {
+    @apply absolute right-3 top-1/2 -translate-y-1/2
+           text-[10px] font-semibold text-slate-400
+           bg-white border border-slate-200 rounded-md px-1.5 py-0.5
+           shadow-sm pointer-events-none;
+  }
+  .topnav-search-spinner {
+    @apply absolute right-12 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-blue-500;
+  }
+
+  /* Search results dropdown */
+  .topnav-search-results {
+    @apply absolute top-full left-0 right-0 mt-1.5
+           bg-white rounded-xl border border-slate-200
+           shadow-xl shadow-slate-200/50 z-50
+           max-h-[400px] overflow-y-auto;
+  }
+  .topnav-search-result-item {
+    @apply flex items-center gap-3 w-full px-4 py-3
+           hover:bg-blue-50/60 transition-colors cursor-pointer
+           border-b border-slate-50 last:border-0;
+  }
+
+  /* Action buttons */
+  .topnav-action-btn {
+    @apply relative p-2 rounded-xl text-slate-500
+           hover:bg-slate-100 hover:text-slate-700
+           transition-all duration-150;
   }
 
   /* ── Modal ───────────────────────────────────────── */
@@ -209,5 +359,42 @@
   .avatar {
     @apply w-9 h-9 rounded-full bg-[var(--accent-primary)]
            flex items-center justify-center text-white text-sm font-medium;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     PATIENT WORKSPACE STYLES
+     ══════════════════════════════════════════════════════════════════ */
+  .workspace-tab {
+    @apply px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-150 cursor-pointer
+           text-slate-500 hover:text-slate-700 hover:bg-slate-100;
+  }
+  .workspace-tab-active {
+    @apply text-blue-600 bg-blue-50 hover:bg-blue-50;
+  }
+
+  .workspace-action-btn {
+    @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+           transition-all duration-150 cursor-pointer border;
+  }
+
+  /* ── Workflow Pipeline ──────────────────────────── */
+  .workflow-step {
+    @apply flex flex-col items-center gap-1.5 relative;
+  }
+  .workflow-step-circle {
+    @apply w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+           border-2 transition-all duration-300;
+  }
+  .workflow-step-active {
+    @apply bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-500/30;
+  }
+  .workflow-step-done {
+    @apply bg-emerald-500 border-emerald-500 text-white;
+  }
+  .workflow-step-pending {
+    @apply bg-white border-slate-300 text-slate-400;
+  }
+  .workflow-connector {
+    @apply h-0.5 flex-1 mx-1;
   }
 }

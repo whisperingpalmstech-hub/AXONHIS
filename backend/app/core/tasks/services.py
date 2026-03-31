@@ -47,9 +47,18 @@ ORDER_TASK_MAP: dict[str, list[dict]] = {
 }
 
 
+from app.core.auth.models import User
+from app.core.patients.patients.models import Patient
+
 class TaskService:
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(self, db: AsyncSession, user: User = None) -> None:
         self.db = db
+        self.user = user
+
+    def _apply_tenant_filter(self, stmt):
+        if self.user and getattr(self.user, 'org_id', None):
+            return stmt.join(Patient, Task.patient_id == Patient.id).where(Patient.org_id == self.user.org_id)
+        return stmt
 
     async def _log_status_change(self, task_id: uuid.UUID, status: str, user_id: uuid.UUID | None, notes: str | None = None) -> None:
         history = TaskStatusHistory(task_id=task_id, status=status, changed_by=user_id, notes=notes)
@@ -110,6 +119,7 @@ class TaskService:
         if status:
             stmt = stmt.where(Task.status == status)
         
+        stmt = self._apply_tenant_filter(stmt)
         stmt = stmt.order_by(Task.created_at.desc())
         result = await self.db.execute(stmt)
         return list(result.scalars().all())

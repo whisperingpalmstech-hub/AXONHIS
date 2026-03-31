@@ -21,6 +21,7 @@ class BloodDonor(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     donor_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -45,6 +46,7 @@ class BloodCollection(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     donor_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("blood_donors.id", ondelete="RESTRICT"), nullable=False, index=True
     )

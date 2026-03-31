@@ -46,6 +46,11 @@ class User(Base):
     )
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    
+    # ABDM M1: Health Professional Registry
+    abdm_hpr_id: Mapped[str | None] = mapped_column(String(100), nullable=True, unique=True, index=True)
+    
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     two_factor_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     two_factor_secret: Mapped[str | None] = mapped_column(String(255), nullable=True)

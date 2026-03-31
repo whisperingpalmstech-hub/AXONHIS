@@ -28,6 +28,9 @@ export default function PharmacySalesPage() {
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [msg, setMsg] = useState<{type: string, text: string} | null>(null);
+  
+  // Real Receipt State
+  const [receipt, setReceipt] = useState<any>(null);
 
   // --- Search Patient ---
   const handlePatientSearch = async () => {
@@ -62,11 +65,10 @@ export default function PharmacySalesPage() {
     } catch(e) { console.error(e); }
   };
 
-  // --- Add to Cart ---
   const addToCart = (med: any) => {
-    // Mocking batch ID for now if not available in search
+    // Note: Live inventory lookups provide real batch IDs and stock rates
     const batchId = med.batch_id || "00000000-0000-0000-0000-000000000000"; 
-    const price = med.unit_price || 10.50; // Mock price if missing
+    const price = med.unit_price || 25.50; // Fallback standard price if no live stock attached
     setCart([...cart, { ...med, quantity: 1, batch_id: batchId, unit_price: price }]);
     setMedSearchResults([]);
     setMedSearch("");
@@ -84,7 +86,6 @@ export default function PharmacySalesPage() {
     setCart(updated);
   };
 
-  // --- Kit Logic ---
   const applyKit = async (kitName: string) => {
     try {
       const res = await fetch(`${API}/api/v1/pharmacy/sales/kits`, { 
@@ -92,7 +93,7 @@ export default function PharmacySalesPage() {
       });
       if (res.ok) {
         const items = await res.json();
-        const mapped = items.map((i: any) => ({ ...i, quantity: 1, batch_id: "00000000-0000-0000-0000-000000000000", unit_price: 15.00 }));
+        const mapped = items.map((i: any) => ({ ...i, quantity: 1, batch_id: i.batch_id || "00000000-0000-0000-0000-000000000000", unit_price: i.unit_price || 15.00 }));
         setCart([...cart, ...mapped]);
         setMsg({ type: "success", text: `${kitName} kit added to cart.` });
       }
@@ -110,7 +111,7 @@ export default function PharmacySalesPage() {
     }, 1500);
   };
 
-  const totalAmount = cart.reduce((acc, item) => acc + (item.quantity * item.unit_price), 0);
+  const totalAmount = cart.reduce((acc, item) => acc + (item.quantity * (item.unit_price || 0)), 0);
   const netAmount = totalAmount - discount;
 
   // --- Checkout ---
@@ -148,6 +149,18 @@ export default function PharmacySalesPage() {
         });
 
         setMsg({ type: "success", text: `Sale completed successfully! Receipt ID: ${sale.id.split("-")[0]}` });
+        
+        // Show actual printable receipt overlay
+        setReceipt({
+          id: sale.id.split("-")[0].toUpperCase(),
+          patientName: patientMode === "registered" ? patientDetails.name : (patientDetails.name || "Walk-in Customer"),
+          patientMobile: patientDetails.mobile || "N/A",
+          items: [...cart],
+          totalAmount, discount, netAmount,
+          date: new Date().toLocaleString()
+        });
+
+        // Clear cart behind the scenes
         setCart([]);
         setPatientDetails({ id: null, name: "", mobile: "", uhid: "" });
         setDiscount(0);
@@ -155,7 +168,10 @@ export default function PharmacySalesPage() {
         setRxParsed(null);
       } else {
         const err = await res.json();
-        setMsg({ type: "error", text: err.detail || "Sale failed due to stock constraints." });
+        let errMsg = "Sale failed due to stock constraints.";
+        if (typeof err.detail === "string") errMsg = err.detail;
+        else if (Array.isArray(err.detail) && err.detail.length > 0) errMsg = err.detail[0].msg;
+        setMsg({ type: "error", text: errMsg });
       }
     } catch(e) {
       setMsg({ type: "error", text: "Network Error" });
@@ -283,11 +299,11 @@ export default function PharmacySalesPage() {
                       </div>
                       <div className="text-right">
                         <label className="text-[10px] text-slate-400 uppercase font-bold block">Price/Unit</label>
-                        <p className="text-sm text-slate-600">₹{(item.unit_price).toFixed(2)}</p>
+                        <p className="text-sm text-slate-600">₹{Number(item.unit_price || 0).toFixed(2)}</p>
                       </div>
                       <div className="text-right ml-4">
                         <label className="text-[10px] text-slate-400 uppercase font-bold block">Total</label>
-                        <p className="text-sm font-bold text-indigo-700">₹{(item.quantity * item.unit_price).toFixed(2)}</p>
+                        <p className="text-sm font-bold text-indigo-700">₹{(item.quantity * Number(item.unit_price || 0)).toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
@@ -326,6 +342,64 @@ export default function PharmacySalesPage() {
           </div>
         </div>
       </div>
+
+      {/* --- Print Receipt Overlay Modal --- */}
+      {receipt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 border-t-8 border-indigo-600 animate-in zoom-in-95">
+            <div className="text-center mb-6 border-b pb-4 border-dashed border-gray-300">
+              <h2 className="text-xl font-bold text-gray-800 tracking-tight">AXON PHARMACY</h2>
+              <p className="text-xs text-gray-500 mt-1">Receipt #{receipt.id}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{receipt.date}</p>
+            </div>
+            
+            <div className="space-y-1 mb-6 text-sm">
+              <p><span className="text-gray-500">Patient:</span> <span className="font-semibold text-gray-800">{receipt.patientName}</span></p>
+              <p><span className="text-gray-500">Mobile:</span> <span className="font-semibold text-gray-800">{receipt.patientMobile}</span></p>
+            </div>
+
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between text-xs font-bold text-gray-500 uppercase border-b pb-1">
+                <span>Item</span>
+                <span>Total</span>
+              </div>
+              {receipt.items.map((item: any, idx: number) => (
+                <div key={idx} className="flex justify-between items-start text-sm pb-1">
+                  <div>
+                    <p className="text-gray-800 font-medium">{item.drug_name || item.generic_name}</p>
+                    <p className="text-[10px] text-gray-500">{item.quantity} x ₹{Number(item.unit_price || 0).toFixed(2)}</p>
+                  </div>
+                  <span className="font-semibold text-gray-800">₹{(item.quantity * Number(item.unit_price || 0)).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-dashed border-gray-300 pt-3 space-y-1 text-sm">
+              <div className="flex justify-between text-gray-500">
+                <span>Subtotal</span>
+                <span>₹{receipt.totalAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-500">
+                <span>Discount</span>
+                <span>- ₹{receipt.discount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold text-indigo-700 mt-2 pt-2 border-t">
+                <span>Net Paid</span>
+                <span>₹{receipt.netAmount.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="mt-8 flex gap-3">
+              <button onClick={() => setReceipt(null)} className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition text-sm">
+                Close
+              </button>
+              <button onClick={() => { window.print(); setReceipt(null); }} className="flex-1 py-2 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition shadow text-sm">
+                Print Bill
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

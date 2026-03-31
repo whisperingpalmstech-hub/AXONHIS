@@ -38,6 +38,30 @@ export default function LoginPage() {
 
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("refresh_token", data.refresh_token);
+
+      // Fetch full user profile (with roles) and store for sidebar role-based rendering
+      try {
+        const meRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500"}/api/v1/auth/me`,
+          { headers: { Authorization: `Bearer ${data.access_token}` } }
+        );
+        if (meRes.ok) {
+          const profile = await meRes.json();
+          // Determine primary role from the roles array
+          const roleNames = (profile.roles || []).map((r: any) => (r.name || "").toLowerCase());
+          let primaryRole = "admin"; // fallback
+          const rolePriority = ["admin", "director", "doctor", "nurse", "pharmacist", "lab_technician", "front_desk"];
+          for (const rp of rolePriority) {
+            if (roleNames.includes(rp)) { primaryRole = rp; break; }
+          }
+          localStorage.setItem("user", JSON.stringify({
+            ...profile,
+            role: primaryRole,
+            roleNames: roleNames,
+          }));
+        }
+      } catch { /* profile fetch failed, sidebar will default to admin */ }
+
       router.push("/dashboard");
     } catch (err) {
       setError("Connection error. Please try again.");
@@ -133,10 +157,13 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="mt-6 pt-4 border-t border-[var(--border)] text-center">
+            <div className="mt-6 pt-4 border-t border-[var(--border)] text-center space-y-4">
               <p className="text-xs text-[var(--text-secondary)]">
                 Default: admin@axonhis.local / Admin@123
               </p>
+              <button type="button" onClick={() => router.push("/register-organization")} className="w-full py-2.5 bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 rounded-lg text-sm hover:bg-emerald-100 transition-colors">
+                New Healthcare Provider? Provision Workspace
+              </button>
             </div>
           </div>
         </div>

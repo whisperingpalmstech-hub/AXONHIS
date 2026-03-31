@@ -5,7 +5,8 @@ import { doctorDeskApi } from "@/lib/doctor-desk-api";
 import { api } from "@/lib/api";
 import {
   Stethoscope, Users, Calendar, Activity, ClipboardList, PenTool,
-  Mic, BrainCircuit, Syringe, Pill, FileText, Download, Target, Plus, CheckCircle
+  Mic, BrainCircuit, Syringe, Pill, FileText, Download, Target, Plus, CheckCircle,
+  AlertTriangle
 } from "lucide-react";
 
 export default function DoctorDeskPage() {
@@ -19,6 +20,7 @@ export default function DoctorDeskPage() {
   // EMR Timeline State
   const [timelineMode, setTimelineMode] = useState(false);
   const [timelineNodes, setTimelineNodes] = useState<any[]>([]);
+  const [simPatientId, setSimPatientId] = useState("");
 
   // SOAP Note State
   const [noteData, setNoteData] = useState({ chief_complaint: "", history_present_illness: "", plan: "" });
@@ -40,7 +42,7 @@ export default function DoctorDeskPage() {
   const loadBaseData = async () => {
     setLoading(true);
     try {
-      const p = await api.get<any>("/patients");
+      const p = await api.get<any>("/patients/");
       setPatients(Array.isArray(p) ? p : p?.items || []);
       const wl = await doctorDeskApi.getWorklist(DOCTOR_ID);
       setWorklist(wl);
@@ -56,15 +58,16 @@ export default function DoctorDeskPage() {
   };
   const getPatientUhid = (id: string) => {
     const pt = patients.find(p => p.id === id);
-    return pt ? pt.uhid : "---";
+    return pt ? (pt.uhid || pt.patient_uuid || "---") : "---";
   };
 
   const seedDoctorQueue = async () => {
     if (patients.length === 0) return alert("Add patients first");
+    const targetId = simPatientId || patients[Math.max(0, patients.length - 1)].id;
     await doctorDeskApi.seedPatient({
       doctor_id: DOCTOR_ID,
       visit_id: "00000000-0000-0000-0000-000000000000",
-      patient_id: patients[0].id,
+      patient_id: targetId,
       priority_indicator: "normal"
     });
     loadBaseData();
@@ -136,6 +139,38 @@ export default function DoctorDeskPage() {
     loadBaseData();
   };
 
+  const recommendAdmission = async () => {
+    if (!activePatient) return;
+    try {
+      const resp = await fetch(`http://localhost:9500/api/v1/ipd/requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
+        body: JSON.stringify({
+          patient_name: `${activePatient.detail?.first_name} ${activePatient.detail?.last_name}`,
+          patient_uhid: activePatient.detail?.uhid || activePatient.patient_id,
+          gender: activePatient.detail?.gender || "Unknown",
+          date_of_birth: activePatient.detail?.date_of_birth || "2000-01-01",
+          mobile_number: activePatient.detail?.primary_phone || "9999999999",
+          admitting_doctor: `Dr. AI Desk`, treating_doctor: `Dr. AI Desk`,
+          specialty: "General Medicine",
+          reason_for_admission: noteData.chief_complaint || "Clinical observation recommended",
+          admission_category: "Emergency",
+          admission_source: "OPD",
+          preferred_bed_category: "General Ward",
+          expected_admission_date: new Date().toISOString()
+        })
+      });
+
+      if (resp.ok) {
+        alert("Admission request strongly recommended. Sent to IPD Front Desk for Bed Allocation!");
+      } else {
+        alert("Error sending admission push to IPD.");
+      }
+    } catch (e) {
+      alert("Network Error while pushing to IPD.");
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 h-screen overflow-hidden flex flex-col">
       <div className="flex justify-between items-center shrink-0">
@@ -152,9 +187,19 @@ export default function DoctorDeskPage() {
         
         {/* LEFT COMPONENT: WORKLIST DASHBOARD */}
         <div className="w-80 bg-white border border-slate-200 rounded-xl flex flex-col overflow-hidden shadow-sm shrink-0">
-          <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
-            <h3 className="font-bold flex items-center gap-2"><Users size={18}/> Waitlist</h3>
-            <button onClick={seedDoctorQueue} className="text-xs text-indigo-200 hover:text-white"><Plus size={16}/></button>
+          <div className="bg-slate-900 text-white p-4">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-bold flex items-center gap-2"><Users size={18}/> Waitlist</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <select className="border border-slate-700 bg-slate-800 rounded text-xs px-2 py-1.5 focus:border-indigo-500 focus:outline-none flex-1" value={simPatientId} onChange={e => setSimPatientId(e.target.value)}>
+                <option value="">Latest Patient</option>
+                {patients.slice().reverse().map(p => (
+                  <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
+                ))}
+              </select>
+              <button onClick={seedDoctorQueue} className="text-xs bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white px-2 py-1.5 rounded flex items-center justify-center" title="Simulate Entry"><Plus size={14}/></button>
+            </div>
           </div>
           <div className="overflow-y-auto flex-1 p-2 space-y-2 relative">
             {worklist.filter(w=>w.status==='waiting').length === 0 && <div className="text-center p-8 text-slate-400 text-sm">Queue empty.</div>}
@@ -207,6 +252,7 @@ export default function DoctorDeskPage() {
                   </div>
                   <div className="flex gap-2">
                      <button onClick={()=>setTimelineMode(!timelineMode)} className={`btn-secondary text-sm ${timelineMode?'bg-slate-200':''}`}><Activity size={16}/> EMR Timeline</button>
+                     <button onClick={recommendAdmission} className="btn-secondary text-sm bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 hover:text-rose-700 font-bold"><AlertTriangle size={16}/> Recommend Admission</button>
                      <button onClick={concludeConsultation} className="btn-primary text-sm bg-emerald-600 hover:bg-emerald-700"><CheckCircle size={16}/> Complete & Summary</button>
                   </div>
               </div>

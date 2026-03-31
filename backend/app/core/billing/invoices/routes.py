@@ -21,6 +21,10 @@ async def get_invoice(invoice_id: uuid.UUID, db: DBSession, _: CurrentUser):
     return inv
 
 @router.get("/invoices", response_model=list[InvoiceOut])
-async def list_invoices(db: DBSession, _: CurrentUser):
-    res = await db.execute(select(Invoice))
+async def list_invoices(db: DBSession, user: CurrentUser):
+    from app.core.patients.patients.models import Patient
+    stmt = select(Invoice)
+    if getattr(user, 'org_id', None):
+        stmt = stmt.join(Patient, Invoice.patient_id == Patient.id).where(Patient.org_id == user.org_id)
+    res = await db.execute(stmt)
     return res.scalars().all()

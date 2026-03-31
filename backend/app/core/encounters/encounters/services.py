@@ -10,9 +10,18 @@ from app.core.encounters.encounters.schemas import EncounterCreate, EncounterUpd
 from app.core.encounters.timeline.services import TimelineService
 from app.core.encounters.timeline.schemas import EncounterTimelineCreate
 
+from app.core.auth.models import User
+from app.core.patients.patients.models import Patient
+
 class EncounterService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, user: User = None):
         self.db = db
+        self.user = user
+
+    def _apply_tenant_filter(self, stmt):
+        if self.user and getattr(self.user, 'org_id', None):
+            return stmt.join(Patient, Encounter.patient_id == Patient.id).where(Patient.org_id == self.user.org_id)
+        return stmt
 
     async def create_encounter(self, data: EncounterCreate, author_id: uuid.UUID) -> Encounter:
         encounter_uuid = f"ENC-{uuid.uuid4().hex[:8].upper()}"
@@ -23,6 +32,7 @@ class EncounterService:
             
         encounter = Encounter(
             encounter_uuid=encounter_uuid,
+            org_id=self.user.org_id if self.user else data.org_id if hasattr(data, 'org_id') else None,
             patient_id=data.patient_id,
             encounter_type=data.encounter_type,
             doctor_id=data.doctor_id,
@@ -91,7 +101,8 @@ class EncounterService:
                 selectinload(Encounter.timeline_events)
             )
             .order_by(Encounter.created_at.desc())
-            .offset(skip).limit(limit)
         )
+        stmt = self._apply_tenant_filter(stmt)
+        stmt = stmt.offset(skip).limit(limit)
         result = await self.db.execute(stmt)
         return result.scalars().unique().all()

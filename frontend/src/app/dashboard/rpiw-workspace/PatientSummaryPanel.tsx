@@ -42,7 +42,13 @@ export default function PatientSummaryPanel({ patientUhid }: { patientUhid: stri
     <div className="space-y-6">
       <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex gap-4">
         <div className="flex-1">
-          <p className="text-sm font-semibold text-blue-800 uppercase tracking-wide">Chief Issue</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-blue-800 uppercase tracking-wide">Chief Issue</p>
+            {/* ABDM Milestone 2 - ABHA Connection Status */}
+            <span className="bg-indigo-100 text-indigo-700 text-[9px] px-1.5 py-0.5 rounded font-bold border border-indigo-200">
+              ABHA: {summary?.is_abha_linked ? "LINKED ✅" : "NOT LINKED ⚠️"}
+            </span>
+          </div>
           <p className="text-gray-800 font-medium text-lg mt-1">{summary.chief_issue || "Not recorded"}</p>
         </div>
         <div className="flex-1 border-l border-blue-200 pl-4">

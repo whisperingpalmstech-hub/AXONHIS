@@ -9,6 +9,7 @@ class Ward(Base):
     __tablename__ = "wards"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     ward_code = Column(String, unique=True, nullable=False)
     ward_name = Column(String, nullable=False)
     department = Column(String, nullable=False)
@@ -23,6 +24,7 @@ class Room(Base):
     __tablename__ = "rooms"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     ward_id = Column(UUID(as_uuid=True), ForeignKey("wards.id", ondelete="CASCADE"), nullable=False)
     room_number = Column(String, nullable=False)
     room_type = Column(String(20), nullable=False) # private, semi_private, general
@@ -36,6 +38,7 @@ class Bed(Base):
     __tablename__ = "beds"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     room_id = Column(UUID(as_uuid=True), ForeignKey("rooms.id", ondelete="CASCADE"), nullable=False)
     bed_code = Column(String, unique=True, nullable=False)
     bed_number = Column(String, nullable=False)
@@ -51,6 +54,7 @@ class BedAssignment(Base):
     __tablename__ = "bed_assignments"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="RESTRICT"), nullable=False)
     encounter_id = Column(UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="RESTRICT"), nullable=False)
     bed_id = Column(UUID(as_uuid=True), ForeignKey("beds.id", ondelete="RESTRICT"), nullable=False)
@@ -65,6 +69,7 @@ class BedTransfer(Base):
     __tablename__ = "bed_transfers"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="RESTRICT"), nullable=False)
     encounter_id = Column(UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="RESTRICT"), nullable=False)
     from_bed_id = Column(UUID(as_uuid=True), ForeignKey("beds.id", ondelete="RESTRICT"), nullable=False)
@@ -77,6 +82,7 @@ class BedCleaningTask(Base):
     __tablename__ = "bed_cleaning_tasks"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     bed_id = Column(UUID(as_uuid=True), ForeignKey("beds.id", ondelete="CASCADE"), nullable=False)
     cleaning_status = Column(String(20), default="pending", nullable=False) # pending, in_progress, completed
     cleaning_started_at = Column(DateTime(timezone=True), nullable=True)

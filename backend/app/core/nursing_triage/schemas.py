@@ -9,6 +9,7 @@ from .models import TriageStatus
 class NursingVitalsCreate(BaseModel):
     visit_id: UUID
     patient_id: UUID
+    org_id: Optional[UUID] = None
     blood_pressure_systolic: Optional[int] = None
     blood_pressure_diastolic: Optional[int] = None
     heart_rate: Optional[int] = None
@@ -37,6 +38,7 @@ class NursingVitalsOut(NursingVitalsCreate):
 class NursingWorklistCreate(BaseModel):
     visit_id: UUID
     patient_id: UUID
+    org_id: Optional[UUID] = None
     priority_level: str = "normal"
 
 class NursingWorklistOut(NursingWorklistCreate):
@@ -55,6 +57,7 @@ class NursingWorklistOut(NursingWorklistCreate):
 class NursingAssessmentCreate(BaseModel):
     visit_id: UUID
     patient_id: UUID
+    org_id: Optional[UUID] = None
     template_used: Optional[str] = None
     chief_complaint: Optional[str] = None
     allergy_information: Optional[str] = None
@@ -86,6 +89,7 @@ class NursingTemplateOut(NursingTemplateCreate):
 class DocumentUploadCreate(BaseModel):
     visit_id: UUID
     patient_id: UUID
+    org_id: Optional[UUID] = None
     document_type: str
     file_path: str
     file_format: str

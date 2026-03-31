@@ -37,9 +37,13 @@ class Settings(BaseSettings):
 
     # Security
     secret_key: str = "insecure-dev-secret-please-change"
-    access_token_expire_minutes: int = 15
+    access_token_expire_minutes: int = 480  # 8 hours for clinical shift
     refresh_token_expire_days: int = 7
     algorithm: str = "HS256"
+    
+    # Encryption (HIPAA/ABDM)
+    # Must be exactly 32 url-safe base64-encoded bytes for Fernet
+    abdm_encryption_key: str = "v-X8HlY-Tbz12c3qB5x8-9zY1D7hX9oP1vB_zM0W4C8="
 
     # Celery
     celery_broker_url: str = "redis://localhost:6379/1"

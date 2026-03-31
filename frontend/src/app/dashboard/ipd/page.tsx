@@ -10,6 +10,7 @@ import {
   ipdApi, type DashboardStats, type IpdAdmissionRequest, type IpdBedMaster
 } from "@/lib/ipd-api";
 import { api } from "@/lib/api";
+import { WorkflowPipeline } from "@/components/ui/WorkflowPipeline";
 
 interface PatientOption { id: string; first_name: string; last_name: string; patient_uuid: string; dob?: string; gender?: string; primary_phone?: string; }
 
@@ -156,6 +157,22 @@ export default function IPDDashboard() {
               <UserPlus size={18}/> New Admission
             </button>
           </div>
+        </div>
+
+        {/* Workflow Bar */}
+        <div className="mb-8">
+          <WorkflowPipeline 
+            title="IPD Admission Pipeline" 
+            colorScheme="blue"
+            steps={[
+              { label: "Admission Request", status: "done" },
+              { label: "Bed Allocation", status: "active" },
+              { label: "Nursing Assessment", status: "pending" },
+              { label: "Doctor Rounds", status: "pending" },
+              { label: "Clinical Orders", status: "pending" },
+              { label: "Discharge Planning", status: "pending" }
+            ]} 
+          />
         </div>
 
         {/* Tabs */}

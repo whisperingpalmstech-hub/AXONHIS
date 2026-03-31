@@ -15,6 +15,7 @@ class WardBase(BaseModel):
     department: str
     floor: Optional[str] = None
     capacity: int = 0
+    org_id: Optional[uuid.UUID] = None
 
 class WardCreate(WardBase):
     pass
@@ -33,6 +34,7 @@ class RoomBase(BaseModel):
     room_number: str
     room_type: str # private, semi_private, general
     capacity: int = 1
+    org_id: Optional[uuid.UUID] = None
 
 class RoomCreate(RoomBase):
     pass
@@ -51,6 +53,7 @@ class BedBase(BaseModel):
     bed_number: str
     bed_type: str # standard, icu, isolation, pediatric
     status: str = "available"
+    org_id: Optional[uuid.UUID] = None
 
 class BedCreate(BedBase):
     pass
@@ -68,6 +71,7 @@ class BedAssignmentBase(BaseModel):
     encounter_id: uuid.UUID
     bed_id: uuid.UUID
     assigned_by: Optional[uuid.UUID] = None
+    org_id: Optional[uuid.UUID] = None
 
 class BedAssignmentCreate(BedAssignmentBase):
     pass
@@ -89,6 +93,7 @@ class BedTransferCreate(BaseModel):
     to_bed_id: uuid.UUID
     transfer_reason: Optional[str] = None
     transferred_by: Optional[uuid.UUID] = None
+    org_id: Optional[uuid.UUID] = None
 
 class BedTransferOut(BedTransferCreate):
     id: uuid.UUID
@@ -102,6 +107,7 @@ class BedCleaningTaskBase(BaseModel):
     bed_id: uuid.UUID
     cleaning_status: str = "pending"
     cleaned_by: Optional[uuid.UUID] = None
+    org_id: Optional[uuid.UUID] = None
 
 class BedCleaningTaskCreate(BedCleaningTaskBase):
     pass

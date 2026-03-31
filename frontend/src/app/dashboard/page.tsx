@@ -65,6 +65,18 @@ export default function DashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [systemStatus, setSystemStatus] = useState<any>(null);
+  const [userRole, setUserRole] = useState("admin");
+
+  // Get user role on mount
+  useEffect(() => {
+    try {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        const user = JSON.parse(userData);
+        setUserRole((user.role || "admin").toLowerCase());
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const fetchAllStats = async () => {
@@ -194,6 +206,7 @@ export default function DashboardPage() {
       href: "/dashboard/patients",
       sub: "Registered patients",
       subColor: "text-blue-500",
+      roles: ["admin", "doctor", "nurse", "front_desk", "director"],
     },
     {
       label: "Active Encounters",
@@ -204,6 +217,7 @@ export default function DashboardPage() {
       href: "/dashboard/encounters",
       sub: "In progress & scheduled",
       subColor: "text-emerald-500",
+      roles: ["admin", "doctor", "nurse", "front_desk", "director"],
     },
     {
       label: "Pending Tasks",
@@ -214,6 +228,7 @@ export default function DashboardPage() {
       href: "/dashboard/tasks",
       sub: "Awaiting execution",
       subColor: "text-amber-500",
+      roles: ["admin", "doctor", "nurse", "director"],
     },
     {
       label: "Low Stock Alerts",
@@ -227,6 +242,7 @@ export default function DashboardPage() {
       href: "/dashboard/pharmacy/inventory",
       sub: "Items below threshold",
       subColor: stats.lowStockAlerts > 0 ? "text-rose-500" : "text-slate-400",
+      roles: ["admin", "pharmacist", "director"],
     },
     {
       label: "Pending Rx",
@@ -237,6 +253,7 @@ export default function DashboardPage() {
       href: "/dashboard/pharmacy",
       sub: "Awaiting dispensing",
       subColor: "text-violet-500",
+      roles: ["admin", "pharmacist", "doctor", "nurse", "director"],
     },
     {
       label: "Near Expiry",
@@ -252,6 +269,7 @@ export default function DashboardPage() {
       sub: "Expiring in 60 days",
       subColor:
         stats.nearExpiryBatches > 0 ? "text-orange-500" : "text-slate-400",
+      roles: ["admin", "pharmacist", "director"],
     },
     {
       label: "Lab Samples",
@@ -262,6 +280,7 @@ export default function DashboardPage() {
       href: "/dashboard/lab",
       sub: "Pending processing",
       subColor: "text-cyan-500",
+      roles: ["admin", "doctor", "lab_technician", "nurse", "director"],
     },
     {
       label: "Invoices",
@@ -272,6 +291,7 @@ export default function DashboardPage() {
       href: "/dashboard/billing",
       sub: `${stats.pendingPayments} pending payment`,
       subColor: "text-indigo-500",
+      roles: ["admin", "front_desk", "director"],
     },
   ];
 
@@ -349,7 +369,7 @@ export default function DashboardPage() {
       <div className="p-6 space-y-6">
         {/* KPI Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {STAT_CARDS.map((stat) => {
+          {STAT_CARDS.filter((s: any) => !s.roles || s.roles.includes(userRole) || userRole === "admin" || userRole === "director").map((stat) => {
             const Icon = stat.icon;
             // Add custom glow effect using the accent color
             const glowClass = `shadow-[0_0_15px_rgba(0,0,0,0.1)] hover:shadow-[0_0_25px_${stat.iconColor.replace("text-", "")}]`;
@@ -419,6 +439,7 @@ export default function DashboardPage() {
                   icon: Users,
                   color: "text-blue-600",
                   bg: "bg-blue-50/80 border border-blue-100",
+                  roles: ["admin", "doctor", "nurse", "front_desk", "director"],
                 },
                 {
                   label: "Encounters",
@@ -427,6 +448,7 @@ export default function DashboardPage() {
                   icon: Stethoscope,
                   color: "text-emerald-600",
                   bg: "bg-emerald-50/80 border border-emerald-100",
+                  roles: ["admin", "doctor", "nurse", "front_desk", "director"],
                 },
                 {
                   label: "Order Management",
@@ -435,6 +457,7 @@ export default function DashboardPage() {
                   icon: ClipboardList,
                   color: "text-violet-600",
                   bg: "bg-violet-50/80 border border-violet-100",
+                  roles: ["admin", "doctor", "nurse", "director"],
                 },
                 {
                   label: "Task Queue",
@@ -443,6 +466,7 @@ export default function DashboardPage() {
                   icon: Activity,
                   color: "text-amber-600",
                   bg: "bg-amber-50/80 border border-amber-100",
+                  roles: ["admin", "doctor", "nurse", "director"],
                 },
                 {
                   label: "Laboratory",
@@ -451,6 +475,7 @@ export default function DashboardPage() {
                   icon: TestTubes,
                   color: "text-cyan-600",
                   bg: "bg-cyan-50/80 border border-cyan-100",
+                  roles: ["admin", "doctor", "lab_technician", "nurse", "director"],
                 },
                 {
                   label: "Pharmacy",
@@ -459,6 +484,7 @@ export default function DashboardPage() {
                   icon: Pill,
                   color: "text-rose-600",
                   bg: "bg-rose-50/80 border border-rose-100",
+                  roles: ["admin", "pharmacist", "doctor", "nurse", "director"],
                 },
                 {
                   label: "Billing",
@@ -467,8 +493,9 @@ export default function DashboardPage() {
                   icon: Receipt,
                   color: "text-indigo-600",
                   bg: "bg-indigo-50/80 border border-indigo-100",
+                  roles: ["admin", "front_desk", "director"],
                 },
-              ].map((item) => {
+              ].filter((item: any) => !item.roles || item.roles.includes(userRole) || userRole === "admin" || userRole === "director").map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link

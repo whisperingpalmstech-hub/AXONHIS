@@ -57,26 +57,27 @@ router = APIRouter(prefix="/ipd", tags=["IPD Admission & Bed Management"])
 
 # --- Dashboard ---
 @router.get("/dashboard/stats", response_model=DashboardStats)
-async def get_dashboard_stats(db: AsyncSession = Depends(get_db)):
-    service = IPDService(db)
+async def get_dashboard_stats(db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    service = IPDService(db, org_id=current_user.org_id if current_user else None)
     return await service.get_dashboard_stats()
 
 # --- Admission Requests ---
 @router.post("/requests", response_model=IpdAdmissionRequestOut)
 async def create_admission_request(req: IpdAdmissionRequestCreate, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
-    service = IPDService(db)
+    service = IPDService(db, org_id=current_user.org_id if current_user else None)
     new_req = await service.create_admission_request(req.model_dump(), current_user.id if current_user else None)
     await db.commit()
+    await db.refresh(new_req)
     return new_req
 
 @router.get("/requests/pending", response_model=List[IpdAdmissionRequestOut])
-async def list_pending_requests(db: AsyncSession = Depends(get_db)):
-    service = IPDService(db)
+async def list_pending_requests(db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    service = IPDService(db, org_id=current_user.org_id if current_user else None)
     return await service.get_pending_requests()
 
 @router.put("/requests/{req_id}/status", response_model=IpdAdmissionRequestOut)
 async def update_request_status(req_id: UUID, new_status: str, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
-    service = IPDService(db)
+    service = IPDService(db, org_id=current_user.org_id if current_user else None)
     updated_req = await service.update_request_status(req_id, new_status, current_user.id if current_user else None)
     if not updated_req:
         raise HTTPException(status_code=404, detail="Request not found")
@@ -86,7 +87,7 @@ async def update_request_status(req_id: UUID, new_status: str, db: AsyncSession 
 # --- Allocation ---
 @router.post("/requests/{req_id}/allocate/{bed_id}", response_model=IpdAdmissionRecordOut)
 async def allocate_bed(req_id: UUID, bed_id: str, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
-    service = IPDService(db)
+    service = IPDService(db, org_id=current_user.org_id if current_user else None)
     adm = await service.allocate_bed(req_id, bed_id, current_user.id if current_user else None)
     if not adm:
         raise HTTPException(status_code=400, detail="Cannot allocate bed. Request must be approved and bed must be available.")
@@ -94,8 +95,8 @@ async def allocate_bed(req_id: UUID, bed_id: str, db: AsyncSession = Depends(get
     return adm
 
 @router.get("/admissions", response_model=list[IpdAdmissionRecordOut])
-async def get_active_admissions(db: AsyncSession = Depends(get_db)):
-    service = IPDService(db)
+async def get_active_admissions(db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    service = IPDService(db, org_id=current_user.org_id if current_user else None)
     return await service.get_active_admissions()
 
 # --- Phase 14: Smart Admission ---

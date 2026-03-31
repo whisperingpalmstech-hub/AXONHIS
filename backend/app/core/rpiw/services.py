@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
@@ -81,111 +82,143 @@ class RPIWService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def seed_role_defaults(self, role_code: str):
-        """Seed default permissions, workflows, and components for a role if not already present."""
-        # Check if already seeded
+    async def seed_role_defaults(self, role_code: str, org_id: uuid.UUID = None):
+        """Seed default permissions, workflows, and components for a role if not already present in the org."""
+        # Check if already seeded for this specific org
         existing = (await self.db.execute(
-            select(RpiwRolePermission).where(RpiwRolePermission.role_code == role_code).limit(1)
+            select(RpiwRolePermission).where(
+                RpiwRolePermission.role_code == role_code,
+                RpiwRolePermission.org_id == org_id
+            ).limit(1)
         )).scalar_one_or_none()
         if existing:
-            return  # Already seeded
+            return  # Already seeded for this org
 
         # Seed permissions
         for perm in DEFAULT_PERMISSIONS.get(role_code, []):
-            self.db.add(RpiwRolePermission(role_code=role_code, **perm))
+            self.db.add(RpiwRolePermission(role_code=role_code, org_id=org_id, **perm))
 
         # Seed workflows
         for wf in DEFAULT_WORKFLOWS.get(role_code, []):
-            self.db.add(RpiwRoleWorkflow(role_code=role_code, **wf))
+            self.db.add(RpiwRoleWorkflow(role_code=role_code, org_id=org_id, **wf))
 
         # Seed components
         for comp in DEFAULT_COMPONENTS.get(role_code, []):
-            self.db.add(RpiwRoleComponent(role_code=role_code, **comp))
+            self.db.add(RpiwRoleComponent(role_code=role_code, org_id=org_id, **comp))
 
         await self.db.flush()
 
     # ─── User Role Management ──────────────────────────────────
 
-    async def assign_role(self, data: dict):
-        role = RpiwUserRole(**data)
+    async def assign_role(self, data: dict, org_id: uuid.UUID = None):
+        role = RpiwUserRole(**data, org_id=org_id)
         self.db.add(role)
         await self.db.flush()
-        await self.seed_role_defaults(data["role_code"])
+        await self.seed_role_defaults(data["role_code"], org_id=org_id)
         return role
 
-    async def get_user_roles(self, user_id: str):
+    async def get_user_roles(self, user_id: str, org_id: uuid.UUID = None):
         return (await self.db.execute(
-            select(RpiwUserRole).where(RpiwUserRole.user_id == user_id, RpiwUserRole.is_active == True)
+            select(RpiwUserRole).where(
+                RpiwUserRole.user_id == user_id, 
+                RpiwUserRole.is_active == True,
+                RpiwUserRole.org_id == org_id
+            )
         )).scalars().all()
 
-    async def get_primary_role(self, user_id: str):
+    async def get_primary_role(self, user_id: str, org_id: uuid.UUID = None):
         return (await self.db.execute(
             select(RpiwUserRole).where(
                 RpiwUserRole.user_id == user_id,
                 RpiwUserRole.is_primary == True,
-                RpiwUserRole.is_active == True
+                RpiwUserRole.is_active == True,
+                RpiwUserRole.org_id == org_id
             )
         )).scalar_one_or_none()
 
-    async def get_all_roles(self):
+    async def get_all_roles(self, org_id: uuid.UUID = None):
         return (await self.db.execute(
-            select(RpiwUserRole).where(RpiwUserRole.is_active == True).order_by(RpiwUserRole.assigned_at.desc())
+            select(RpiwUserRole).where(
+                RpiwUserRole.is_active == True,
+                RpiwUserRole.org_id == org_id
+            ).order_by(RpiwUserRole.assigned_at.desc())
         )).scalars().all()
 
     # ─── Permission Management ──────────────────────────────────
 
-    async def get_role_permissions(self, role_code: str):
+    async def get_role_permissions(self, role_code: str, org_id: uuid.UUID = None):
         return (await self.db.execute(
-            select(RpiwRolePermission).where(RpiwRolePermission.role_code == role_code, RpiwRolePermission.is_active == True)
+            select(RpiwRolePermission).where(
+                RpiwRolePermission.role_code == role_code, 
+                RpiwRolePermission.is_active == True,
+                RpiwRolePermission.org_id == org_id
+            )
         )).scalars().all()
 
-    async def check_permission(self, role_code: str, permission_key: str) -> bool:
+    async def check_permission(self, role_code: str, permission_key: str, org_id: uuid.UUID = None) -> bool:
         perm = (await self.db.execute(
             select(RpiwRolePermission).where(
                 RpiwRolePermission.role_code == role_code,
                 RpiwRolePermission.permission_key == permission_key,
-                RpiwRolePermission.is_active == True
+                RpiwRolePermission.is_active == True,
+                RpiwRolePermission.org_id == org_id
             )
         )).scalar_one_or_none()
         return perm is not None
 
     # ─── Workflow Management ──────────────────────────────────
 
-    async def get_role_workflows(self, role_code: str):
+    async def get_role_workflows(self, role_code: str, org_id: uuid.UUID = None):
         return (await self.db.execute(
-            select(RpiwRoleWorkflow).where(RpiwRoleWorkflow.role_code == role_code, RpiwRoleWorkflow.is_active == True)
+            select(RpiwRoleWorkflow).where(
+                RpiwRoleWorkflow.role_code == role_code, 
+                RpiwRoleWorkflow.is_active == True,
+                RpiwRoleWorkflow.org_id == org_id
+            )
             .order_by(RpiwRoleWorkflow.sort_order)
         )).scalars().all()
 
     # ─── Component Management ──────────────────────────────────
 
-    async def get_role_components(self, role_code: str):
+    async def get_role_components(self, role_code: str, org_id: uuid.UUID = None):
         return (await self.db.execute(
-            select(RpiwRoleComponent).where(RpiwRoleComponent.role_code == role_code, RpiwRoleComponent.is_active == True)
+            select(RpiwRoleComponent).where(
+                RpiwRoleComponent.role_code == role_code, 
+                RpiwRoleComponent.is_active == True,
+                RpiwRoleComponent.org_id == org_id
+            )
             .order_by(RpiwRoleComponent.sort_order)
         )).scalars().all()
 
     # ─── Session Management ──────────────────────────────────
 
-    async def create_session(self, user_id: str, role_code: str, department: str = None):
-        # Deactivate old sessions
+    async def create_session(self, user_id: str, role_code: str, department: str = None, org_id: uuid.UUID = None):
+        # Deactivate old sessions in same org
         await self.db.execute(
-            update(RpiwRoleSession).where(RpiwRoleSession.user_id == user_id).values(is_active=False)
+            update(RpiwRoleSession).where(
+                RpiwRoleSession.user_id == user_id,
+                RpiwRoleSession.org_id == org_id
+            ).values(is_active=False)
         )
-        session = RpiwRoleSession(user_id=user_id, role_code=role_code, department=department)
+        session = RpiwRoleSession(user_id=user_id, role_code=role_code, department=department, org_id=org_id)
         self.db.add(session)
         await self.db.flush()
         return session
 
-    async def get_active_session(self, user_id: str):
+    async def get_active_session(self, user_id: str, org_id: uuid.UUID = None):
         return (await self.db.execute(
-            select(RpiwRoleSession).where(RpiwRoleSession.user_id == user_id, RpiwRoleSession.is_active == True)
+            select(RpiwRoleSession).where(
+                RpiwRoleSession.user_id == user_id, 
+                RpiwRoleSession.is_active == True,
+                RpiwRoleSession.org_id == org_id
+            )
         )).scalar_one_or_none()
 
-    async def update_session_workspace(self, session_id: str, workspace: str):
-        session = (await self.db.execute(
-            select(RpiwRoleSession).where(RpiwRoleSession.id == session_id)
-        )).scalar_one_or_none()
+    async def update_session_workspace(self, session_id: str, workspace: str, org_id: uuid.UUID = None):
+        stmt = select(RpiwRoleSession).where(RpiwRoleSession.id == session_id)
+        if org_id:
+            stmt = stmt.where(RpiwRoleSession.org_id == org_id)
+        session = (await self.db.execute(stmt)).scalar_one_or_none()
         if session:
             session.active_workspace = workspace
             session.last_activity = datetime.now(timezone.utc)
@@ -194,24 +227,24 @@ class RPIWService:
 
     # ─── Workspace Configuration ──────────────────────────────────
 
-    async def get_workspace_config(self, role_code: str):
+    async def get_workspace_config(self, role_code: str, org_id: uuid.UUID = None):
         """Get full workspace configuration for a role (permissions + workflows + components)."""
-        await self.seed_role_defaults(role_code)
-        permissions = await self.get_role_permissions(role_code)
-        workflows = await self.get_role_workflows(role_code)
-        components = await self.get_role_components(role_code)
+        await self.seed_role_defaults(role_code, org_id=org_id)
+        permissions = await self.get_role_permissions(role_code, org_id=org_id)
+        workflows = await self.get_role_workflows(role_code, org_id=org_id)
+        components = await self.get_role_components(role_code, org_id=org_id)
         return {"permissions": permissions, "workflows": workflows, "components": components}
 
     # ─── Activity Logging ──────────────────────────────────
 
-    async def log_activity(self, data: dict):
-        log = RpiwRoleActivityLog(**data)
+    async def log_activity(self, data: dict, org_id: uuid.UUID = None):
+        log = RpiwRoleActivityLog(**data, org_id=org_id)
         self.db.add(log)
         await self.db.flush()
         return log
 
-    async def get_activity_logs(self, user_id: str = None, role_code: str = None, limit: int = 50):
-        q = select(RpiwRoleActivityLog).order_by(RpiwRoleActivityLog.performed_at.desc()).limit(limit)
+    async def get_activity_logs(self, user_id: str = None, role_code: str = None, limit: int = 50, org_id: uuid.UUID = None):
+        q = select(RpiwRoleActivityLog).where(RpiwRoleActivityLog.org_id == org_id).order_by(RpiwRoleActivityLog.performed_at.desc()).limit(limit)
         if user_id:
             q = q.where(RpiwRoleActivityLog.user_id == user_id)
         if role_code:

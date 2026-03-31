@@ -23,7 +23,8 @@ export const rcmApi = {
 
   // Bill Workflows
   initializeBill: (data: any) => api.post(`/rcm-billing/master?authorized_user_id=11111111-1111-1111-1111-111111111111`, data),
-  getBillInfo: (visitId: string) => api.get(`/rcm-billing/master/${visitId}`),
+  getBillInfo: (visitId: string, patientId?: string) => 
+    api.get(`/rcm-billing/master/${visitId}${patientId ? `?patient_id=${patientId}` : ''}`),
   
   // Appends
   addService: (billId: string, svc: any) => api.post(`/rcm-billing/master/${billId}/services`, svc),

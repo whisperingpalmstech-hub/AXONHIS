@@ -18,6 +18,7 @@ class PharmacySalesWorklist(Base):
     status = Column(String(50), nullable=False, default="Pending") # Pending, In Progress, Dispensed, Completed
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
     prescriptions = relationship("PharmacyPrescription", back_populates="worklist_item")
 
@@ -32,6 +33,7 @@ class PharmacyPrescription(Base):
     doctor_notes = Column(Text, nullable=True)
     is_non_formulary = Column(Boolean, default=False)
     substituted_for = Column(String(255), nullable=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
     worklist_item = relationship("PharmacySalesWorklist", back_populates="prescriptions")
 
@@ -48,6 +50,7 @@ class PharmacyDispensingRecord(Base):
     total_price = Column(Numeric(12, 2), nullable=False, default=0.0)
     dispensed_by = Column(UUID(as_uuid=True), nullable=True)
     dispensed_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     
     batches = relationship("PharmacyDispenseBatch", back_populates="dispensing_record", cascade="all, delete-orphan")
 

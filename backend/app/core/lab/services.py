@@ -10,6 +10,7 @@ from app.core.lab.models import (
     LabTest, LabOrder, LabSample, LabResult, LabValidation, LabProcessing,
     SampleStatus, LabOrderStatus, ResultFlag, ValidationStatus, ProcessingStatus,
 )
+from app.core.audit.models import AuditLog
 
 
 class LabService:
@@ -232,13 +233,26 @@ class LabService:
         )
         return (await self.db.execute(stmt)).scalar_one_or_none()
 
-    async def get_patient_results(self, patient_id: uuid.UUID) -> list[LabResult]:
+    async def get_patient_results(self, patient_id: uuid.UUID, user_id: uuid.UUID | None = None, org_id: uuid.UUID | None = None) -> list[LabResult]:
         stmt = (
             select(LabResult)
             .options(selectinload(LabResult.validation))
             .where(LabResult.patient_id == patient_id)
             .order_by(LabResult.entered_at.desc())
         )
+        
+        # HIPAA Point 8: Audit READ access
+        if org_id:
+            audit = AuditLog(
+                user_id=user_id,
+                org_id=org_id,
+                action="READ",
+                resource_type="LabResult",
+                resource_id=str(patient_id),
+                note="Accessed patient lab results history"
+            )
+            self.db.add(audit)
+
         return list((await self.db.execute(stmt)).scalars().all())
 
     async def get_results_for_order(self, order_id: uuid.UUID) -> list[LabResult]:

@@ -78,10 +78,10 @@ def _user_to_out(user) -> UserOut:
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def register(data: UserCreate, db: DBSession, user: CurrentUser) -> UserOut:
-    """Create a new user account (requires manage_users permission)."""
+    """Create a new user account (requires manage_users permission). Auto-inherits org_id from the creating admin."""
     try:
         service = AuthService(db)
-        new_user = await service.create_user(data)
+        new_user = await service.create_user(data, org_id=getattr(user, 'org_id', None))
         await EventService(db).emit(
             EventType.USER_CREATED,
             summary=f"User {new_user.full_name} ({new_user.email}) created",
@@ -234,11 +234,11 @@ async def create_role(data: RoleCreate, db: DBSession, user: CurrentUser) -> Rol
 
 @router.get("/users", response_model=UserListOut)
 async def list_users(
-    db: DBSession, _: CurrentUser,
+    db: DBSession, user: CurrentUser,
     skip: int = Query(0, ge=0), limit: int = Query(20, le=100),
 ) -> UserListOut:
     service = AuthService(db)
-    users, total = await service.list_users(skip=skip, limit=limit)
+    users, total = await service.list_users(skip=skip, limit=limit, org_id=getattr(user, 'org_id', None))
     return UserListOut(total=total, items=[_user_to_out(u) for u in users])
 
 

@@ -65,14 +65,15 @@ class AuthService:
 
     # ── User Management ───────────────────────────────────────────────────
 
-    async def create_user(self, data: UserCreate) -> User:
-        """Create a new user with optional role assignments."""
+    async def create_user(self, data: UserCreate, org_id: uuid.UUID | None = None) -> User:
+        """Create a new user with optional role assignments, scoped to org_id."""
         user = User(
             email=data.email,
             password_hash=hash_password(data.password),
             first_name=data.first_name,
             last_name=data.last_name,
             phone=data.phone,
+            org_id=org_id,
         )
         self.db.add(user)
         await self.db.flush()
@@ -106,15 +107,18 @@ class AuthService:
         )
         return result.scalar_one_or_none()
 
-    async def list_users(self, skip: int = 0, limit: int = 20) -> tuple[list[User], int]:
-        count = (await self.db.execute(select(func.count(User.id)))).scalar_one()
+    async def list_users(self, skip: int = 0, limit: int = 20, org_id: uuid.UUID | None = None) -> tuple[list[User], int]:
+        count_stmt = select(func.count(User.id))
+        list_stmt = select(User).options(
+            selectinload(User.user_roles).selectinload(UserRole.role)
+            .selectinload(Role.role_permissions).selectinload(RolePermission.permission)
+        )
+        if org_id:
+            count_stmt = count_stmt.where(User.org_id == org_id)
+            list_stmt = list_stmt.where(User.org_id == org_id)
+        count = (await self.db.execute(count_stmt)).scalar_one()
         result = await self.db.execute(
-            select(User)
-            .options(
-                selectinload(User.user_roles).selectinload(UserRole.role)
-                .selectinload(Role.role_permissions).selectinload(RolePermission.permission)
-            )
-            .offset(skip).limit(limit).order_by(User.created_at.desc())
+            list_stmt.offset(skip).limit(limit).order_by(User.created_at.desc())
         )
         return list(result.scalars().all()), count
 
@@ -189,6 +193,7 @@ class AuthService:
             {
                 "sub": str(user.id),
                 "email": user.email,
+                "org_id": str(user.org_id) if user.org_id else None,
                 "roles": roles,
                 "permissions": permissions,
                 "type": "access",

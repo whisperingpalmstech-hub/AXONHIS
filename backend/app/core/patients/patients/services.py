@@ -14,9 +14,17 @@ class DuplicateResult:
         self.patient = patient
         self.confidence_score = confidence_score
 
+from app.core.auth.models import User
+
 class PatientService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, user: User = None):
         self.db = db
+        self.user = user
+
+    def _apply_tenant_filter(self, stmt):
+        if self.user and getattr(self.user, 'org_id', None):
+            return stmt.where(Patient.org_id == self.user.org_id)
+        return stmt
 
     async def create_patient(self, data: PatientCreate) -> Patient:
         # Check for absolute matches on unique fields before insert (e.g. UUID)
@@ -30,7 +38,8 @@ class PatientService:
             date_of_birth=data.date_of_birth,
             gender=data.gender,
             primary_phone=data.primary_phone,
-            email=data.email
+            email=data.email,
+            org_id=self.user.org_id if self.user and getattr(self.user, 'org_id', None) else None
         )
         self.db.add(patient)
         await self.db.flush()
@@ -51,6 +60,7 @@ class PatientService:
             )
             .where(Patient.id == patient_id)
         )
+        stmt = self._apply_tenant_filter(stmt)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -75,6 +85,7 @@ class PatientService:
             .offset(skip)
             .limit(limit)
         )
+        stmt = self._apply_tenant_filter(stmt)
         result = await self.db.execute(stmt)
         return result.scalars().unique().all()
 
@@ -97,6 +108,7 @@ class PatientService:
                 Patient.primary_phone == (phone if phone else "xxx")
             )
         )
+        stmt = self._apply_tenant_filter(stmt)
         
         result = await self.db.execute(stmt)
         patients = result.scalars().all()
@@ -146,8 +158,9 @@ class PatientService:
                     PatientIdentifier.identifier_value.ilike(f"%{query}%")
                 )
             )
-            .limit(limit)
         )
+        stmt = self._apply_tenant_filter(stmt)
+        stmt = stmt.limit(limit)
         # Add loaders for output
         stmt = stmt.options(
             selectinload(Patient.identifiers),

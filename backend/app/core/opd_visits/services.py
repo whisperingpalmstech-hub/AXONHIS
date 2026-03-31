@@ -95,10 +95,21 @@ class VisitCreationService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create_visit(self, data: VisitCreate) -> VisitMaster:
+    async def create_visit(self, data: VisitCreate, org_id: uuid.UUID | None = None) -> VisitMaster:
+        # Create a real Encounter record for inter-module linking
+        from app.core.encounter_bridge import EncounterBridgeService
+        bridge = EncounterBridgeService(self.db)
+        encounter = await bridge.create_encounter_for_visit(
+            patient_id=data.patient_id,
+            org_id=org_id,
+            doctor_id=data.doctor_id,
+            chief_complaint=None,
+            encounter_type="OPD"
+        )
+        
         visit = VisitMaster(
             visit_id=_generate_visit_id(),
-            encounter_id=_generate_encounter_id(),
+            encounter_id=str(encounter.id),  # Link to real Encounter
             patient_id=data.patient_id,
             patient_uhid=data.patient_uhid,
             visit_type=data.visit_type,
@@ -115,18 +126,38 @@ class VisitCreationService:
             parent_visit_id=data.parent_visit_id,
             appointment_id=data.appointment_id,
             status=VisitStatus.created,
+            org_id=org_id
         )
         self.db.add(visit)
+        
+        # Phase 23 - Auto-initialize Billing via Bridge
+        try:
+            # We use doctor_id as a fallback for 'generated_by'
+            sys_admin_id = data.doctor_id or uuid.uuid4() 
+            await bridge.initialize_bill(
+                patient_id=data.patient_id,
+                visit_id=encounter.id,
+                generated_by=sys_admin_id,
+                org_id=org_id,
+                encounter_type="OPD"
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"[BRIDGE] Billing initialization failed: {e}")
+
         await self.db.commit()
         await self.db.refresh(visit)
         return visit
 
-    async def get_visit(self, visit_id: uuid.UUID) -> Optional[VisitMaster]:
-        r = await self.db.execute(select(VisitMaster).where(VisitMaster.id == visit_id))
+    async def get_visit(self, visit_id: uuid.UUID, org_id: uuid.UUID | None = None) -> Optional[VisitMaster]:
+        stmt = select(VisitMaster).where(VisitMaster.id == visit_id)
+        if org_id:
+            stmt = stmt.where(VisitMaster.org_id == org_id)
+        r = await self.db.execute(stmt)
         return r.scalar_one_or_none()
 
-    async def update_visit(self, visit_id: uuid.UUID, data: VisitUpdate) -> Optional[VisitMaster]:
-        visit = await self.get_visit(visit_id)
+    async def update_visit(self, visit_id: uuid.UUID, data: VisitUpdate, org_id: uuid.UUID | None = None) -> Optional[VisitMaster]:
+        visit = await self.get_visit(visit_id, org_id=org_id)
         if not visit:
             return None
         for k, v in data.model_dump(exclude_unset=True).items():
@@ -143,8 +174,11 @@ class VisitCreationService:
         visit_date: Optional[str] = None,
         department: Optional[str] = None,
         priority_tag: Optional[str] = None,
+        org_id: uuid.UUID | None = None,
     ) -> list[VisitMaster]:
         q = select(VisitMaster).order_by(VisitMaster.visit_date_time.desc())
+        if org_id:
+            q = q.where(VisitMaster.org_id == org_id)
         if patient_id:
             q = q.where(VisitMaster.patient_id == patient_id)
         if doctor_id:
@@ -161,7 +195,7 @@ class VisitCreationService:
         r = await self.db.execute(q.limit(200))
         return list(r.scalars().all())
 
-    async def get_todays_queue(self, doctor_id: uuid.UUID) -> list[VisitMaster]:
+    async def get_todays_queue(self, doctor_id: uuid.UUID, org_id: uuid.UUID | None = None) -> list[VisitMaster]:
         today = date.today()
         q = (select(VisitMaster)
              .where(VisitMaster.doctor_id == doctor_id)
@@ -172,6 +206,8 @@ class VisitCreationService:
                  VisitStatus.with_doctor,
              ]))
              .order_by(VisitMaster.visit_date_time))
+        if org_id:
+            q = q.where(VisitMaster.org_id == org_id)
         r = await self.db.execute(q)
         return list(r.scalars().all())
 
@@ -184,8 +220,14 @@ class ComplaintCaptureService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def capture_complaint(self, data: ComplaintCreate) -> VisitComplaint:
+    async def capture_complaint(self, data: ComplaintCreate, org_id: uuid.UUID | None = None) -> VisitComplaint:
         text = data.raw_complaint_text.lower().strip()
+
+        # Check visit ownership
+        svc = VisitCreationService(self.db)
+        visit = await svc.get_visit(data.visit_id, org_id=org_id)
+        if not visit:
+            raise ValueError("Visit not found in your organization")
 
         # Extract symptoms
         symptoms = []
@@ -227,7 +269,13 @@ class ComplaintCaptureService:
         await self.db.refresh(complaint)
         return complaint
 
-    async def get_complaints(self, visit_id: uuid.UUID) -> list[VisitComplaint]:
+    async def get_complaints(self, visit_id: uuid.UUID, org_id: uuid.UUID | None = None) -> list[VisitComplaint]:
+        # Check visit ownership
+        svc = VisitCreationService(self.db)
+        visit = await svc.get_visit(visit_id, org_id=org_id)
+        if not visit:
+            return []
+
         r = await self.db.execute(
             select(VisitComplaint).where(VisitComplaint.visit_id == visit_id)
         )
@@ -242,7 +290,13 @@ class ClassificationService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def classify_visit(self, data: ClassificationCreate) -> VisitClassification:
+    async def classify_visit(self, data: ClassificationCreate, org_id: uuid.UUID | None = None) -> VisitClassification:
+        # Check visit ownership
+        svc = VisitCreationService(self.db)
+        visit_obj = await svc.get_visit(data.visit_id, org_id=org_id)
+        if not visit_obj:
+            raise ValueError("Visit not found in your organization")
+
         # Get complaint data
         complaints = await self.db.execute(
             select(VisitComplaint).where(VisitComplaint.visit_id == data.visit_id)
@@ -315,13 +369,9 @@ class ClassificationService:
             ClassificationCategory.priority: PriorityTag.priority,
             ClassificationCategory.routine: PriorityTag.normal,
         }
-        visit = await self.db.execute(
-            select(VisitMaster).where(VisitMaster.id == data.visit_id)
-        )
-        v = visit.scalar_one_or_none()
-        if v:
-            v.priority_tag = priority_map.get(category, PriorityTag.normal)
-            v.status = VisitStatus.in_queue
+        
+        visit_obj.priority_tag = priority_map.get(category, PriorityTag.normal)
+        visit_obj.status = VisitStatus.in_queue
 
         await self.db.commit()
         await self.db.refresh(classification)
@@ -329,8 +379,14 @@ class ClassificationService:
 
     async def override_classification(
         self, visit_id: uuid.UUID, override: ClassificationOverride,
-        user_id: uuid.UUID
+        user_id: uuid.UUID, org_id: uuid.UUID | None = None
     ) -> Optional[VisitClassification]:
+        # Check visit ownership
+        svc = VisitCreationService(self.db)
+        visit = await svc.get_visit(visit_id, org_id=org_id)
+        if not visit:
+            return None
+
         r = await self.db.execute(
             select(VisitClassification).where(VisitClassification.visit_id == visit_id)
         )
@@ -345,7 +401,13 @@ class ClassificationService:
         await self.db.refresh(c)
         return c
 
-    async def get_classification(self, visit_id: uuid.UUID) -> Optional[VisitClassification]:
+    async def get_classification(self, visit_id: uuid.UUID, org_id: uuid.UUID | None = None) -> Optional[VisitClassification]:
+        # Check visit ownership
+        svc = VisitCreationService(self.db)
+        visit = await svc.get_visit(visit_id, org_id=org_id)
+        if not visit:
+            return None
+
         r = await self.db.execute(
             select(VisitClassification).where(VisitClassification.visit_id == visit_id)
         )
@@ -360,7 +422,13 @@ class DoctorRecommendationService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def recommend_doctor(self, visit_id: uuid.UUID) -> VisitDoctorRecommendation:
+    async def recommend_doctor(self, visit_id: uuid.UUID, org_id: uuid.UUID | None = None) -> VisitDoctorRecommendation:
+        # Check visit ownership
+        svc = VisitCreationService(self.db)
+        visit = await svc.get_visit(visit_id, org_id=org_id)
+        if not visit:
+            raise ValueError("Visit not found in your organization")
+
         # Get complaints
         complaints = await self.db.execute(
             select(VisitComplaint).where(VisitComplaint.visit_id == visit_id)
@@ -395,8 +463,14 @@ class DoctorRecommendationService:
         return rec
 
     async def select_doctor(
-        self, visit_id: uuid.UUID, update: DoctorSelectionUpdate
+        self, visit_id: uuid.UUID, update: DoctorSelectionUpdate, org_id: uuid.UUID | None = None
     ) -> Optional[VisitDoctorRecommendation]:
+        # Check visit ownership
+        svc = VisitCreationService(self.db)
+        visit_obj = await svc.get_visit(visit_id, org_id=org_id)
+        if not visit_obj:
+            return None
+
         r = await self.db.execute(
             select(VisitDoctorRecommendation).where(
                 VisitDoctorRecommendation.visit_id == visit_id
@@ -410,13 +484,8 @@ class DoctorRecommendationService:
         rec.selected_at = datetime.utcnow()
 
         # Update visit
-        visit = await self.db.execute(
-            select(VisitMaster).where(VisitMaster.id == visit_id)
-        )
-        v = visit.scalar_one_or_none()
-        if v:
-            v.doctor_id = update.selected_doctor_id
-            v.specialty = rec.recommended_specialty
+        visit_obj.doctor_id = update.selected_doctor_id
+        visit_obj.specialty = rec.recommended_specialty
 
         await self.db.commit()
         await self.db.refresh(rec)
@@ -431,21 +500,29 @@ class QuestionnaireService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create_template(self, data: QuestionnaireTemplateCreate) -> VisitQuestionnaireTemplate:
-        t = VisitQuestionnaireTemplate(**data.model_dump())
+    async def create_template(self, data: QuestionnaireTemplateCreate, org_id: uuid.UUID | None = None) -> VisitQuestionnaireTemplate:
+        t = VisitQuestionnaireTemplate(**data.model_dump(), org_id=org_id)
         self.db.add(t)
         await self.db.commit()
         await self.db.refresh(t)
         return t
 
-    async def list_templates(self, specialty: Optional[str] = None) -> list[VisitQuestionnaireTemplate]:
+    async def list_templates(self, specialty: Optional[str] = None, org_id: uuid.UUID | None = None) -> list[VisitQuestionnaireTemplate]:
         q = select(VisitQuestionnaireTemplate).where(VisitQuestionnaireTemplate.is_active == True)
+        if org_id:
+            q = q.where(VisitQuestionnaireTemplate.org_id == org_id)
         if specialty:
             q = q.where(VisitQuestionnaireTemplate.specialty == specialty)
         r = await self.db.execute(q)
         return list(r.scalars().all())
 
-    async def submit_response(self, data: QuestionnaireResponseCreate) -> VisitQuestionnaireResponse:
+    async def submit_response(self, data: QuestionnaireResponseCreate, org_id: uuid.UUID | None = None) -> VisitQuestionnaireResponse:
+        # Check visit ownership
+        svc = VisitCreationService(self.db)
+        visit = await svc.get_visit(data.visit_id, org_id=org_id)
+        if not visit:
+            raise ValueError("Visit not found in your organization")
+
         resp = VisitQuestionnaireResponse(
             visit_id=data.visit_id,
             template_id=data.template_id,
@@ -460,7 +537,13 @@ class QuestionnaireService:
         await self.db.refresh(resp)
         return resp
 
-    async def get_responses(self, visit_id: uuid.UUID) -> list[VisitQuestionnaireResponse]:
+    async def get_responses(self, visit_id: uuid.UUID, org_id: uuid.UUID = None) -> list[VisitQuestionnaireResponse]:
+        # Check visit ownership
+        svc = VisitCreationService(self.db)
+        visit = await svc.get_visit(visit_id, org_id=org_id)
+        if not visit:
+            return []
+
         r = await self.db.execute(
             select(VisitQuestionnaireResponse).where(
                 VisitQuestionnaireResponse.visit_id == visit_id
@@ -477,13 +560,11 @@ class ContextAggregationService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def aggregate_context(self, visit_id: uuid.UUID) -> VisitContextSnapshot:
-        visit_r = await self.db.execute(
-            select(VisitMaster).where(VisitMaster.id == visit_id)
-        )
-        visit = visit_r.scalar_one_or_none()
+    async def aggregate_context(self, visit_id: uuid.UUID, org_id: uuid.UUID | None = None) -> VisitContextSnapshot:
+        svc = VisitCreationService(self.db)
+        visit = await svc.get_visit(visit_id, org_id=org_id)
         if not visit:
-            raise ValueError("Visit not found")
+            raise ValueError("Visit not found in your organization")
 
         # Fetch previous visits for this patient
         prev = await self.db.execute(
@@ -539,7 +620,13 @@ class ContextAggregationService:
         await self.db.refresh(snapshot)
         return snapshot
 
-    async def get_context(self, visit_id: uuid.UUID) -> Optional[VisitContextSnapshot]:
+    async def get_context(self, visit_id: uuid.UUID, org_id: uuid.UUID | None = None) -> Optional[VisitContextSnapshot]:
+        # Check visit ownership
+        svc = VisitCreationService(self.db)
+        visit = await svc.get_visit(visit_id, org_id=org_id)
+        if not visit:
+            return None
+
         r = await self.db.execute(
             select(VisitContextSnapshot).where(VisitContextSnapshot.visit_id == visit_id)
         )
@@ -554,34 +641,37 @@ class MultiVisitRuleService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create_rule(self, data: MultiVisitRuleCreate) -> MultiVisitRule:
-        rule = MultiVisitRule(**data.model_dump())
+    async def create_rule(self, data: MultiVisitRuleCreate, org_id: uuid.UUID | None = None) -> MultiVisitRule:
+        rule = MultiVisitRule(**data.model_dump(), org_id=org_id)
         self.db.add(rule)
         await self.db.commit()
         await self.db.refresh(rule)
         return rule
 
-    async def list_rules(self) -> list[MultiVisitRule]:
-        r = await self.db.execute(
-            select(MultiVisitRule).order_by(MultiVisitRule.priority.desc())
-        )
+    async def list_rules(self, org_id: uuid.UUID | None = None) -> list[MultiVisitRule]:
+        stmt = select(MultiVisitRule).order_by(MultiVisitRule.priority.desc())
+        if org_id:
+            stmt = stmt.where(MultiVisitRule.org_id == org_id)
+        r = await self.db.execute(stmt)
         return list(r.scalars().all())
 
-    async def check_multi_visit(self, visit_id: uuid.UUID) -> dict:
-        visit_r = await self.db.execute(
-            select(VisitMaster).where(VisitMaster.id == visit_id)
-        )
-        visit = visit_r.scalar_one_or_none()
+    async def check_multi_visit(self, visit_id: uuid.UUID, org_id: uuid.UUID | None = None) -> dict:
+        svc = VisitCreationService(self.db)
+        visit = await svc.get_visit(visit_id, org_id=org_id)
         if not visit:
-            return {"action": "none", "reason": "Visit not found"}
+            return {"action": "none", "reason": "Visit not found in your organization"}
 
         today = date.today()
-        same_day = await self.db.execute(
+        stmt = (
             select(VisitMaster)
             .where(VisitMaster.patient_id == visit.patient_id)
             .where(func.date(VisitMaster.visit_date_time) == today)
             .where(VisitMaster.id != visit_id)
         )
+        if org_id:
+            stmt = stmt.where(VisitMaster.org_id == org_id)
+        
+        same_day = await self.db.execute(stmt)
         same_day_visits = list(same_day.scalars().all())
 
         if not same_day_visits:
@@ -612,9 +702,11 @@ class VisitAnalyticsService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def compute_daily(self, for_date: str, department: Optional[str] = None) -> VisitAnalyticsSnapshot:
+    async def compute_daily(self, for_date: str, department: Optional[str] = None, org_id: uuid.UUID | None = None) -> VisitAnalyticsSnapshot:
         d = date.fromisoformat(for_date)
         q = select(VisitMaster).where(func.date(VisitMaster.visit_date_time) == d)
+        if org_id:
+            q = q.where(VisitMaster.org_id == org_id)
         if department:
             q = q.where(VisitMaster.department == department)
         r = await self.db.execute(q)
@@ -657,7 +749,7 @@ class VisitAnalyticsService:
         await self.db.refresh(snapshot)
         return snapshot
 
-    async def get_dashboard_summary(self, from_date: str, to_date: str) -> VisitDashboardSummary:
+    async def get_dashboard_summary(self, from_date: str, to_date: str, org_id: uuid.UUID | None = None) -> VisitDashboardSummary:
         fd = date.fromisoformat(from_date)
         td = date.fromisoformat(to_date)
         q = select(VisitMaster).where(
@@ -666,6 +758,8 @@ class VisitAnalyticsService:
                 func.date(VisitMaster.visit_date_time) <= td,
             )
         )
+        if org_id:
+            q = q.where(VisitMaster.org_id == org_id)
         r = await self.db.execute(q)
         visits = list(r.scalars().all())
 

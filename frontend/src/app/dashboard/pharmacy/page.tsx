@@ -5,6 +5,7 @@ import {
   Package, AlertTriangle, TrendingDown, ClipboardList, ShieldAlert
 } from "lucide-react";
 import Link from "next/link";
+import { WorkflowPipeline } from "@/components/ui/WorkflowPipeline";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
 
@@ -77,6 +78,21 @@ export default function PharmacyDashboardPage() {
             Manage Inventory
           </Link>
         </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+        <WorkflowPipeline 
+          title="Pharmacy Dispensing Pipeline" 
+          colorScheme="violet"
+          steps={[
+            { label: "Prescription Received", status: "done" },
+            { label: "Pharmacist Verification", status: "active" },
+            { label: "Stock Allocation", status: "pending" },
+            { label: "Medication Dispensing", status: "pending" },
+            { label: "Inventory Deduction", status: "pending" },
+            { label: "Billing Entry", status: "pending" }
+          ]} 
+        />
       </div>
 
       {/* KPI Cards */}

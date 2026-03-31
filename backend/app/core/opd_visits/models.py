@@ -69,8 +69,8 @@ class VisitMaster(Base):
     __tablename__ = "visit_master"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    visit_id = Column(String(32), unique=True, nullable=False, index=True)
-    encounter_id = Column(String(32), unique=True, nullable=False, index=True)
+    visit_id = Column(String(64), unique=True, nullable=False, index=True)
+    encounter_id = Column(String(64), unique=True, nullable=False, index=True)
     patient_id = Column(UUID(as_uuid=True), nullable=False)
     patient_uhid = Column(String(50), nullable=True)
 
@@ -101,6 +101,7 @@ class VisitMaster(Base):
     created_by = Column(UUID(as_uuid=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True)
 
     __table_args__ = (
         Index("ix_visit_patient", "patient_id"),
@@ -212,6 +213,7 @@ class VisitQuestionnaireTemplate(Base):
 
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True)
 
     __table_args__ = (
         Index("ix_questionnaire_specialty", "specialty"),
@@ -317,6 +319,7 @@ class VisitAnalyticsSnapshot(Base):
     doctor_load_distribution = Column(JSON, default=dict)
 
     computed_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), index=True, nullable=True)
 
     __table_args__ = (
         Index("ix_visit_analytics_date", "analytics_date"),

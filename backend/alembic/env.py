@@ -19,6 +19,7 @@ from app.core.audit.models import AuditLog  # noqa: F401
 from app.core.files.models import File  # noqa: F401
 from app.core.notifications.models import Notification  # noqa: F401
 from app.core.config.models import Configuration  # noqa: F401
+from app.core.administration.tenants.models import OrganizationEntity, FacilitySite  # noqa: F401
 
 # Phase 2+ – Clinical
 from app.core.patients.patients.models import Patient  # noqa: F401
@@ -28,7 +29,7 @@ from app.core.patients.guardians.models import PatientGuardian  # noqa: F401
 from app.core.patients.insurance.models import PatientInsurance  # noqa: F401
 from app.core.patients.consents.models import PatientConsent  # noqa: F401
 from app.core.patients.appointments.models import Appointment  # noqa: F401
-from app.core.encounters.encounters.models import Encounter  # noqa: F401
+from app.core.encounters.models import Encounter  # noqa: F401
 from app.core.encounters.diagnoses.models import EncounterDiagnosis  # noqa: F401
 from app.core.encounters.notes.models import EncounterNote  # noqa: F401
 from app.core.encounters.timeline.models import EncounterTimeline  # noqa: F401

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Enum, Date
+from sqlalchemy import Column, String, DateTime, Enum, Date, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -20,7 +20,12 @@ class Patient(Base):
     primary_phone = Column(String(50), nullable=True)
     email = Column(String(100), nullable=True)
     status = Column(String(50), default="active", nullable=False)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     
+    # ABDM M2: Ayushman Bharat Health Account (ABHA)
+    abha_number_encrypted = Column(String(500), nullable=True, unique=True)
+    abha_address_encrypted = Column(String(500), nullable=True, unique=True)
+    abha_linked = Column(Boolean, default=False)
     # Fields from old model
     address = Column(String(255), nullable=True)
     blood_group = Column(String(10), nullable=True)

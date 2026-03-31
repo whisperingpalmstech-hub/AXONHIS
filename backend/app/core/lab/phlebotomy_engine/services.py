@@ -180,6 +180,8 @@ class SampleCollectionService:
             )
         )
 
+        await db.flush()
+
         # Audit
         await AuditService.log(db, "SAMPLE", sample.id, "SAMPLE_COLLECTED", collector_name, {
             "sample_id": sample_id,

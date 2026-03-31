@@ -32,6 +32,7 @@ class BillingMaster(Base):
     
     bill_number = Column(String(50), unique=True, nullable=False)
     status = Column(String(30), default=BillStatus.unpaid)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     
     gross_amount = Column(Numeric(10, 2), default=0.00)
     discount_amount = Column(Numeric(10, 2), default=0.00)
@@ -62,6 +63,7 @@ class BillingService(Base):
     status = Column(String(30), default="active") # active, cancelled
     
     added_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 class BillingPayment(Base):
     """Ledger of payments mapping to a master bill"""
@@ -76,6 +78,7 @@ class BillingPayment(Base):
     
     collected_by = Column(UUID(as_uuid=True), nullable=False)
     collected_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 class BillingDiscount(Base):
     """Rule-based discount / concession logs"""
@@ -90,6 +93,7 @@ class BillingDiscount(Base):
     
     authorized_by = Column(UUID(as_uuid=True), nullable=False)
     applied_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 class BillingRefund(Base):
     """Audit trail of refunded or reversed charges"""
@@ -105,6 +109,7 @@ class BillingRefund(Base):
     
     authorized_by = Column(UUID(as_uuid=True), nullable=False)
     refunded_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 class BillingPayer(Base):
     """Identifies the guarantor of a bill (Insurance Co., Employer, etc.)"""
@@ -119,6 +124,7 @@ class BillingPayer(Base):
     authorization_status = Column(String(50), nullable=True) # pending, approved, rejected
     
     corporate_employer = Column(String(255), nullable=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     
 class BillingTariff(Base):
     """Internal Reference Dictionary for Service Computations based on grade/sponsor."""
@@ -132,3 +138,4 @@ class BillingTariff(Base):
     
     price = Column(Numeric(10, 2), nullable=False)
     is_active = Column(Boolean, default=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)

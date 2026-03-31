@@ -18,6 +18,7 @@ class RpiwUserRole(Base):
     is_active = Column(Boolean, default=True)
     assigned_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     assigned_by = Column(String, nullable=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 
 class RpiwRolePermission(Base):
@@ -65,6 +66,7 @@ class RpiwRoleSession(Base):
     started_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     last_activity = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     is_active = Column(Boolean, default=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 
 class RpiwRoleComponent(Base):
@@ -80,6 +82,7 @@ class RpiwRoleComponent(Base):
     sort_order = Column(Integer, default=0)
     is_visible = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 
 class RpiwRoleActivityLog(Base):
@@ -97,3 +100,4 @@ class RpiwRoleActivityLog(Base):
     details = Column(JSON, default={})
     ip_address = Column(String, nullable=True)
     performed_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)

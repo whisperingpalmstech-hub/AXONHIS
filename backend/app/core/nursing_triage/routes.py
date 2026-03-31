@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
+from app.dependencies import CurrentUser
 
 from .models import NursingWorklist, TriageStatus, NursingTemplate
 from .schemas import (
@@ -25,13 +26,14 @@ router = APIRouter(prefix="/nursing-triage", tags=["OPD Nursing Triage"])
 # ── 1. Nursing Worklist Dashboard ───────────────────────────────────────────
 
 @router.get("/worklist", response_model=List[NursingWorklistOut])
-async def get_nursing_worklist(db: AsyncSession = Depends(get_db)):
+async def get_nursing_worklist(user: CurrentUser, db: AsyncSession = Depends(get_db)):
     # Returns the active list of patients waiting for triage
-    q = select(NursingWorklist).order_by(NursingWorklist.created_at.asc())
+    q = select(NursingWorklist).where(NursingWorklist.org_id == user.org_id).order_by(NursingWorklist.created_at.asc())
     return (await db.execute(q)).scalars().all()
 
 @router.post("/worklist", response_model=NursingWorklistOut)
-async def add_patient_to_nursing_queue(data: NursingWorklistCreate, db: AsyncSession = Depends(get_db)):
+async def add_patient_to_nursing_queue(data: NursingWorklistCreate, user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    data.org_id = user.org_id
     svc = NursingWorklistService(db)
     return await svc.add_to_worklist(data)
 
@@ -46,7 +48,8 @@ async def update_worklist_status(wl_id: uuid.UUID, status: str, db: AsyncSession
 # ── 2. Vitals Capture & Alert Engine ────────────────────────────────────────
 
 @router.post("/vitals", response_model=NursingVitalsOut)
-async def record_patient_vitals(data: NursingVitalsCreate, db: AsyncSession = Depends(get_db)):
+async def record_patient_vitals(data: NursingVitalsCreate, user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    data.org_id = user.org_id
     svc = VitalsCaptureEngine(db)
     # The record_vitals method automatically runs the AbnormalVitalsAlertEngine
     vitals = await svc.record_vitals(data)
@@ -59,14 +62,16 @@ async def get_nursing_templates(db: AsyncSession = Depends(get_db)):
     return (await db.execute(select(NursingTemplate).where(NursingTemplate.is_active==True))).scalars().all()
 
 @router.post("/assessments", response_model=NursingAssessmentOut)
-async def record_nursing_assessment(data: NursingAssessmentCreate, db: AsyncSession = Depends(get_db)):
+async def record_nursing_assessment(data: NursingAssessmentCreate, user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    data.org_id = user.org_id
     svc = AssessmentHistoryService(db)
     return await svc.save_assessment(data)
 
 # ── 4. Document Management ──────────────────────────────────────────────────
 
 @router.post("/documents", response_model=DocumentUploadOut)
-async def attach_nursing_document(data: DocumentUploadCreate, db: AsyncSession = Depends(get_db)):
+async def attach_nursing_document(data: DocumentUploadCreate, user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    data.org_id = user.org_id
     svc = DocumentUploadSystem(db)
     return await svc.register_document(data)
 

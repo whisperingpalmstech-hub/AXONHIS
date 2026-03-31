@@ -27,6 +27,7 @@ class TransfusionOrder(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     order_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True, index=True
     )  # Reference to Phase 4 order
@@ -66,6 +67,7 @@ class BloodAllocation(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     transfusion_order_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("transfusion_orders.id", ondelete="CASCADE"), nullable=False, index=True
     )

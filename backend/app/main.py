@@ -310,6 +310,10 @@ def create_app() -> FastAPI:
     from app.core.pharmacy.sales.routes import router as pharmacy_sales_router
     app.include_router(pharmacy_sales_router, prefix="/api/v1")
 
+    # Virtual Avatar Interaction Layer
+    from app.core.avatar.routes import router as avatar_router
+    app.include_router(avatar_router, prefix="/api/v1")
+
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])
     async def health_check() -> dict[str, str]:

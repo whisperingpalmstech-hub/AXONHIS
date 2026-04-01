@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect } from "react";
 import { 
   Pill, AlertCircle, Clock, CheckCircle2, Search, ArrowRight,
@@ -11,6 +13,7 @@ import { useRouter } from "next/navigation";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
 
 export default function PharmacyInventoryPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [medications, setMedications] = useState<any[]>([]);
   const [inventory, setInventory] = useState<any[]>([]);

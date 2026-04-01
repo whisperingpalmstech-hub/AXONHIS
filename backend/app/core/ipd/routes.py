@@ -43,7 +43,7 @@ from .schemas import (
     IpdDischargeNoteCreate, IpdDischargeNoteOut,
     IpdBillingMasterOut, IpdBillingServiceCreate, IpdBillingServiceOut,
     IpdBillingDepositCreate, IpdBillingDepositOut,
-    IpdInsuranceClaimCreate, IpdInsuranceClaimOut,
+    IpdInsuranceClaimCreate, IpdInsuranceClaimOut, IpdInsuranceClaimApprove,
     IpdPaymentCreate, IpdPaymentOut, IpdRefundCreate, IpdRefundOut,
     IpdVisitorCreate, IpdVisitorOut, IpdVisitorPassCreate, IpdVisitorPassOut,
     IpdVisitorLogCreate, IpdVisitorLogOut,
@@ -609,6 +609,19 @@ async def add_insurance_claim(
     claim = await ipd_service.add_insurance_claim(admission_number, data.model_dump(), "System Admin")
     if not claim:
         raise HTTPException(status_code=404, detail="Admission not found")
+    await db.commit()
+    return claim
+
+@router.post("/billing/insurance/{claim_id}/approve", response_model=IpdInsuranceClaimOut)
+async def approve_insurance_claim(
+    claim_id: UUID,
+    data: IpdInsuranceClaimApprove,
+    db: AsyncSession = Depends(get_db)
+):
+    ipd_service = IPDService(db)
+    claim = await ipd_service.process_insurance_claim(str(claim_id), data.model_dump(), "System Admin")
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
     await db.commit()
     return claim
 

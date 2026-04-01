@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "@/i18n";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
 
 /* ─── Role-based visibility map ──────────────────────── */
 type UserRole = "admin" | "doctor" | "nurse" | "pharmacist" | "lab_technician" | "front_desk" | "director" | "all";
@@ -57,6 +59,16 @@ const Icon = {
   pharmacy: (
     <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+    </svg>
+  ),
+  er: (
+    <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+    </svg>
+  ),
+  finance: (
+    <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18v-.008zm-12 0h.008v.008H6v-.008z" />
     </svg>
   ),
   admin: (
@@ -115,6 +127,15 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    section: "Emergency (ER)",
+    icon: Icon.er,
+    roles: ["doctor", "nurse", "front_desk", "admin", "director"],
+    children: [
+      { label: "Command Center", href: "/dashboard/er", badge: "ER" },
+      { label: "Operating Theatre", href: "/dashboard/ot", badge: "OT" },
+    ],
+  },
+  {
     section: "Inpatient (IPD)",
     icon: Icon.ipd,
     roles: ["doctor", "nurse", "front_desk", "admin", "director"],
@@ -168,17 +189,27 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    section: "Finance & Billing",
+    icon: Icon.finance,
+    roles: ["admin", "front_desk", "director"],
+    children: [
+      { label: "Billing Hub", href: "/dashboard/billing", badge: "HUB" },
+      { label: "Billing Masters", href: "/dashboard/billing-masters", badge: "CONFIG" },
+      { label: "RCM Billing", href: "/dashboard/rcm-billing", badge: "FINANCE" },
+    ],
+  },
+  {
     section: "Administration",
     icon: Icon.admin,
     roles: ["admin", "front_desk", "director"],
     children: [
       { label: "Organizations (SaaS)", href: "/dashboard/administration/organizations", badge: "MASTER" },
-      { label: "RCM Billing", href: "/dashboard/rcm-billing", badge: "FINANCE" },
       { label: "Users", href: "/dashboard/users", roles: ["admin", "director"] },
       { label: "System Settings", href: "/dashboard/settings", roles: ["admin"] },
       { label: "Core System", href: "/dashboard/system", roles: ["admin"] },
       { label: "Audit Logs", href: "/dashboard/audit", roles: ["admin", "director"] },
       { label: "Notifications", href: "/dashboard/notifications" },
+      { label: "Language Management", href: "/dashboard/admin/languages", badge: "i18n", roles: ["admin"] },
       { label: "Communication", href: "/communication" },
     ],
   },
@@ -225,11 +256,70 @@ function isItemVisible(item: { roles?: UserRole[] }, userRole: UserRole): boolea
 }
 
 /* ─── Sidebar Component ──────────────────────────── */
+// Label → i18n key mapping for sidebar navigation
+const LABEL_I18N_MAP: Record<string, string> = {
+  "Dashboard": "nav.dashboard", "Patients": "nav.patients", "Patient Management": "nav.patients", "Patient Registry": "nav.patientRegistry",
+  "Encounters": "nav.encounters", "Scheduling": "nav.scheduling", "Clinical Workspace": "nav.clinicalOps",
+  "Doctor Desk": "nav.doctorDesk", "Outpatient (OPD)": "nav.opdVisits", "OPD Visits": "nav.opdVisits",
+  "Smart Queue": "nav.smartQueue", "Nursing Triage": "nav.nursingTriage",
+  "Emergency (ER)": "nav.emergencyRoom", "Command Center": "nav.emergencyRoom",
+  "Operating Theatre": "nav.operationTheater",
+  "Inpatient (IPD)": "nav.ipdManagement", "Admissions": "nav.ipdAdmissions",
+  "Ward Board": "nav.wardsAndBeds", "Nursing Station": "nav.ipdNursing",
+  "Nursing Vitals": "nav.ipdNursing", "Doctor Rounds": "nav.ipdDoctorDesk",
+  "IPD Billing": "nav.ipdBilling", "Bed Transfers": "nav.ipdTransfers",
+  "Smart Discharge": "nav.ipdDischarge",
+  "Diagnostics": "nav.laboratory", "LIS Orders": "nav.lisOrders",
+  "Lab Processing": "nav.labProcessing", "Validation Desk": "nav.resultValidation",
+  "Laboratory": "nav.laboratory", "Radiology": "nav.radiology", "Blood Bank": "nav.bloodBank",
+  "Pharmacy": "nav.pharmacy", "Pharmacy Core": "nav.pharmacyCore",
+  "Walk-in Sales": "nav.pharmacySales", "Billing & Compliance": "nav.pharmacyBilling",
+  "Finance & Billing": "nav.billing", "Billing Hub": "nav.billing",
+  "Billing Masters": "nav.billingMasters", "RCM Billing": "nav.rcmBilling",
+  "Administration": "nav.administration", "Users": "nav.users",
+  "System Settings": "nav.systemSettings", "Audit Logs": "nav.audit",
+  "Notifications": "common.notifications",
+  "Analytics & AI": "nav.analytics", "Analytics": "nav.analytics",
+  "Language Management": "admin.languageManagement",
+
+  "RPIW Workspace": "nav.rpiwWorkspace",
+  "Tasks": "nav.tasks",
+  "Orders": "nav.clinicalOrders",
+  "Visitor & MLC": "nav.visitorMlc",
+  "Sample Receiving": "nav.sampleReceiving",
+  "Analyzer Hub": "nav.analyzerHub",
+  "Report Handover": "nav.reportHandover",
+  "Advanced Diagnostics": "nav.advancedDiagnostics",
+  "Extended Lab Services": "nav.extendedLab",
+  "Rx Worklist": "nav.rxWorklist",
+  "IP Medication Issue": "nav.ipMedicationIssue",
+  "Returns": "nav.pharmacyReturns",
+  "IP Returns": "nav.ipPharmacyReturns",
+  "Narcotics Vault": "nav.narcoticsVault",
+  "Inventory Intelligence": "nav.inventoryIntelligence",
+  "Organizations (SaaS)": "nav.organizations",
+  "Core System": "nav.coreSystem",
+  "Communication": "nav.communication",
+  "BI Intelligence": "nav.biIntelligence",
+  "AI Platform": "nav.aiPlatform",
+};
+
 export function Sidebar() {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [userRole, setUserRole] = useState<UserRole>("admin");
   const [collapsed, setCollapsed] = useState(false);
+
+  // Translate a label using the mapping, fallback to original English
+  const tLabel = (label: string) => {
+    const key = LABEL_I18N_MAP[label];
+    if (key) {
+      const translated = t(key);
+      return translated !== key ? translated : label;
+    }
+    return label;
+  };
 
   // Determine role on mount
   useEffect(() => {
@@ -290,15 +380,24 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* ─── Role Badge ─── */}
+      {/* ─── Role Badge & Language ─── */}
       {!collapsed && (
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-2 flex flex-col gap-2">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-700/50 border border-slate-600/30">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
               {userRole.replace("_", " ")}
             </span>
           </div>
+          <div className="flex justify-between items-center px-1">
+            <span className="text-[10px] text-slate-500 font-medium">LANGUAGE</span>
+            <LanguageSelector />
+          </div>
+        </div>
+      )}
+      {collapsed && (
+        <div className="px-2 pb-2 flex justify-center">
+            <LanguageSelector />
         </div>
       )}
 
@@ -315,10 +414,10 @@ export function Sidebar() {
                 <Link
                   href={group.href}
                   className={`sidebar-group-header ${isActive ? "sidebar-group-active" : ""}`}
-                  title={collapsed ? group.section : undefined}
+                  title={collapsed ? tLabel(group.section) : undefined}
                 >
                   <span className="sidebar-group-icon">{group.icon}</span>
-                  {!collapsed && <span className="sidebar-group-label">{group.section}</span>}
+                  {!collapsed && <span className="sidebar-group-label">{tLabel(group.section)}</span>}
                 </Link>
               </div>
             );
@@ -337,12 +436,12 @@ export function Sidebar() {
               <button
                 onClick={() => toggleSection(group.section)}
                 className={`sidebar-group-header w-full ${hasActiveChild ? "sidebar-group-active" : ""}`}
-                title={collapsed ? group.section : undefined}
+                title={collapsed ? tLabel(group.section) : undefined}
               >
                 <span className="sidebar-group-icon">{group.icon}</span>
                 {!collapsed && (
                   <>
-                    <span className="sidebar-group-label">{group.section}</span>
+                    <span className="sidebar-group-label">{tLabel(group.section)}</span>
                     <span className={`ml-auto transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>
                       {Icon.chevron}
                     </span>
@@ -362,7 +461,7 @@ export function Sidebar() {
                         className={`sidebar-child-link ${isActive ? "sidebar-child-active" : ""}`}
                       >
                         <span className={`sidebar-child-dot ${isActive ? "bg-blue-400" : "bg-slate-600"}`}></span>
-                        <span className="flex-1 truncate">{child.label}</span>
+                        <span className="flex-1 truncate">{tLabel(child.label)}</span>
                         {child.badge && (
                           <span className="sidebar-badge">{child.badge}</span>
                         )}
@@ -377,17 +476,21 @@ export function Sidebar() {
       </nav>
 
       {/* ─── Footer ─── */}
-      <div className="sidebar-footer-enterprise">
+      <div className="sidebar-footer-enterprise border-t border-slate-800/50 mt-auto pt-4 flex flex-col gap-4">
         {!collapsed ? (
           <>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span className="text-[11px] text-slate-500">System Online</span>
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span className="text-[11px] text-slate-500">{tLabel("System Online") || "System Online"}</span>
+              </div>
+              <p className="text-[10px] text-slate-600">v1.0.0 — Enterprise Clinical Platform</p>
             </div>
-            <p className="text-[10px] text-slate-600">v1.0.0 — Enterprise Clinical Platform</p>
           </>
         ) : (
-          <span className="w-2 h-2 rounded-full bg-emerald-400 mx-auto block"></span>
+          <div className="flex flex-col gap-4 items-center">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 block"></span>
+          </div>
         )}
       </div>
     </aside>

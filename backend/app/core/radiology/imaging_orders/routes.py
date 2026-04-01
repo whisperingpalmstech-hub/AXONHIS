@@ -14,3 +14,7 @@ async def create_radiology_order(data: ImagingOrderCreate, db: DBSession, user: 
 @router.get("/orders", response_model=List[ImagingOrderOut])
 async def list_radiology_orders(db: DBSession, user: CurrentUser, skip: int = 0, limit: int = 100):
     return await ImagingOrderService(db).list_orders(skip, limit)
+
+@router.put("/orders/{order_id}/status", response_model=ImagingOrderOut)
+async def update_radiology_order_status(order_id: uuid.UUID, status: str, db: DBSession, user: CurrentUser):
+    return await ImagingOrderService(db).update_order_status(order_id, status)

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -22,6 +24,7 @@ interface Bill {
 }
 
 export default function PharmacyBillingComplianceEngine() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("Billing & Settlements");
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "@/i18n";
 import { TopNav } from "@/components/ui/TopNav";
 import Link from "next/link";
 import {
@@ -66,6 +67,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [systemStatus, setSystemStatus] = useState<any>(null);
   const [userRole, setUserRole] = useState("admin");
+  const { t } = useTranslation();
 
   // Get user role on mount
   useEffect(() => {
@@ -198,40 +200,40 @@ export default function DashboardPage() {
 
   const STAT_CARDS = [
     {
-      label: "Total Patients",
+      label: t("dashboard.totalPatients"),
       value: stats.totalPatients,
       color: "bg-blue-50 border-blue-100",
       iconColor: "text-blue-600",
       icon: Users,
       href: "/dashboard/patients",
-      sub: "Registered patients",
+      sub: t("dashboard.Registeredpatients"),
       subColor: "text-blue-500",
       roles: ["admin", "doctor", "nurse", "front_desk", "director"],
     },
     {
-      label: "Active Encounters",
+      label: t("dashboard.activeEncounters"),
       value: stats.activeEncounters,
       color: "bg-emerald-50 border-emerald-100",
       iconColor: "text-emerald-600",
       icon: Stethoscope,
       href: "/dashboard/encounters",
-      sub: "In progress & scheduled",
+      sub: t("dashboard.Inprogress&scheduled"),
       subColor: "text-emerald-500",
       roles: ["admin", "doctor", "nurse", "front_desk", "director"],
     },
     {
-      label: "Pending Tasks",
+      label: t("dashboard.pendingTasks"),
       value: stats.pendingTasks,
       color: "bg-amber-50 border-amber-100",
       iconColor: "text-amber-600",
       icon: ClipboardList,
       href: "/dashboard/tasks",
-      sub: "Awaiting execution",
+      sub: t("dashboard.Awaitingexecution"),
       subColor: "text-amber-500",
       roles: ["admin", "doctor", "nurse", "director"],
     },
     {
-      label: "Low Stock Alerts",
+      label: t("dashboard.lowStock"),
       value: stats.lowStockAlerts,
       color:
         stats.lowStockAlerts > 0
@@ -240,23 +242,23 @@ export default function DashboardPage() {
       iconColor: stats.lowStockAlerts > 0 ? "text-rose-600" : "text-slate-400",
       icon: TrendingDown,
       href: "/dashboard/pharmacy/inventory",
-      sub: "Items below threshold",
+      sub: t("dashboard.Itemsbelowthreshold"),
       subColor: stats.lowStockAlerts > 0 ? "text-rose-500" : "text-slate-400",
       roles: ["admin", "pharmacist", "director"],
     },
     {
-      label: "Pending Rx",
+      label: t("dashboard.pendingRx"),
       value: stats.pendingPrescriptions,
       color: "bg-violet-50 border-violet-100",
       iconColor: "text-violet-600",
       icon: Pill,
       href: "/dashboard/pharmacy",
-      sub: "Awaiting dispensing",
+      sub: t("dashboard.Awaitingdispensing"),
       subColor: "text-violet-500",
       roles: ["admin", "pharmacist", "doctor", "nurse", "director"],
     },
     {
-      label: "Near Expiry",
+      label: t("dashboard.nearExpiry"),
       value: stats.nearExpiryBatches,
       color:
         stats.nearExpiryBatches > 0
@@ -266,24 +268,24 @@ export default function DashboardPage() {
         stats.nearExpiryBatches > 0 ? "text-orange-600" : "text-slate-400",
       icon: AlertTriangle,
       href: "/dashboard/pharmacy/inventory",
-      sub: "Expiring in 60 days",
+      sub: t("dashboard.Expiringin60days"),
       subColor:
         stats.nearExpiryBatches > 0 ? "text-orange-500" : "text-slate-400",
       roles: ["admin", "pharmacist", "director"],
     },
     {
-      label: "Lab Samples",
+      label: t("dashboard.labSamples"),
       value: stats.pendingSamples,
       color: "bg-cyan-50 border-cyan-100",
       iconColor: "text-cyan-600",
       icon: TestTubes,
       href: "/dashboard/lab",
-      sub: "Pending processing",
+      sub: t("dashboard.Pendingprocessing"),
       subColor: "text-cyan-500",
       roles: ["admin", "doctor", "lab_technician", "nurse", "director"],
     },
     {
-      label: "Invoices",
+      label: t("dashboard.invoices"),
       value: stats.totalInvoices,
       color: "bg-indigo-50 border-indigo-100",
       iconColor: "text-indigo-600",
@@ -349,12 +351,12 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div>
-        <TopNav title="Dashboard" />
+        <TopNav title={t("common.dashboard")} />
         <div className="flex h-[80vh] items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-[var(--accent-primary)]" />
             <p className="text-sm text-[var(--text-secondary)]">
-              Loading dashboard data...
+              {t("common.loading")}
             </p>
           </div>
         </div>
@@ -364,7 +366,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <TopNav title="Dashboard" />
+      <TopNav title={t("common.dashboard")} />
 
       <div className="p-6 space-y-6">
         {/* KPI Stats Grid */}
@@ -424,17 +426,17 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
               <h3 className="font-bold text-slate-800 text-lg">
-                Quick Navigation
+                {t("dashboard.quickNav")}
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Direct access to core modules
+                {t("dashboard.quickNavDesc")}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 divide-y md:divide-y-0 text-left">
               {[
                 {
-                  label: "Patient Registry",
-                  desc: "Register & search patients",
+                  label: t("nav.patientRegistry"),
+                  desc: t("dashboard.Register&searchpatie"),
                   href: "/dashboard/patients",
                   icon: Users,
                   color: "text-blue-600",
@@ -442,8 +444,8 @@ export default function DashboardPage() {
                   roles: ["admin", "doctor", "nurse", "front_desk", "director"],
                 },
                 {
-                  label: "Encounters",
-                  desc: "Manage clinical visits & consultations",
+                  label: t("nav.encounters"),
+                  desc: t("dashboard.Manageclinicalvisits"),
                   href: "/dashboard/encounters",
                   icon: Stethoscope,
                   color: "text-emerald-600",
@@ -451,8 +453,8 @@ export default function DashboardPage() {
                   roles: ["admin", "doctor", "nurse", "front_desk", "director"],
                 },
                 {
-                  label: "Order Management",
-                  desc: "Lab tests, medications & procedures",
+                  label: t("dashboard.OrderManagement"),
+                  desc: t("dashboard.Labtests,medications"),
                   href: "/dashboard/orders",
                   icon: ClipboardList,
                   color: "text-violet-600",
@@ -460,8 +462,8 @@ export default function DashboardPage() {
                   roles: ["admin", "doctor", "nurse", "director"],
                 },
                 {
-                  label: "Task Queue",
-                  desc: "Clinical workflows & nursing tasks",
+                  label: t("dashboard.TaskQueue"),
+                  desc: t("dashboard.Clinicalworkflows&nu"),
                   href: "/dashboard/tasks",
                   icon: Activity,
                   color: "text-amber-600",
@@ -469,8 +471,8 @@ export default function DashboardPage() {
                   roles: ["admin", "doctor", "nurse", "director"],
                 },
                 {
-                  label: "Laboratory",
-                  desc: "Test catalog, samples & results",
+                  label: t("nav.laboratory"),
+                  desc: t("dashboard.Testcatalog,samples&"),
                   href: "/dashboard/lab",
                   icon: TestTubes,
                   color: "text-cyan-600",

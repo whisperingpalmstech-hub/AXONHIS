@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   CheckCircle2, XCircle, AlertCircle, RefreshCw, Shield, Bell, Clock,
@@ -23,6 +25,7 @@ const priorityColors: Record<string, string> = {
 };
 
 export default function ResultValidationPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabTypes>("worklist");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -130,14 +133,14 @@ export default function ResultValidationPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <TopNav title="LIS Result Validation & Approval Engine" />
+      <TopNav title={t("resultValidation.title")} />
       <div className="flex-1 p-6 max-w-[1400px] mx-auto w-full space-y-5">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
            <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Validation Command Center</h1>
-              <p className="text-slate-400 font-bold uppercase tracking-[0.15em] text-[10px] mt-1">Multi-Level Clinical Approval Workflow</p>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t("resultValidation.title")}</h1>
+              <p className="text-slate-400 font-bold uppercase tracking-[0.15em] text-[10px] mt-1">{t("resultValidation.subtitle")}</p>
            </div>
            <div className="flex items-center gap-3">
               <div className="flex flex-col items-end text-right px-4 py-1.5 border-r border-slate-200">

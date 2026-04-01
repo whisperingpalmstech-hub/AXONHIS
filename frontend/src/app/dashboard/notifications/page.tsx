@@ -1,8 +1,11 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useEffect, useState } from "react";
 import { Bell, CheckCircle, Info, AlertTriangle } from "lucide-react";
 
 export default function NotificationsPage() {
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -66,28 +69,28 @@ export default function NotificationsPage() {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
             <Bell className="text-slate-700" size={32} />
-             Notifications
+             {t("notifications.title")}
           </h1>
-          <p className="mt-2 text-slate-500">Stay updated with critical platform alerts and assignments.</p>
+          <p className="mt-2 text-slate-500">{t("notifications.subtitle")}</p>
         </div>
         <button 
           onClick={markAllRead} 
           className="bg-slate-900 text-white px-5 py-2.5 rounded-lg shadow-md font-medium hover:bg-slate-800 transition-colors text-sm"
         >
-          Mark all as read
+          {t("notifications.markAllRead")}
         </button>
       </div>
 
       <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden min-h-[400px]">
         {loading ? (
-          <div className="p-12 text-center text-slate-500">Loading your alerts...</div>
+          <div className="p-12 text-center text-slate-500">{t("notifications.loading")}</div>
         ) : error ? (
           <div className="p-12 text-center text-rose-500 bg-rose-50 m-4 rounded-xl border border-rose-200">{error}</div>
         ) : notifications.length === 0 ? (
           <div className="p-20 text-center flex flex-col items-center">
             <CheckCircle className="text-emerald-400 mb-6" size={64} />
-            <p className="text-2xl font-bold text-slate-900">You're all caught up!</p>
-            <p className="text-slate-500 mt-2">No new notifications to show right now.</p>
+            <p className="text-2xl font-bold text-slate-900">{t("notifications.noNotifications")}</p>
+            <p className="text-slate-500 mt-2">{t("common.noData")}</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -108,7 +111,7 @@ export default function NotificationsPage() {
                 </div>
                 {!n.read_at && (
                   <button onClick={() => markRead(n.id)} className="flex-shrink-0 text-sm font-bold text-blue-600 hover:text-blue-800 bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
-                    Mark Read
+                    {t("notifications.markAsRead")}
                   </button>
                 )}
               </div>

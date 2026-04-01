@@ -1,0 +1,427 @@
+BILLING APPLICATION FUNCTIONALITY
+Billing Module functionalities:
+Billing application will have four types
+Out Patient Billing
+In patient Billing 
+Emergency Room billing 
+Daycare Billing 
+ 
+Billing Masters 
+Service Group Master
+Service Master 
+Patient category Master
+Payment Entitlement Master 
+Mode of Payments Master 
+ Currency Master 
+Currency denomination Master 
+Discount Reason Master 
+Price Master 
+Tariff Master (multiple tariffs derived from Base tariff)
+Package Master 
+Contract Master 
+Common features to be available in all billing functionalities 
+Privileged based access to billing module 
+Standard roles available in billing module 
+Hospital Administrator / CFO 
+OPD Billing Manager
+IPD Billing Manager 
+OPD Front desk manager 
+Admission Desk manager
+OPD Billing executives 
+IPD Billing executives
+Daycare Billing executive 
+ER Billing Executive 
+Accounts manager 
+Back Office Executive 
+Data to be captured for audit logs 
+Organization ID
+Location ID 
+Date and Time in milli seconds 
+Created by 
+Updated by 
+User details 
+Machine Mac address 
+Audit reports to be available for all transactions 
+No two users should be able to open same patient’s bill 
+Handle Concurrency at all levels 
+Multi-Currency option. Define default currency with to take payments in multiple currency.  
+Base Rate for the service 
+System to have facility to define base rate for all types of services. 
+System to have facility to change base rate in terms of percentage / Amount for service group or specific service with validity period (Start date and end date)
+Variable pricing 
+System to have facility to define rates based on below variables 
+Patient category 
+National 
+Foreign National 
+Below Poverty Line 
+Patient Type 
+Employee 
+NOK of Employee
+Visit Type
+OPD visit 
+IPD Visit 
+ER Visit 
+Daycare visit 
+Billing Bed category 
+Applicable in case of in patients 
+Payment Entitlement
+Self-Pay 
+ Insurance 
+Corporate 
+Stat charges 
+In case of Inpatients, if service is ordered and rendered after office hours then patient will be charged extra in terms of percentage over standard billing
+How to derive pricing
+Outpatient Visit
+In patient Visit
+ER Visit
+Daycare Visit
+Pick up service to be Billed
+Pick up service to be Billed
+Pick up service to be Billed
+Pick up service to be Billed
+Pick up base price for the service
+Pick up patient’s Category
+Pick up patient’s Category
+Pick up patient’s Category
+Pick up patient category like National / Foreigner etc. 
+Pick up patient’s Bed Type
+Pick up patient’s Bed Type
+Pick up patient’s Bed Type
+Check patient’s Payment Entitlement
+Pick up patient’s Payment Entitlement
+Pick up patient’s Payment Entitlement
+Pick up patient’s Payment Entitlement
+Pick up price based on patient’s category and Payment Entitlement
+Check when service was ordered. Normal / After office hours
+Check when service was ordered. Normal / After office hours
+Pick up base price for the service
+In case of package Billing consider package Price as the base price and derive amount based on patient’s Category and Payment Entitlement
+Pick up base price for the service
+Pick up base price for the service
+Derive charges based on patient category- patient’s bed type- patient’s payment entitlement
+
+Derive charges based on patient category- patient’s bed type- patient’s payment entitlement- Time when service was ordered
+Derive charges based on patient category- patient’s bed type- patient’s payment entitlement- Time when service was ordered
+In case Package is to be applied to the patient, pick up Base package price and derive package price based on patient’s category- bed type-patient’s payment entitlement.
+Services which are not covered as part of package, apply rule for individual service
+
+In case Package is to be applied to the patient, pick up Base package price and derive package price based on patient’s category- bed type-patient’s payment entitlement.
+Services which are not covered as part of package, apply rule for individual service
+Material Billing should happen as per Price defined in the Material Master. No variations based on Patient’s category etc.
+Material Billing should happen as per Price defined in the Material Master. No variations based on Patient’s category etc.
+
+Material Billing should happen as per Price defined in the Material Master. No variations based on Patient’s category etc.
+
+
+
+
+Rate validity 
+System to have facility to define Start date and end date for the price. Rate will be applicable between start date and end date. Any price revision in same period then system to pick up latest updated rate. 
+Validity period of derived rates has to be less than that of base rate. 
+Various stages of Bills
+Partial Payment 
+Application should give an alert in case user is collecting partial payment.
+Facility to capture reason from drop down for partial payment collection.
+Status of any bill for which amount is collected partially will be “On-Hold”. With bill on hold patient should be able to avail all services.
+In case patient’s In- patient / OPD / Daycare / ER bill is on hold, whenever patient comes next time application should alert user about bills on Hold and amount patient must pay.
+Application should have facility to collect money multiple number of times using any mode of payment.
+Application should have the facility to collect the amount in multi payment mode at the time of payment collection.
+On-Hold Bill
+If the bill is having part payment, then system should automatically make the bill to On-hold
+When there is a cancellation, the closed bill should be updated with an on-hold status and the user should be able to do refund from this bill for the amount of cancelled service
+When there is a refund, the bill should be settled with on-hold status. Once refund is completed, the bill status should be changed to “Closed”.
+Multiple refunds should be possible from an on-hold bill till the refund amount is completely exhausted
+Provision to define with reason for which bill is put on hold
+Closure of On-hold bill using “Wave off” option or any other option available to settle the Bill.
+In case of OP Bill, in case any service is cancelled, application should reverse Bill status from “Settled” to “On-Hold” so that refund can be done.
+Settled Bill
+Bill can be settled only when complete payment is made
+Facility to select services for which bill is to be generated and payment can be collected
+Settled bill status can change to “On-Hold” when service in the bill is cancelled
+Interim Bill
+Once bill generated for any visit type, application should open next Interim Bill for the patient. Even though the bill status is “On -Hold” application should generate Next Interim Bill so that services ordered can flow to the Interim Bill.
+Services ordered by the doctor during his OP consultation, should flow to patient’s Interim Bill which user can select all or partial and generates next Bill
+In case of OP billing where user has option to select services for billing from services ordered by the doctor, once bill is generated for the selected services remaining services should automatically flow to next Interim Bill.
+In case of In-patient, Daycare and ER visit services which are rendered to the patient should flow to the interim bill.
+Application should have provision to print Interim bill for In- patient which can be from 1st Day of Admission till date or over a period.
+In case user selects date range, application should display bill number of services which are rendered prior to the start date as a consolidated amount and from the Start Date should display date wise. 
+Cancellation Bill
+In case user wants to edit settled bill, system should first cancel previous bill then give facility to edit bill (addition / deletion of services)
+System to keep track of cancelled bill.
+Intermediate Bill
+Application should have facility to select all types of services which has flown to patient’s interim bill and generate Intermediate bill for the patient. 
+Intermediate bill generated will be considered as Partial Final Bill, which means against patient’s one In-patient encounter there will be more than one Intermediate Bill. 
+Once Intermediate bill is generated, services which are selected for generating the bill will be removed from patient’s Interim Bill. 
+Application should have provision to display details Intermediate Bill generated in Patient’s running Interim Bill.
+Unless and until all services in patient’s Interim bill are settled, application should not open new Interim bill for the patient and no financial clearance will be done.
+Once Intermediate Bill generated, no user should be able to edit Bill.
+Application should have the facility to create intermediate bill for admitted patient.
+If patient will stay longer time in the hospital, and hospital wants to settled his bill in between his stays in the hospital till date then application should have the facility to settled his bill till date without discharge. 
+Intermediate bill also one kind of final bill only the difference is that we will create Intermediate bill without patient discharge.
+Once intermediate bill will be created against in patient then all the charges which convert in to the intermediate bill is removed from the patient open charge list.
+Remaining charges after the intermediate will keep on adding in the patient bill against the same encounter.
+
+Bill Number 
+System should assign Unique Bill number based on bill type mentioned above which should be consecutive number. 
+System should never skip any number 
+Taxation 
+System to have facility to define Tax master with tax percentage and validity end date 
+Facility to define tax applicability for a service / service group 
+Facility to define applicable tax if tax is applicable 
+Package creation 
+Various types of packages required as part of billing application 
+Visit based packages 
+OPD packages 
+IPD Packages 
+In these packages Room / ICU stay will be included 
+Daycare packages 
+Gender based packages 
+Male 
+Female 
+Common 
+Billing Bed category 
+In case of In patient, number of days of stay in specific Billing bed category can be defined, For example Three days of Private room etc. 
+System to alert user if patient is getting transferred to Billing bed which is higher than defined bed. For example, Super Deluxe room. If patient is transferred to higher billing bed category, then differential price to be charged over and above package price.
+Packages for Corporates 
+Facility to create packages for Specific Corporate / Insurance company
+Common functionalities in Packages 
+System to calculate Package Cost (addition of service rates and average moving price of pharmacy items).
+Offer discount over Package cost and derive package Price. patient will be billed based on package price 
+Calculate patient wise package profit 
+Copy one package and do modifications for creating another package 
+Package versioning. 
+Facility to Edit existing package and save as next version
+Types of services which can be part of package 
+Following types of services can be part of packages 
+Hospital Services 
+Registration charges
+Nursing charges 
+Administration charges 
+Consultation fees (OPD packages)
+Primary Consultation 
+Follow up consultation 
+Free Consultations 
+Pathology services
+Individual Services 
+Profiles / Panel 
+Imaging services 
+Room Rents / ICU charges 
+Surgery charges 
+Procedure charges 
+Non-invasive Diagnostic procedures 
+Invasive Diagnostic procedures 
+Periodicity services (Charged based on usage)
+Medical gases 
+Bed side monitor charges 
+Doctor visit charges (In case of In patients)
+First visit 
+Follow up visits 
+Miscellaneous services 
+Inventory items 
+Medicines 
+Consumables 
+Implants (Consignment / Stock)
+Miscellaneous services 
+Diet 
+CSSD charges 
+Forcefull inclusion / exclusion of services 
+User to have facility to forcefully include services / Pharmacy service till Zero package profit. Over and above package cost, system to give alert and send request for approval. Such services can be included in package against approval 
+Package validity date. 
+Package should be valid between defined date range. Before start date and after end date package should not be available for assigning it to the patient 
+Deactivation of packages. 
+Deactivated package should not be visible for assigning to the patient 
+Forcefull closure of package 
+User to have facility to forcefully close package. After forceful closure no service can be included as apart of package 
+Removal of package from patient bill 
+If user wants to remove package from patient’s bill, first system to mandate user to remove all services from the package then allow user to remove package. Removed services will be billed as per billing rule like in case of In patients based on patient type (National / Below Poverty Line), Payment entitlement (Self / Credit) and Billing bed category. 
+Applicability of packages. 
+Once package is assigned to the patient, the package will be applicable till end of encounter for the patient 
+
+Various types of packages (these will be Visit based and gender based)
+EHC packages 
+These are OPD packages which can be corporate specific. 
+Packages with CAP
+These packages will have CAP amount defined based on Service group or individual services. Services / Inventory items rendered over and above CAP amount will be charged extra. In these packages scenario of Split service also to be handled (Partially consumed from package and remaining portion to be billed extra)
+All Inclusive packages 
+In these packages unless and until user defines exclusions all services / Inventory items are included in packages.  
+Either Or packages
+In this type of package user will have facility to order one service between two. For Example, Stress test / Dopamine induced stress 
+Multi visit package 
+In this type of package, user can define number of OPD visits or IPD visits / Daycare visits or combination of visits. Patient will be charged for the package in first visit, in subsequent visits system to generate Zero amount bill. 
+Contract Creation 
+Define Visit Type 
+OPD
+IPD
+Daycare 
+Define Employee category 
+Type of Contract 
+Corporate Contract
+Insurance Contract 
+Contract validity period
+Define applicable terrif 
+Define Inclusions and Exclusions service wise / service group wise 
+Define Co pay amount 
+Define CAP amount for included services 
+Define Credit limit for the organization 
+Define Payment Terms
+Define Packages under contract 
+In case of corporate contracts, facility to create multiple contracts based on employee grades 
+Patient Billing 
+Registration Charges 
+Registration applicable or not
+If yes whether it is one time recurring 
+If recurring duration when registration charge become applicable 
+Consultation charges 
+Facility to define separate rates for Primary / Follow up consultation / Secondary consultation 
+Facility to define separate rates based on specialty / consultant 
+Doctor visit charges / Visit charges for Inpatients 
+Facility to define separate rates based on specialty / consultant 
+Facility to define number of applicable visits per day 
+Facility to post extra visit charges if number exceeds applicable visits 
+Room rent charges 
+Applicable only for in patient / Daycare and ER beds
+Charging based on bed occupied at the time room rent posting 
+Facility to charge half day bed charges if patient is admitted / discharged after 12:00 pm and full day if patient is admitted / discharged before 12:00 pm
+Bed Down grade / Upgrade policy 
+In case of package patients, system should restrict user from transferring patient to bed category for which package is not defined 
+Revised pricing will be applicable after patient is accepted on new bed category 
+Services billing
+In case of Inpatient amount will be posted against order and revenue recognition when service is rendered. Two-step process required if user wants to cancel rendered service. 
+Type of Service
+Trigger point for patient billing
+Laboratory services
+When sample status changes to “In process” from “Pending” or “Sample Collected” or “Sample Received”.
+In case Laboratory wants to recollect the sample, patient should be billed only once.
+Radiology services
+When patient status changes to “In Process”
+Bed side Procedures
+When patient status changes to “In Process”
+Surgery
+When patient is “Wheeled in” to Operation Theatre
+Pharmacy
+Once Pharmacy Bill is generated or issue the drugs
+Consumables
+Once Bill is generated or Nurse makes consumption in Pharmacy module for the patient or issue the consumables
+Blood and Blood Products
+When Blood or Blood Product is issued against request
+Room rent
+Automatic 
+Meal Service
+Automatic
+Extra Meal
+Once shipped from Kitchen against Meal Order 
+Doctor Visit Charges
+Consultant prepares Progress note / Automatic as well as manual (Application configuration)
+Nursing charges
+Automatic as well as manual (Application Configuration)
+Package
+First service from the package is rendered to the patient 
+Lab Profile
+When first service from the Profile is rendered to the patient.
+Crash Cart
+Consumption of an item
+
+Discount functionality 
+Bill level discount 
+Service group level discount
+Service level discount 
+Promotional Discount 
+User can give only type of discount in one bill 
+Facility to define discount applicability in service master 
+Facility to define Max discount which can be offered in service master 
+Define authority to give discount in terms of Value or Percentage 
+Request need to go to next level if not authorized to give discount 
+Facility to reject / partially accept request 
+Reason for discount is mandatory 
+Apportioning of discount across all services rendered to patient 
+Facility to take Security deposit for Credit patient. Amount can be based on percentage of bill amount or value. Security deposit can’t be utilised for bill settlement. It can be adjusted against denials from credit company 
+Provision to offer special pricing for specific services for limited period 
+Facility to define Promotional offer – Name, Services / service group included, start date – end date, Criteria to avail offer (Gender / Age group / Primary Diagnosis like Haemophilia)
+Concession on patient bill 
+Concession can be applicable to specified patient category / payment entitlement 
+Concession can be defined in patient category master for making it applicable by default 
+Concession can be given at Service group / Service Level 
+Concession can be given even on Pharmacy item / Category of item 
+Deposit functionality 
+Deposit can be taken against specific Encounter 
+Deposit can be taken against specific service group / Pharmacy 
+Deposit can be taken against any forthcoming encounters (Active deposit)
+Facility to use Active deposit to any family member’s encounter (OTP authentication required to validate)
+Deposit can be taken against bed reservation (amount can change based on billing bed category) or against surgery booking
+Facility to refund unutilized deposit 
+Credit Note functionality 
+Credit note can be created against settled bill / unused discount 
+Two-step process for credit note approval 
+Credit note can be created if hospital want to offer discount after bill is settled 
+Either refund can be generated against refund or can be added as Active deposit 
+System to generate Unique Credit note number
+Debit Note functionality 
+Debit note can be created after patient bill is settled and hospital wants to add services 
+Debit note can be created against denials from Credit Company 
+Debit can be given to vendors against GRN 
+Debit note to be displayed at the time of upcoming transactions 
+Debit note can be added in patient’s next bill or bill can be generated against debit note 
+Vendor’s debit note can be adjusted against Vendor’s payment 
+Refund functionality 
+Facility to refund against Credit note or against deposit available 
+Define how much Cash can be given back to patient 
+If refund amount exceeds Cash limit the front office send request to back office for E Transfer / DD / Cheque 
+Facility to create Refund Voucher number 
+Cash refunded to be captured against user and will have impact Cash Desk management report (Cash in hand = Cash collected – Cash refunded)
+Bill estimation  
+Bill estimation can be done for registered as well unregistered patient 
+Variable to be considered for bill estimation 
+Patient Category 
+Patient Type 
+Payment Entitlement 
+Admission type (Medical / Surgical)
+Billing bed category  
+Package 
+Duration of stay 
+Services which can be availed 
+Pharmacy items required 
+System to generate estimation number 
+System to keep track of difference between estimated amount and actual amount 
+Change of Payee
+For Inpatients facility to change payee during patient’s stay but before bill settlement (From self to credit and other way)
+System to recalculate patient bill after change of payee
+System to validate availability of package for the selected payee else stop user from changing payee. User will have to change package the change payee
+In case payee is credit company then system to check whether patient is occupying applicable billing bed category. If not user alert to transfer patient to applicable bed category 
+Auto posting of charges 
+Facility to define which services can be auto posted in patient’s bill 
+System to run scheduled job to post charges by default in patient’s bill 
+No admission / transfers to be allowed during auto posting 
+Payment Follow up process
+Due deposit dashboard for patients 
+System to run scheduled job to calculate deposit available in case of Cash patient / available authorisation in case of credit patients
+System to display separately amount of ordered but not rendered services like upcoming surgery 
+Report should be visible to authorised users who will manually add amount to be paid by patient 
+System to generate emails to NOK regarding payments 
+Credit payable dashboard 
+Like patient system to generate dashboard for Credit companies like Insurance / Corporate on amount pending against invoice raised as well as patient bills against which Invoice not yet raised 
+System to highlight amount which is over due as per payment terms defined in contract 
+Credit patient billing 
+Insurance Billing 
+Facility to assign multiple credit companies to the patient 
+Facility to capture Insurance details like Name, Associate company, Provider / TPA, Insurance policy number, Insured amount, Insurance Start Date and end date, Multiple authorization numbers along with date and amount of authorisation, claim number, Claim amount.
+Facility to define sequence in which contracts can be consumed 
+System to give alert in case authorization amount exceeds credit payable amount
+In case of Co-Pay, system to split service amount into Self and Credit payable amount 
+In case credit payable amount exceeds Insured amount then excess amount to be chargeable to patient 
+Facility to collect security deposit at the time discharge 
+Security deposit to be adjusted against denials coming from Insurance after submitting final bill 
+Refund of security deposit after bill is settled 
+Corporate Billing 
+Facility to add employee details and applicable contract for the employee 
+Exclusions to be charged to patient
+Co pay amount to be charged to patient 
+In case patient is occupying bed which is not applicable, difference to be posted as patient payable amount 
+Back-office functionality 
+At application configuration level give facility to define whether hospital wants to generate invoice for patient’s OPD/ IPD/ Daycare / ER bills to Insurance / Corporate. Based these flags system should mandate user to generate Invoice 
+Invoice settlement process capturing denial amount, TDS, amount paid. Bill can be settled if bill amount is equal to addition of paid amount +Denials + TDS
+
+
+
+
+
+

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation } from "@/i18n";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -61,6 +62,7 @@ interface Encounter {
 }
 
 export default function WardManagement() {
+  const { t } = useTranslation();
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
   const [activeView, setActiveView] = useState<"dashboard" | "inventory">("dashboard");
   const [wards, setWards] = useState<Ward[]>([]);
@@ -243,16 +245,14 @@ export default function WardManagement() {
       {/* ── HEADER ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Ward & Bed Management</h1>
-          <p className="text-slate-500 text-sm">Monitor hospital occupancy and manage physical bed inventory</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t("wards.wardAndBedManagement") || "Ward & Bed Management"}</h1>
+          <p className="text-slate-500 text-sm">{t("wards.monitorHospitalOccupancy") || "Monitor hospital occupancy and manage beds."}</p>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => setShowWardModal(true)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm font-medium">
-            <Plus size={18} /> New Ward
-          </button>
+            <Plus size={18} />{t("wards.newWard")}</button>
           <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition shadow-xs font-medium">
-            <Filter size={18} /> Filters
-          </button>
+            <Filter size={18} />{t("wards.filters")}</button>
         </div>
       </div>
 
@@ -260,8 +260,8 @@ export default function WardManagement() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="p-5 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Capacity</p>
-            <p className="text-2xl font-bold text-slate-900">{stats.total} <span className="text-sm font-normal text-slate-400 ml-1">Beds</span></p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{t("wards.totalCapacity")}</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.total} <span className="text-sm font-normal text-slate-400 ml-1">{t("wards.beds")}</span></p>
           </div>
           <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
             <Building2 size={24} />
@@ -269,7 +269,7 @@ export default function WardManagement() {
         </div>
         <div className="p-5 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-rose-500">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Occupied</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{t("wards.occupied")}</p>
             <p className="text-2xl font-bold text-rose-600">{stats.occupied}</p>
           </div>
           <div className="p-3 bg-rose-50 text-rose-600 rounded-lg">
@@ -278,7 +278,7 @@ export default function WardManagement() {
         </div>
         <div className="p-5 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-amber-500">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Cleaning</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{t("wards.cleaning")}</p>
             <p className="text-2xl font-bold text-amber-600">{stats.cleaning}</p>
           </div>
           <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
@@ -287,7 +287,7 @@ export default function WardManagement() {
         </div>
         <div className="p-5 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-between border-l-4 border-l-emerald-500">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Available</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{t("wards.available")}</p>
             <p className="text-2xl font-bold text-emerald-600">{stats.available}</p>
           </div>
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
@@ -298,12 +298,8 @@ export default function WardManagement() {
 
       {/* ── NAVIGATION TABS ── */}
       <div className="flex border-b border-slate-200">
-        <button onClick={() => setActiveView("dashboard")} className={`px-6 py-3 font-medium transition-all ${activeView === "dashboard" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}>
-          Ward Dashboard
-        </button>
-        <button onClick={() => setActiveView("inventory")} className={`px-6 py-3 font-medium transition-all ${activeView === "inventory" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}>
-          Bed Inventory
-        </button>
+        <button onClick={() => setActiveView("dashboard")} className={`px-6 py-3 font-medium transition-all ${activeView === "dashboard" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}>{t("wards.wardDashboard")}</button>
+        <button onClick={() => setActiveView("inventory")} className={`px-6 py-3 font-medium transition-all ${activeView === "inventory" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-slate-500 hover:text-slate-700"}`}>{t("wards.bedInventory")}</button>
       </div>
 
       {/* ── WARD GRID ── */}
@@ -346,7 +342,7 @@ export default function WardManagement() {
                     className="flex flex-col items-center justify-center p-3 rounded-lg border border-dashed border-slate-300 text-slate-400 hover:bg-slate-50 hover:border-indigo-300 hover:text-indigo-600 transition-all font-bold"
                   >
                     <Plus size={24} className="mb-1" />
-                    <span className="text-[10px] uppercase">Add Bed</span>
+                    <span className="text-[10px] uppercase">{t("wards.addBed")}</span>
                   </button>
                 </div>
               </div>
@@ -372,7 +368,7 @@ export default function WardManagement() {
           )) : (
             <div className="col-span-2 py-20 bg-white rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400">
               <Building2 size={48} className="mb-4 opacity-20" />
-              <p>No wards defined yet. Start by creating your first ward.</p>
+              <p>{t("wards.noWardsDefinedYetStartByCreati")}</p>
               <button onClick={() => setShowWardModal(true)} className="mt-4 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-medium hover:bg-indigo-100 transition">
                 + Create Ward
               </button>
@@ -389,18 +385,16 @@ export default function WardManagement() {
               <button 
                 onClick={() => setShowBulkBedModal(true)}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition shadow-sm"
-              >
-                Add Multiple Beds
-              </button>
+              >{t("wards.addMultipleBeds")}</button>
            </div>
            <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
-                  <th className="px-6 py-4 border-b border-slate-200">Bed Info</th>
-                  <th className="px-6 py-4 border-b border-slate-200">Status</th>
-                  <th className="px-6 py-4 border-b border-slate-200">Room/Ward</th>
-                  <th className="px-6 py-4 border-b border-slate-200">Current Occupant</th>
-                  <th className="px-6 py-4 border-b border-slate-200">Actions</th>
+                  <th className="px-6 py-4 border-b border-slate-200">{t("wards.bedInfo")}</th>
+                  <th className="px-6 py-4 border-b border-slate-200">{t("wards.status")}</th>
+                  <th className="px-6 py-4 border-b border-slate-200">{t("wards.roomWard")}</th>
+                  <th className="px-6 py-4 border-b border-slate-200">{t("wards.currentOccupant")}</th>
+                  <th className="px-6 py-4 border-b border-slate-200">{t("wards.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -425,19 +419,19 @@ export default function WardManagement() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-medium text-slate-700">Room {bed.room_id.substring(0,4)}</p>
-                      <p className="text-xs text-slate-400">Ward Name</p>
+                      <p className="text-xs text-slate-400">{t("wards.wardName")}</p>
                     </td>
                     <td className="px-6 py-4">
                       {bed.status === "occupied" ? (
                         <div className="flex items-center gap-2">
-                           <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-xs uppercase">JD</div>
+                           <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-bold text-xs uppercase">{t("wards.jd")}</div>
                            <div>
-                              <p className="text-sm font-bold text-slate-900">John Doe</p>
+                              <p className="text-sm font-bold text-slate-900">{t("wards.johnDoe")}</p>
                               <p className="text-[10px] text-slate-500 uppercase tracking-tighter italic">Enc: ENT-2938</p>
                            </div>
                         </div>
                       ) : (
-                        <span className="text-slate-300 text-xs italic">Unassigned</span>
+                        <span className="text-slate-300 text-xs italic">{t("wards.unassigned")}</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -471,41 +465,40 @@ export default function WardManagement() {
            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-indigo-600">
                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Building2 size={20} /> Define New Hospital Ward
-                 </h2>
+                    <Building2 size={20} />{t("wards.defineNewHospitalWard")}</h2>
                  <button onClick={() => setShowWardModal(false)} className="text-white/80 hover:text-white transition">
                     <Trash2 size={20} />
                  </button>
               </div>
               <div className="p-6 space-y-4">
                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Ward Code</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.wardCode")}</label>
                     <input value={wardForm.ward_code} onChange={e => setWardForm({...wardForm, ward_code: e.target.value})} type="text" placeholder="e.g. WARD-B1" className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium" />
                  </div>
                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Ward Name</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.wardName")}</label>
                     <input value={wardForm.ward_name} onChange={e => setWardForm({...wardForm, ward_name: e.target.value})} type="text" placeholder="e.g. General Surgery" className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium" />
                  </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Department</label>
+                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.department")}</label>
                         <select value={wardForm.department} onChange={e => setWardForm({...wardForm, department: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
-                            <option value="">Select Dept</option>
-                            <option value="Surgery">Surgery</option>
-                            <option value="Medicine">Medicine</option>
-                            <option value="ICU">ICU</option>
-                            <option value="Emergency">Emergency</option>
+                            <option value="">{t("wards.selectDept")}</option>
+                            <option value="Surgery">{t("wards.surgery")}</option>
+                            <option value="Medicine">{t("wards.medicine")}</option>
+                            <option value="ICU">{t("wards.icu")}</option>
+                            <option value="Emergency">{t("wards.emergency")}</option>
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Floor</label>
+                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.floor")}</label>
                         <input value={wardForm.floor} onChange={e => setWardForm({...wardForm, floor: e.target.value})} type="text" placeholder="e.g. 2nd Floor" className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium" />
                     </div>
                  </div>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
-                 <button onClick={() => setShowWardModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition">Discard</button>
-                 <button onClick={handleCreateWard} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">Save Ward</button>
+                 <button onClick={() => setShowWardModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition">{t("wards.discard")}</button>
+                 <button onClick={handleCreateWard} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">{t("wards.saveWard")}</button>
               </div>
            </div>
         </div>
@@ -516,32 +509,32 @@ export default function WardManagement() {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-emerald-600 text-white">
-                 <h2 className="text-lg font-bold">New Room In Ward</h2>
+                 <h2 className="text-lg font-bold">{t("wards.newRoomInWard")}</h2>
                  <button onClick={() => setShowRoomModal(false)} className="hover:opacity-80 transition"><Trash2 size={20} /></button>
               </div>
               <div className="p-6 space-y-4">
                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Room Number</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.roomNumber")}</label>
                     <input value={roomForm.room_number} onChange={e => setRoomForm({...roomForm, room_number: e.target.value})} type="text" placeholder="e.g. 101" className="w-full px-4 py-2 border border-slate-200 rounded-xl outline-none font-medium focus:ring-2 focus:ring-emerald-500" />
                  </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Room Type</label>
+                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.roomType")}</label>
                         <select value={roomForm.room_type} onChange={e => setRoomForm({...roomForm, room_type: e.target.value as RoomType})} className="w-full px-4 py-2 border border-slate-200 rounded-xl outline-none font-medium">
-                            <option value="general">General</option>
-                            <option value="semi_private">Semi-Private</option>
-                            <option value="private">Private</option>
+                            <option value="general">{t("wards.general")}</option>
+                            <option value="semi_private">{t("wards.semiPrivate")}</option>
+                            <option value="private">{t("wards.private")}</option>
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Capacity</label>
+                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.capacity")}</label>
                         <input value={roomForm.capacity} onChange={e => setRoomForm({...roomForm, capacity: parseInt(e.target.value)})} type="number" className="w-full px-4 py-2 border border-slate-200 rounded-xl outline-none font-medium" />
                     </div>
                  </div>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
-                 <button onClick={() => setShowRoomModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition">Cancel</button>
-                 <button onClick={handleCreateRoom} className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition">Create Room</button>
+                 <button onClick={() => setShowRoomModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition">{t("wards.cancel")}</button>
+                 <button onClick={handleCreateRoom} className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition">{t("wards.createRoom")}</button>
               </div>
            </div>
         </div>
@@ -552,12 +545,12 @@ export default function WardManagement() {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[55] flex items-center justify-center p-4">
            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-indigo-600 text-white">
-                 <h2 className="text-lg font-bold">Add Single Bed</h2>
+                 <h2 className="text-lg font-bold">{t("wards.addSingleBed")}</h2>
                  <button onClick={() => setShowBedModal(false)} className="hover:opacity-80 transition"><Trash2 size={20} /></button>
               </div>
               <div className="p-6 space-y-4">
                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Select Room</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.selectRoom")}</label>
                     <div className="flex gap-2">
                         <select value={bedForm.room_id} onChange={e => setBedForm({...bedForm, room_id: e.target.value})} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl outline-none font-medium focus:ring-2 focus:ring-indigo-500">
                             <option value="">{selectedWardRooms.length === 0 ? "-- No Rooms in Ward --" : "-- Choose Room --"}</option>
@@ -572,18 +565,18 @@ export default function WardManagement() {
                  </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Bed Code</label>
+                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.bedCode")}</label>
                         <input value={bedForm.bed_code} onChange={e => setBedForm({...bedForm, bed_code: e.target.value})} type="text" placeholder="B1-01" className="w-full px-4 py-2 border border-slate-200 rounded-xl outline-none font-medium focus:ring-2 focus:ring-indigo-500" />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Bed Number</label>
+                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.bedNumber")}</label>
                         <input value={bedForm.bed_number} onChange={e => setBedForm({...bedForm, bed_number: e.target.value})} type="text" placeholder="1" className="w-full px-4 py-2 border border-slate-200 rounded-xl outline-none font-medium focus:ring-2 focus:ring-indigo-500" />
                     </div>
                  </div>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
-                 <button onClick={() => setShowBedModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition">Cancel</button>
-                 <button onClick={handleCreateBed} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition">Add Bed</button>
+                 <button onClick={() => setShowBedModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition">{t("wards.cancel")}</button>
+                 <button onClick={handleCreateBed} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition">{t("wards.addBed")}</button>
               </div>
            </div>
         </div>
@@ -594,12 +587,12 @@ export default function WardManagement() {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[55] flex items-center justify-center p-4">
            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-indigo-700 text-white">
-                 <h2 className="text-lg font-bold">Add Multiple Beds</h2>
+                 <h2 className="text-lg font-bold">{t("wards.addMultipleBeds")}</h2>
                  <button onClick={() => setShowBulkBedModal(false)} className="hover:opacity-80 transition"><Trash2 size={20} /></button>
               </div>
               <div className="p-6 space-y-4">
                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Select Ward</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.selectWard")}</label>
                     <select 
                       value={selectedWardForBulk} 
                       onChange={e => {
@@ -613,7 +606,7 @@ export default function WardManagement() {
                         {wards.map(w => <option key={w.id} value={w.id}>{w.ward_name}</option>)}
                     </select>
 
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Select Room</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.selectRoom")}</label>
                     <select 
                       value={bulkBedForm.room_id} 
                       onChange={e => setBulkBedForm({...bulkBedForm, room_id: e.target.value})} 
@@ -625,7 +618,7 @@ export default function WardManagement() {
                  </div>
                  <div className="grid grid-cols-3 gap-4">
                     <div className="col-span-1">
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Prefix</label>
+                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.prefix")}</label>
                         <input value={bulkBedForm.prefix} onChange={e => setBulkBedForm({...bulkBedForm, prefix: e.target.value})} type="text" className="w-full px-4 py-2 border border-slate-200 rounded-xl outline-none font-medium" />
                     </div>
                     <div className="col-span-1">
@@ -633,13 +626,13 @@ export default function WardManagement() {
                         <input value={bulkBedForm.start_num} onChange={e => setBulkBedForm({...bulkBedForm, start_num: parseInt(e.target.value)})} type="number" className="w-full px-4 py-2 border border-slate-200 rounded-xl outline-none font-medium" />
                     </div>
                     <div className="col-span-1">
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Count</label>
+                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.count")}</label>
                         <input value={bulkBedForm.count} onChange={e => setBulkBedForm({...bulkBedForm, count: parseInt(e.target.value)})} type="number" className="w-full px-4 py-2 border border-slate-200 rounded-xl outline-none font-medium" />
                     </div>
                  </div>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
-                 <button onClick={() => setShowBulkBedModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition">Cancel</button>
+                 <button onClick={() => setShowBulkBedModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition">{t("wards.cancel")}</button>
                  <button onClick={handleCreateBedsBulk} className="flex-1 px-4 py-2 bg-indigo-700 text-white rounded-xl font-bold hover:bg-indigo-800 transition">Create {bulkBedForm.count} Beds</button>
               </div>
            </div>
@@ -670,7 +663,7 @@ export default function WardManagement() {
                   <div className="col-span-2 space-y-6">
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                       <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-bold text-slate-900">Rooms & Layout</h3>
+                        <h3 className="font-bold text-slate-900">{t("wards.roomsLayout")}</h3>
                         <button 
                           onClick={() => {
                             setRoomForm({...roomForm, ward_id: showWardDetailModal.id});
@@ -678,8 +671,7 @@ export default function WardManagement() {
                           }}
                           className="text-xs font-bold text-indigo-600 flex items-center gap-1 hover:underline"
                         >
-                          <Plus size={14} /> Add Room
-                        </button>
+                          <Plus size={14} />{t("wards.addRoom")}</button>
                       </div>
                       <div className="space-y-4">
                          {/* This would show rooms if we had them fetched */}
@@ -696,7 +688,7 @@ export default function WardManagement() {
                        <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm font-black text-2xl tracking-tighter italic">
                           85%
                        </div>
-                       <h3 className="font-bold text-slate-900">Occupancy Rate</h3>
+                       <h3 className="font-bold text-slate-900">{t("wards.occupancyRate")}</h3>
                        <p className="text-xs text-slate-500 mt-1">17 / 20 Beds Occupied</p>
                     </div>
                   </div>
@@ -704,7 +696,7 @@ export default function WardManagement() {
               </div>
               
               <div className="p-4 bg-white border-t border-slate-100 flex justify-end">
-                <button onClick={() => setShowWardDetailModal(null)} className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold hover:bg-black transition shadow-lg">Close View</button>
+                <button onClick={() => setShowWardDetailModal(null)} className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold hover:bg-black transition shadow-lg">{t("wards.closeView")}</button>
               </div>
            </div>
         </div>
@@ -721,7 +713,7 @@ export default function WardManagement() {
               </div>
               <div className="p-6 space-y-4">
                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Select Patient</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.selectPatient")}</label>
                     <select 
                       value={assignForm.patient_id} 
                       onChange={e => setAssignForm({...assignForm, patient_id: e.target.value, encounter_id: ""})} 
@@ -732,7 +724,7 @@ export default function WardManagement() {
                     </select>
                  </div>
                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Select Encounter</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">{t("wards.selectEncounter")}</label>
                     <select 
                       value={assignForm.encounter_id} 
                       onChange={e => setAssignForm({...assignForm, encounter_id: e.target.value})} 
@@ -745,16 +737,14 @@ export default function WardManagement() {
                           .map(enc => <option key={enc.id} value={enc.id}>{enc.encounter_type} - {enc.status} ({enc.encounter_uuid.substring(0,8)})</option>)
                         }
                     </select>
-                    {!assignForm.patient_id && <p className="text-[10px] text-rose-500 mt-1 italic">Please select a patient first to see active encounters</p>}
+                    {!assignForm.patient_id && <p className="text-[10px] text-rose-500 mt-1 italic">{t("wards.pleaseSelectAPatientFirstToSee")}</p>}
                  </div>
                  <p className="text-[10px] text-slate-400 italic bg-slate-50 p-2 rounded border border-slate-100 flex items-start gap-2">
-                    <Activity size={14} className="shrink-0 mt-0.5" />
-                    Beds can only be assigned to patients with an active IP or ER encounter.
-                 </p>
+                    <Activity size={14} className="shrink-0 mt-0.5" />{t("wards.bedsCanOnlyBeAssignedToPatient")}</p>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
-                 <button onClick={() => setShowAssignModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition">Cancel</button>
-                 <button onClick={handleAssignBed} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition">Confirm Assignment</button>
+                 <button onClick={() => setShowAssignModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition">{t("wards.cancel")}</button>
+                 <button onClick={handleAssignBed} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition">{t("wards.confirmAssignment")}</button>
               </div>
            </div>
         </div>

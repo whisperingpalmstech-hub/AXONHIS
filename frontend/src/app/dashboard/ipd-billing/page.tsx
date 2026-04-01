@@ -1,9 +1,12 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useState, useEffect } from "react";
 import { ipdApi as api } from "@/lib/ipd-api";
 
 export default function IpdBillingDashboard() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"active" | "settled">("active");
   const [bills, setBills] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -150,8 +153,8 @@ export default function IpdBillingDashboard() {
     <div className="p-6">
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">IPD Billing & Settlement</h1>
-          <p className="text-sm text-gray-500">Manage patient charges, deposits, insurance, and final settlements.</p>
+          <h1 className="text-2xl font-bold">{t("ipdBilling.title")}</h1>
+          <p className="text-sm text-gray-500">{t("ipdBilling.subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -172,18 +175,18 @@ export default function IpdBillingDashboard() {
             className={`px-6 py-3 cursor-pointer ${activeTab === "active" ? "border-b-2 border-primary text-primary font-semibold" : "text-gray-500 hover:text-gray-700"}`}
             onClick={() => setActiveTab("active")}
           >
-            Active Patients
+            {t("ipdBilling.activePatients")}
           </li>
           <li
             className={`px-6 py-3 cursor-pointer ${activeTab === "settled" ? "border-b-2 border-primary text-primary font-semibold" : "text-gray-500 hover:text-gray-700"}`}
             onClick={() => setActiveTab("settled")}
           >
-            Settled / Discharged
+            {t("ipdBilling.settledDischarged")}
           </li>
         </ul>
 
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading billing data...</div>
+          <div className="p-8 text-center text-gray-500">{t("ipdBilling.loadingBillingData")}</div>
         ) : bills.filter(b => activeTab === 'active' ? b.status !== 'Settled' : b.status === 'Settled').length === 0 ? (
           <div className="p-8 text-center text-gray-500">No billing records found for this tab.</div>
         ) : (
@@ -225,7 +228,7 @@ export default function IpdBillingDashboard() {
                         onClick={() => openBillDetail(b.admission_number)}
                         className="text-primary hover:underline"
                       >
-                        Manage Bill
+                        {t("ipdBilling.manageBill")}
                       </button>
                     </td>
                   </tr>
@@ -242,7 +245,7 @@ export default function IpdBillingDashboard() {
           <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] flex flex-col shadow-xl">
             <div className="flex items-center justify-between p-4 border-b">
               <div>
-                <h2 className="text-lg font-bold">Billing Details: {selectedBill.patient_name}</h2>
+                <h2 className="text-lg font-bold">{t("ipdBilling.billingDetails")}: {selectedBill.patient_name}</h2>
                 <div className="text-sm text-gray-500">Adm No: {selectedBill.admission_number} | UHID: {selectedBill.patient_uhid}</div>
               </div>
               <button onClick={() => setShowDetailModal(false)} className="text-gray-500 hover:text-gray-700">
@@ -256,7 +259,7 @@ export default function IpdBillingDashboard() {
                 
                 {/* Services Card */}
                 <div className="bg-white p-4 rounded border shadow-sm">
-                  <h3 className="font-semibold mb-4">Itemized Services & Charges</h3>
+                  <h3 className="font-semibold mb-4">{t("ipdBilling.serviceCharges")}</h3>
                   <div className="overflow-x-auto max-h-64 border rounded mb-4">
                     <table className="w-full text-sm text-left">
                       <thead className="bg-gray-100 sticky top-0">
@@ -320,7 +323,7 @@ export default function IpdBillingDashboard() {
 
                 {/* Deposits Card */}
                 <div className="bg-white p-4 rounded border shadow-sm">
-                  <h3 className="font-semibold mb-4">Advance Deposits</h3>
+                  <h3 className="font-semibold mb-4">{t("ipdBilling.advanceDeposits")}</h3>
                   <div className="overflow-x-auto max-h-48 border rounded mb-4">
                     <table className="w-full text-sm text-left">
                       <thead className="bg-gray-100 sticky top-0">
@@ -373,7 +376,7 @@ export default function IpdBillingDashboard() {
 
                 {/* Insurance Card */}
                 <div className="bg-white p-4 rounded border shadow-sm">
-                  <h3 className="font-semibold mb-4">Insurance & TPA Claims</h3>
+                  <h3 className="font-semibold mb-4">{t("ipdBilling.insuranceClaims")}</h3>
                   <div className="overflow-x-auto border rounded mb-4">
                     <table className="w-full text-sm text-left">
                       <thead className="bg-gray-100">
@@ -396,7 +399,29 @@ export default function IpdBillingDashboard() {
                             <td className="p-2">{c.pre_auth_number || '-'}</td>
                             <td className="p-2 text-right">₹{c.coverage_limit}</td>
                             <td className="p-2 text-right text-yellow-600">₹{c.claimed_amount}</td>
-                            <td className="p-2 text-right font-medium text-green-600">₹{c.approved_amount}</td>
+                            <td className="p-2 text-right font-medium text-green-600">
+                              ₹{c.approved_amount}
+                              {c.status === "Pending" && (
+                                <button 
+                                  onClick={async () => {
+                                    const amtRaw = prompt(`Enter approved amount for claim ${c.id.substring(0,8)} (Max: ₹${c.claimed_amount}):`, c.claimed_amount.toString());
+                                    if(amtRaw === null) return;
+                                    const amt = parseFloat(amtRaw);
+                                    if(isNaN(amt) || amt < 0) return alert("Invalid amount");
+                                    try {
+                                      await api.approveInsuranceClaim(c.id, { approved_amount: amt, status: "Approved" });
+                                      await openBillDetail(selectedBill.admission_number);
+                                    } catch(e) {
+                                      alert("Failed to approve claim.");
+                                      console.error(e);
+                                    }
+                                  }}
+                                  className="ml-2 bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] hover:bg-green-200"
+                                >
+                                  Approve
+                                </button>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -456,8 +481,8 @@ export default function IpdBillingDashboard() {
                 
                 <div className="bg-white p-5 rounded border shadow-sm flex-1">
                   <div className="flex items-center justify-between mb-6 border-b pb-2">
-                    <h3 className="font-bold text-lg">Bill Summary</h3>
-                    <button onClick={handleRecalculate} className="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 text-gray-700">Recalculate</button>
+                    <h3 className="font-bold text-lg">{t("ipdBilling.billSummary")}</h3>
+                    <button onClick={handleRecalculate} className="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 text-gray-700">{t("ipdBilling.recalculate")}</button>
                   </div>
 
                   <div className="space-y-3 text-sm">
@@ -525,7 +550,7 @@ export default function IpdBillingDashboard() {
                         </div>
                       </div>
                       <button onClick={handleProcessPayment} disabled={newPay.amount === 0} className={`w-full text-white py-2 rounded font-medium ${newPay.amount > 0 ? 'bg-green-600 hover:bg-green-700 shadow shadow-green-200' : 'bg-gray-300 cursor-not-allowed'}`}>
-                        Process Payment
+                        {t("ipdBilling.processPayment")}
                       </button>
                     </div>
 
@@ -534,9 +559,9 @@ export default function IpdBillingDashboard() {
                             onClick={() => window.open(`/dashboard/ipd-billing/print/${selectedBill.admission_number}`, '_blank')}
                             className="flex-1 border border-primary text-primary py-2 rounded text-sm hover:bg-primary/5"
                         >
-                            Print Detail Bill
+                            {t("ipdBilling.printBill")}
                         </button>
-                        <button className="flex-1 border bg-gray-100 text-gray-700 py-2 rounded text-sm hover:bg-gray-200">Print Receipt</button>
+                        <button className="flex-1 border bg-gray-100 text-gray-700 py-2 rounded text-sm hover:bg-gray-200">{t("ipdBilling.printReceipt")}</button>
                     </div>
                   </div>
 

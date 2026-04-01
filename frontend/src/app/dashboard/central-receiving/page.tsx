@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useEffect, useState } from "react";
 import {
@@ -27,6 +29,7 @@ const REJECTION_REASONS = [
 ];
 
 export default function CentralReceivingPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabTypes>("dashboard");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

@@ -1,0 +1,188 @@
+import json
+import os
+
+locales_dir = "frontend/src/i18n/locales"
+
+translations = {
+    "en": {
+        "addPatientsFirst": "Add patients first",
+        "consultationComplete": "Consultation complete. Patient discharged. Clinical Summary Generated.",
+        "aiDoctorDesk": "AI Doctor Desk",
+        "deskSubtitle": "Intelligent EMR, AI Scribing, and Clinical Decision Support.",
+        "waitlist": "Waitlist",
+        "latestPatient": "Latest Patient",
+        "simulateEntry": "Simulate Entry",
+        "queueEmpty": "Queue empty.",
+        "token": "TOKEN",
+        "callToChamber": "Call to Chamber",
+        "consultationInProgress": "Consultation In Progress",
+        "returnToProfile": "Return to Profile",
+        "waitingForNextPatient": "Waiting for Next Patient",
+        "selectFromWorklist": "Select a patient from the Worklist to begin consultation.",
+        "uhid": "UHID",
+        "age": "Age",
+        "blood": "Blood",
+        "emrTimeline": "EMR Timeline",
+        "recommendAdmission": "Recommend Admission",
+        "completeSummary": "Complete & Summary",
+        "clinicalEncounterNotes": "Clinical Encounter Notes",
+        "insertTemplate": "Insert Template",
+        "dictationActive": "Dictation Active...",
+        "aiVoiceScribe": "AI Voice Scribe",
+        "chiefComplaint": "Chief Complaint (Symptoms)",
+        "historyPresentIllness": "History of Present Illness",
+        "assessmentPlan": "Assessment & Plan",
+        "aiSupportTitle": "AI Clinical Decision Support",
+        "predictDiagnostics": "Predict Diagnostics",
+        "runCDSSPrompt": "Run the CDSS Predictor to scan patient parameters against known topologies.",
+        "possibleDiffDx": "Possible Differential Diagnoses",
+        "suggestedLabWork": "Suggested Lab Work",
+        "orderBtn": "Order",
+        "suggestedImaging": "Suggested Imaging",
+        "structuredPrescriptions": "Structured e-Prescriptions",
+        "naturalRxPlaceholder": "Natural Rx: Amox 500mg BID 7 days",
+        "noMedicationsAdded": "No medications added.",
+        "lisRisOrderDispatch": "LIS / RIS Order Dispatch",
+        "typeLab": "Laboratory",
+        "typeRadiology": "Radiology",
+        "typeProcedure": "Procedure",
+        "mriBrainPlaceholder": "e.g. MRI Brain",
+        "addBtn": "Add",
+        "noDiagnosticOrders placed": "No diagnostic orders placed.",
+        "clinicalHandoverIPD": "Clinical Handover: IPD Admission",
+        "clinicalHandoverSubtitle": "Provide critical clinical context to the Ward Nurses before allocating a bed.",
+        "currentHealthVitals": "Current Health & Vitals",
+        "dosesMedications": "Doses & Medications to Administer",
+        "planOfAction": "Plan of Action",
+        "cancel": "Cancel",
+        "pushAdmission": "Push Admission to Ward"
+    },
+    "hi": {
+        "addPatientsFirst": "पहले मरीजों को जोड़ें",
+        "consultationComplete": "परामर्श पूर्ण। मरीज को छुट्टी दे दी गई है। नैदानिक ​​सारांश उत्पन्न किया गया।",
+        "aiDoctorDesk": "AI डॉक्टर डेस्क",
+        "deskSubtitle": "बुद्धिमान ईएमआर, एआई स्क्राइबिंग, और नैदानिक ​​निर्णय समर्थन।",
+        "waitlist": "प्रतीक्षा सूची",
+        "latestPatient": "नवीनतम मरीज",
+        "simulateEntry": "प्रविष्टि का अनुकरण करें",
+        "queueEmpty": "कतार खाली है।",
+        "token": "टोकन",
+        "callToChamber": "चैंबर में बुलाएं",
+        "consultationInProgress": "परामर्श प्रगति पर",
+        "returnToProfile": "प्रोफ़ाइल पर लौटें",
+        "waitingForNextPatient": "अगले मरीज की प्रतीक्षा कर रहा है",
+        "selectFromWorklist": "परामर्श शुरू करने के लिए कार्य सूची से मरीज का चयन करें।",
+        "uhid": "UHID",
+        "age": "आयु",
+        "blood": "रक्त",
+        "emrTimeline": "ईएमआर टाइमलाइन",
+        "recommendAdmission": "प्रवेश की सिफारिश करें",
+        "completeSummary": "पूर्ण और सारांश",
+        "clinicalEncounterNotes": "नैदानिक ​​मुठभेड़ नोट्स",
+        "insertTemplate": "टेम्पलेट डालें",
+        "dictationActive": "श्रुतलेख सक्रिय...",
+        "aiVoiceScribe": "AI वॉयस स्क्राइब",
+        "chiefComplaint": "मुख्य शिकायत (लक्षण)",
+        "historyPresentIllness": "वर्तमान बीमारी का इतिहास",
+        "assessmentPlan": "मूल्यांकन और योजना",
+        "aiSupportTitle": "AI नैदानिक ​​निर्णय समर्थन",
+        "predictDiagnostics": "निदान की भविष्यवाणी करें",
+        "runCDSSPrompt": "ज्ञात टोपोलॉजी के खिलाफ रोगी मापदंडों को स्कैन करने के लिए CDSS प्रिडिक्टर चलाएँ।",
+        "possibleDiffDx": "संभावित विभेदक निदान",
+        "suggestedLabWork": "सुझाई गई लैब वर्क",
+        "orderBtn": "ऑर्डर दे",
+        "suggestedImaging": "सुझाई गई इमेजिंग",
+        "structuredPrescriptions": "संरचित ई-प्रिस्क्रिप्शन",
+        "naturalRxPlaceholder": "प्राकृतिक Rx: Amox 500mg दिन में दो बार 7 दिन",
+        "noMedicationsAdded": "कोई दवा नहीं जोड़ी गई।",
+        "lisRisOrderDispatch": "LIS / RIS ऑर्डर डिस्पैच",
+        "typeLab": "प्रयोगशाला",
+        "typeRadiology": "रेडियोलॉजी",
+        "typeProcedure": "प्रक्रिया",
+        "mriBrainPlaceholder": "उदा. एमआरआई ब्रेन",
+        "addBtn": "जोड़ें",
+        "noDiagnosticOrders placed": "कोई नैदानिक ​​आदेश नहीं दिया गया।",
+        "clinicalHandoverIPD": "नैदानिक ​​हस्तक्षेप: आईपीडी प्रवेश",
+        "clinicalHandoverSubtitle": "बिस्तर आवंटित करने से पहले वार्ड नर्सों को महत्वपूर्ण नैदानिक ​​संदर्भ प्रदान करें।",
+        "currentHealthVitals": "वर्तमान स्वास्थ्य और महत्वपूर्ण",
+        "dosesMedications": "खुराक और प्रशासित की जाने वाली दवाएं",
+        "planOfAction": "कार्य योजना",
+        "cancel": "रद्द करें",
+        "pushAdmission": "वार्ड में प्रवेश भेजें"
+    },
+    "mr": {
+        "addPatientsFirst": "प्रथम रुग्णांना जोडा",
+        "consultationComplete": "सल्लामसलत पूर्ण. रुग्णाला डिस्चार्ज दिला. क्लिनिकल सारांश तयार केला.",
+        "aiDoctorDesk": "AI डॉक्टर डेस्क",
+        "deskSubtitle": "बुद्धिमान ईएमआर, एआय स्क्राइबिंग, आणि क्लिनिकल निर्णय समर्थन.",
+        "waitlist": "प्रतीक्षा यादी",
+        "latestPatient": "नवीनतम रुग्ण",
+        "simulateEntry": "नोंदीचे अनुकरण करा",
+        "queueEmpty": "रांग रिकामी आहे.",
+        "token": "टोकन",
+        "callToChamber": "चेंबरमध्ये बोलावा",
+        "consultationInProgress": "सल्लामसलत प्रगतीपथावर",
+        "returnToProfile": "प्रोफाइलवर परत जा",
+        "waitingForNextPatient": "पुढील रुग्णाची प्रतीक्षा करत आहे",
+        "selectFromWorklist": "सल्लामसलत सुरू करण्यासाठी कामाच्या यादीतून रुग्ण निवडा.",
+        "uhid": "UHID",
+        "age": "वय",
+        "blood": "रक्त",
+        "emrTimeline": "ईएमआर टाइमलाइन",
+        "recommendAdmission": "प्रवेशाची शिफारस करा",
+        "completeSummary": "पूर्ण आणि सारांश",
+        "clinicalEncounterNotes": "क्लिनिकल एन्काउंटर नोट्स",
+        "insertTemplate": "टेम्पलेट घाला",
+        "dictationActive": "श्रुतलेखन सक्रिय...",
+        "aiVoiceScribe": "AI व्हॉइस स्क्राइब",
+        "chiefComplaint": "मुख्य तक्रार (लक्षणे)",
+        "historyPresentIllness": "सध्याच्या आजाराचा इतिहास",
+        "assessmentPlan": "मूल्यांकन आणि योजना",
+        "aiSupportTitle": "AI क्लिनिकल निर्णय समर्थन",
+        "predictDiagnostics": "निदानाची भविष्यवाणी करा",
+        "runCDSSPrompt": "ज्ञात टोपोलॉजीज विरूद्ध रुग्ण पॅरामीटर्स स्कॅन करण्यासाठी CDSS प्रेडिक्टर चालवा.",
+        "possibleDiffDx": "संभाव्य विभेदक निदान",
+        "suggestedLabWork": "सुचविलेले लॅब कार्य",
+        "orderBtn": "ऑर्डर करा",
+        "suggestedImaging": "सुचविलेले इमेजिंग",
+        "structuredPrescriptions": "संरचित ई-प्रिस्क्रिप्शन",
+        "naturalRxPlaceholder": "नैसर्गिक Rx: Amox 500mg दिवसातून दोनदा 7 दिवस",
+        "noMedicationsAdded": "कोणतीही औषधे जोडलेली नाहीत.",
+        "lisRisOrderDispatch": "LIS / RIS ऑर्डर डिस्पॅच",
+        "typeLab": "प्रयोगशाळा",
+        "typeRadiology": "रेडिओलॉजी",
+        "typeProcedure": "प्रक्रिया",
+        "mriBrainPlaceholder": "उदा. एमआरआय ब्रेन",
+        "addBtn": "जोडा",
+        "noDiagnosticOrders placed": "कोणतेही निदान आदेश दिले नाहीत.",
+        "clinicalHandoverIPD": "क्लिनिकल हँडओव्हर: आयपीडी प्रवेश",
+        "clinicalHandoverSubtitle": "बेड वाटप करण्यापूर्वी वॉर्ड नर्सेसना महत्त्वपूर्ण क्लिनिकल संदर्भ प्रदान करा.",
+        "currentHealthVitals": "सद्य आरोग्य आणि महत्वाचे",
+        "dosesMedications": "डोस आणि द्यावयाची औषधे",
+        "planOfAction": "कृती योजना",
+        "cancel": "रद्द करा",
+        "pushAdmission": "वॉर्डमध्ये अॅडमिशन पुश करा"
+    }
+}
+
+for lang_code in ['en', 'hi', 'mr', 'ar', 'es', 'fr', 'pt', 'de', 'ru', 'zh', 'ja']:
+    file_path = os.path.join(locales_dir, f"{lang_code}.json")
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            try:
+                data = json.load(f)
+            except:
+                data = {}
+        
+        final_translations = translations["en"].copy()
+        if lang_code in translations:
+            final_translations.update(translations[lang_code])
+            
+        if "docDesk" not in data:
+            data["docDesk"] = {}
+        
+        data["docDesk"].update(final_translations)
+        
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"Updated docDesk in {file_path}")

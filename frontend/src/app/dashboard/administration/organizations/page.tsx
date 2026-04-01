@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useState, useEffect } from "react";
 import { TopNav } from "@/components/ui/TopNav";
@@ -6,6 +8,7 @@ import { tenantsApi, type Organization, type Site } from "@/lib/tenants-api";
 import { Building2, MapPin, Globe, Mic, Settings2, Plus, Users, Save, CheckCircle2, AlertTriangle, ShieldCheck, Database, ShieldAlert } from "lucide-react";
 
 export default function TenantManagementDashboard() {
+  const { t } = useTranslation();
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(false);
   

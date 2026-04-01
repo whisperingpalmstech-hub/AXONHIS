@@ -103,7 +103,26 @@ def create_app() -> FastAPI:
     from app.core.system.security.rate_limit import RateLimitMiddleware
     app.add_middleware(RateLimitMiddleware, requests_per_minute=200)
 
-    # ── Exception Handler Phase 11 ────────────────────────────────────────
+    # ── Exception Handler Phase 11 & i18n ────────────────────────────────────────
+    from fastapi.exceptions import RequestValidationError
+    from app.core.i18n import get_locale_from_header, t
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        locale = request.headers.get("X-Locale") or get_locale_from_header(request.headers.get("Accept-Language"))
+        errors = []
+        for error in exc.errors():
+            msg = error.get("msg", "invalid")
+            # Basic map for generic pydantic errors
+            if "required" in msg:
+                msg = t("validation.required", locale=locale)
+            elif "not a valid email" in msg:
+                msg = t("validation.invalid_email", locale=locale)
+            elif "not a valid number" in msg:
+                msg = t("validation.positive_number", locale=locale)
+            errors.append({"loc": error.get("loc"), "msg": msg, "type": error.get("type")})
+        return JSONResponse(status_code=422, content={"detail": errors})
+
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
         # We need an ad-hoc session since this is an exception
@@ -207,6 +226,26 @@ def create_app() -> FastAPI:
     # Enterprise OPD Billing & Revenue Cycle Engine
     app.include_router(rcm_billing_router, prefix="/api/v1")
     app.include_router(multitenancy_router, prefix="/api/v1/administration")
+
+    # Sprint 1: Billing Masters & Configuration Engine (FRD Gaps 5-15)
+    from app.core.billing_masters.routes import router as billing_masters_router
+    app.include_router(billing_masters_router, prefix="/api/v1")
+
+    # Sprint 2: Emergency Room (ER) Module (FRD Gap 1)
+    from app.core.er.routes import router as er_router
+    app.include_router(er_router, prefix="/api/v1")
+
+    # Sprint 3: IPD Enhancements (FRD Gaps 2-4)
+    from app.core.ipd.ipd_enhancements.routes import router as ipd_enhanced_router
+    app.include_router(ipd_enhanced_router, prefix="/api/v1")
+
+    # Sprint 4: Cross-Module Integration Bridge
+    from app.core.integration.routes import router as integration_router
+    app.include_router(integration_router, prefix="/api/v1")
+
+    # Sprint 5: Operating Theatre (OT) Module — Enhanced
+    from app.core.ot.routes import router as ot_enhanced_router
+    app.include_router(ot_enhanced_router, prefix="/api/v1")
 
     # Hospital Intelligence & Analytics Engine
     from app.core.hospital_intelligence.routes import router as bi_router

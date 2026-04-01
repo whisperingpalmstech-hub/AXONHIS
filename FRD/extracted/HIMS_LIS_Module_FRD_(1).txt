@@ -1,0 +1,508 @@
+Functional Requirements Document
+Laboratory Information System (LIS) ModuleHospital Information System (HIS)   
+
+1. Document Control
+Document Title 
+Functional Requirements Document – LIS  Module 
+Module Name 
+LIS Module 
+Parent System 
+Hospital Information System (HIS) 
+Version 
+Document Version  
+Date 
+December 16, 2026
+Status 
+Draft 
+Document Conventions
+HIS: Hospital Information System (parent system)
+LIS: Laboratory Information System
+OPD: Outpatient Department
+IPD: Inpatient Department
+EHR: Electronic Health Record
+RBAC: Role-Based Access Control
+CR: Central Receiving
+HL7: Health Level 7 (healthcare data exchange standard)
+
+
+2. Introduction
+2.1 Purpose
+This Functional Requirements Document (FRD) defines the functional and non-functional requirements for the Laboratory Information System (LIS) module within the Hospital Information System (HIS). The LIS module is designed to streamline and automate laboratory, including sample collection, test processing, result entry, validation, reporting, and integration with other hospital departments.   
+2.2 Scope/ Enhancements : 
+This document covers the following aspects of the LIS module:
+Add scan and upload prescription (For LIS service orders) option on OPD billing screen:
+When we scan prescription, it will auto add the services for billing 
+Need upload prescription option as well to upload documents
+Add a consent required flag in unit service master screen and need a pop-up on OPD Billing screen when we add LIS services which requires consent: 
+The pop-up should work same as pre-requisite pop-up on OPD billing
+The pop-up should appear if the consent required is true
+The pop-up should say "Consent is required for this test"
+Need a column on Phlebotomy Work List screen to upload consent
+Add a column 'Upload Consent' in the Phlebotomy Worklist 
+The column will have upload document icon
+Document type should be 'Consent' 
+It will only be applicable to services who's consent require flag is true
+Without consent service cannot be rendered if the flag is true
+Calculate Delta Value in LIS (For biochemistry, hematology & clinical pathology )After report entry & first level validation -New result is entered 
+-LIS pulls the patient’s last result
+-System calculates delta
+-If delta exceeds configured limits → alert appears
+Review / Verify / Comment before report release
+The LIS should implement color-coded prioritization on report release screen, where critical and urgent reports are prominently highlighted and auto-sorted to the top of the queue. Non-urgent reports should be shown in a separate color and arranged at the bottom to support efficient validation workflow.
+For Repeated sample -> Due sample collection time should have to reflect (for repetitive time) (Check for repeat sample in master confg -> no. of samples-> mention number of times sample collection, if repeat collection of sample is there or not & check for respective time) 
+Histopathology -> Sensitive Reports: Sensitive reports should not be released directly to the patient. A system flag must be available to indicate whether counselling is required prior to report release(eg. Cancer +ve) 
+(Create Worklist for counselling for OPD patients only)
+Enable attachment of microscopic cell images within histopathology reports.Microscope) -> positive finding -> paste image in reporting 
+Report uploading (give image upload option) 
+
+Provide separate fields for diagnosis before examination (provisional diagnosis) and after microscopic examination (final diagnosis) on report, with a facility to fetch the finalized histopathologist diagnosis into the surgeon’s module. Currently, the histopathologist’s diagnosis is not visible to the surgeon.
+
+Give Cross Referral option from histopathology result (As cancer detected) Implement cross-referral workflow for oncology cases with integrated histopathology visibility. Enable previous hospital document upload linked to patient UHID
+
+
+Integration of LAB Modules with other Departments 1.  Microbiology Module should include dedicated sections for Virology and Mycology (including Amoeba-related tests).
+ Ensure integration across all modules, particularly integrating Blood Bank as a sub-module under Lab, aligned with the complete blood donation workflow.
+ Provide a Blood Donation flag within the system and enable automatic report sharing via email to the respective donor/concerned authority as per configured rules.
+
+
+Enable integration between the CSSD department and Microbiology module for sterility monitoring.
+In the CSSD module, incorporate functionality for managing Biological Indicator (BI) testing.
+For each BI cycle, maintain two samples:
+Control sample (kept outside the sterilization process)
+Test sample (subjected to sterilization)
+Microbiology should process both samples, compare the results, and generate a consolidated report.
+The finalized BI report should be automatically sent to the respective department.
+This workflow should have no impact on billing (non-chargeable process).
+
+
+   3. Enable integration between OT and Ward modules with the Microbiology module for infection control monitoring.
+       Facilitate Swab Test requests (OT / ICU / Ward) to be routed to Microbiology for culture testing to assess sterilization and environmental contamination.
+       Upon completion, the culture test report should be automatically shared with the respective department for necessary action and compliance tracking.
+
+        Report should be sent on particular department id instead of whats app, as it is dept specific flow
+
+Smart Report Enhancement (Should be configurable) 
+Implement a Smart Report module that auto-populates interpretative comments based on result values. 
+Example: If status = Reactive, system should auto-display predefined clinical interpretation and reference ranges (e.g., glucose range, normal limits, critical limits).
+Comment library should be configurable by department.
+
+
+Laboratory Information System (LIS) for managing lab tests, samples, and results
+Sample collection workflows (Phlebotomy, Home Collection, Outsourcing)
+Test processing and result entry for various specialties (Clinical Pathology, Histopathology, Microbiology, etc.)
+Integration with HIS modules (OPD, IPD, Billing, Doctor Desk, Nursing, Pharmacy)
+Barcode generation and tracking for samples
+Report validation, release, and handover processes
+Dashboard and workload management
+Quality control and compliance features
+2.3 Module Context within HIS
+The LIS module is an integral component of the Hospital Information System (HIS), developed by Axonic Health Pvt Ltd as a SaaS platform. It interfaces with multiple HIS modules to provide seamless diagnostic services across the hospital:
+Receives test orders from OPD, IPD, Doctor Desk, and Billing modules
+Shares patient demographics and clinical information with EHR
+Integrates with Billing for test charges and payment processing
+Provides results to Doctor Desk and Nursing modules for clinical decision-making
+Coordinates with Inventory for reagent and consumable management
+Interfaces with Front Office for patient registration and appointment scheduling
+Supports diagnostic centers for walk-in patients and home collection services
+Enables external lab integration for outsourced tests
+
+3. System Architecture and Integration
+3.1 Module Architecture
+The LIS module operates as an integrated component within the HIS architecture, following a multi-tier design pattern:
+Presentation Layer: Web-based user interfaces for lab staff, radiologists, technicians, and administrators
+Application Layer: Business logic for test processing, result management, and workflow orchestration
+Integration Layer: APIs and interfaces for HIS module communication and external system integration
+Data Layer: Centralized HIS database with dedicated schemas for LIS data
+Device Integration Layer: Interfaces for lab analyzers, radiology modalities, and barcode scanners
+3.2 Integration Points with HIS Modules
+The LIS module integrates with the following HIS modules:
+OPD Module: Receives test orders from outpatient consultations, shares results with doctors
+IPD Module: Receives test orders for admitted patients, supports bedside sample collection
+Billing Module: Synchronizes test charges, processes payments, handles refunds and cancellations
+Doctor Desk: Enables test ordering, displays results, supports clinical decision-making
+Nursing Module: Coordinates sample collection, displays pending tests, shows results
+Pharmacy Module: Shares medication information for drug interaction analysis
+Front Office: Manages patient registration, appointment scheduling, report handover
+Back Office: Provides administrative reports, manages master data
+Inventory Module: Tracks reagent consumption, manages stock levels, triggers reorders
+Finance Module: Shares revenue data, supports financial reporting and reconciliation
+EHR System: Stores test results in patient health records, supports longitudinal data analysis
+3.3 Data Flow
+Key data flows within the LIS module:
+Test Order → Sample Collection → Processing → Result Entry → Validation → Report Release → Handover 
+Billing Integration: Test charges flow from LIS to Billing, payment status flows back
+Inventory Integration: Reagent consumption data flows to Inventory, stock alerts flow back
+Clinical Integration: Test results flow to Doctor Desk, Patient App, EHR, and Nursing modules
+External Lab Integration: Sample details flow to external labs, results flow back to LIS
+Quality Control: QC data flows to quality management system, alerts flow back to LIS
+4. User Roles and Permissions
+The LIS module supports multiple user roles managed through HIS Role-Based Access Control (RBAC). Each role has specific permissions and access levels:
+Lab Assistant: Sample registration, barcode generation, phlebotomy worklist management, sample handover to CR
+Lab Technician: Test processing, result entry, quality control, equipment maintenance
+Lab Senior Technician: Result validation, complex test processing, technical supervision, troubleshooting
+Lab HOD: Report approval, quality assurance, staff management, protocol development
+Phlebotomist: Sample collection (in-hospital, home collection), patient identification, sample labeling
+Pathologist: Result interpretation, report validation, consultation, case review
+Front Office Executive: Patient registration, appointment scheduling, report handover, payment collection
+Billing Executive: Test charge entry, payment processing, refund management, billing reports
+Doctor: Test ordering, result viewing, clinical interpretation, consultation
+Nurse: Sample collection coordination, test status monitoring, result communication
+Hospital Administrator: System configuration, user management, performance monitoring, strategic planning
+
+5. Functional Requirements - Laboratory Information System (LIS)
+5.1 Patient Visit and Test Ordering
+Requirements:
+Support test ordering from multiple sources: OPD billing, Doctor Desk, IPD charges, Walk-in patients
+Enable selection of individual tests or test panels/profiles
+Capture clinical information and test indications
+Support urgent/STAT test marking with priority handling
+Validate patient eligibility and insurance coverage
+Generate unique test order numbers with barcode
+Support home collection requests with address and scheduling
+Enable outsource lab selection for specialized tests
+Capture sample collection instructions and special requirements
+5.2 Phlebotomy and Sample Collection
+Requirements:
+Display phlebotomy worklist with pending sample collections
+Filter worklist by location, priority, time, patient type
+Generate sample barcodes with unique identifiers
+Support multiple sample types (blood, urine, tissue, etc.)
+Capture sample collection time, location, and collector details
+Enable patient identification verification (ID, photo, biometric)
+Support bedside sample collection for IPD patients
+Manage home collection schedules and assignments
+Track sample collection status and delays
+Generate sample collection labels with patient and test details
+5.3 Central Receiving (CR)
+Requirements:
+Receive samples from phlebotomy, wards, and external sources
+Scan barcodes to register sample receipt
+Verify sample quality and acceptability criteria
+Reject unsuitable samples with rejection reasons
+Sort samples by department and test type
+Distribute samples to respective lab sections
+Track sample location and custody chain
+Manage sample storage conditions (temperature, time)
+Generate sample receipt acknowledgments
+Alert for missing or delayed samples
+5.4 Test Processing and Result Entry
+Requirements:
+Display worklist of samples ready for processing
+Support manual result entry with validation rules
+Enable auto-analyzer interface for automated result import
+Provide result entry templates for different test types
+Support numeric, text, and image-based results
+Implement normal range validation with flags (High, Low, Critical)
+Enable delta check for significant result changes
+Support result comments and interpretations
+Manage quality control (QC) samples and results
+Support batch processing for multiple samples
+
+5.5Biochemistry / Hematology / Clinical Pathology/ Serology Department Workflow in HIS 
+Phlebotomy Worklist: Sample Collection 
+Result Entry
+Analyzer values auto-imported/ manual entry done
+Remarks added if required
+Abnormal values flagged (H/L)
+Validation
+Authorized user reviews results
+Verifies abnormal/critical findings
+Approves or sends back for correction
+System logs validator name, date, and time
+ Report Release
+Finalized and locked after approval
+
+Report Handover Screen (Common)
+All completed reports from every department are consolidated into a centralized Report Handover Screen. Users can review report readiness, filter by department, visits and perform Bulk Release actions with role-based authorization checks.Released Report : For verification of doctor, released by doctor (role based access- configurable ) Bulk Email Worklist : Send All Email in bulk, provision to send mail 
+5.6 Histopathology Workflow
+Requirements:
+ Collect sample from phlebotomy worklist  ( Check for manual sample collection or outsource checkbox ) -> Send to CR -> Central Receiving OP/ IP Samples 
+Check sample entry on ‘Specimen Receipt’ screen-> Record patient history by click on action icon (Diagnosis & Medical History) -> SAVE 
+Macroscopic examination worklist -> Provision to view SLIDE ( Check for abnormal behavior)->SAVE 
+(Provision to enter ‘Provisional Diagnosis’-> OK)-> Slide View -> Enter Block, Slide-> Release Report 
+Block Creation-> Create Block -> SAVE 
+Slide Creation -> Create Slide-> SAVE 
+Microscopic examination worklist -> Provision to check for (Macroscopic examination details) -> View Slide -> Click on SAVE ( Provision to enter diagnosis & then report creation and release) 
+Storage -> Store sample in sample -> SAVE 
+Track specimen processing stages (fixation, embedding, sectioning, staining)
+Support block and slide management with unique identifiers
+Enable microscopic examination and image capture
+Provide structured reporting templates for histopathology
+Support immunohistochemistry (IHC) and special stains
+Enable consultation and second opinion workflows
+Manage frozen section procedures with rapid turnaround
+Track tissue block storage and retrieval
+Generate comprehensive histopathology reports with imagesLIS Template : LIS Workbench : (Multipara test master -> Select report type Template ) LIS Workbench -> Accept Sample -> Result Entry -> Upload Result -> Select Template -> SAVE Report Entry -> Upload ->SAVE -> Provisional Release Report Validation-> Upload -> Final Release Report Handover  
+5.7 Microbiology Workflow
+Requirements:
+Collect Sample -> Microbiology -> Incubation Observation (select Incubation Type, Incubation period) -> Check for growth found, completed -> SAVE 
+Macroscopic examination -> Enter details -> Microscopic examination -> Sensitivity Testing -> Test Check -> SAVE Manage culture sample processing and inoculation
+Track incubation periods with time and temperature monitoring
+Record incubation observations (growth, colony characteristics)
+Support organism identification and classification
+Enable antibiotic sensitivity testing with MIC values
+Provide antibiogram reporting with interpretation
+Support multiple culture types (blood, urine, wound, etc.)
+Enable preliminary and final report generation
+Track culture media and reagent usage
+Manage infection control alerts and notifications
+5.8 Result Validation and Approval
+Requirements:
+Display pending results for validation
+Enable multi-level validation (Technician → Senior Technician → Pathologist)
+Implement validation rules and business logic
+Support critical value alerts and notifications
+Enable result comparison with previous values
+Provide clinical correlation and interpretation
+Support validation rejection with reasons
+Track validation time and validator details
+Enable batch validation for multiple results
+Generate validation audit trail
+5.9 Report Generation and Release
+Requirements:
+Generate standardized lab reports with hospital branding
+Include patient demographics, test details, results, and interpretations
+Display normal ranges and flags for abnormal values
+Support multiple report formats (PDF, printed, digital)
+Enable digital signature for authorized personnel
+Implement report release workflow with approvals
+Support preliminary and final report versions
+Enable report amendments with version control
+Generate cumulative reports for multiple tests
+Support report delivery via email, SMS, patient portal
+Track report printing and handover status
+5.10 Report Handover and Distribution
+Requirements:
+Manage report handover worklist at Front Office
+Verify patient/representative identity before handover
+Record handover time, recipient details, and acknowledgment
+Support digital report access via patient portal
+Enable report reprinting with authorization
+Track pending report handovers and delays
+Send notifications for report availability
+Support courier delivery for home collection patients
+Manage unclaimed reports and follow-up
+5.11 Outsource Lab Management
+Requirements:
+Maintain master list of external labs with contact details
+Enable test outsourcing with sample dispatch tracking
+Generate sample dispatch forms and documentation
+Track sample status at external labs
+Receive and import results from external labs
+Validate and approve external lab results
+Integrate external results into patient reports
+Manage billing and reconciliation with external labs
+Track turnaround time for outsourced tests
+5.12 Home Collection Management
+Requirements:
+Receive and manage home collection requests
+Schedule collection appointments with date, time, and address
+Assign phlebotomists to home collection routes
+Provide mobile app for phlebotomists with patient details
+Enable GPS tracking of phlebotomist location
+Capture sample collection confirmation at patient home
+Manage sample transportation to lab
+Track home collection charges and payments
+Generate home collection performance reports5.13 Workload Dashboard:  Shows all test entries with lab status/ details 
+
+6. Process Workflows
+6.1 LIS Workflow - OPD/IPD Patient
+Standard workflow for laboratory tests:
+1. Patient Registration → Test ordering from OPD/IPD/Doctor Desk
+2. Billing → Test charges entry and payment
+3. Phlebotomy Worklist → Sample collection scheduling
+4. Sample Collection → Barcode generation and labeling
+5. Send to CR → Sample handover to Central Receiving
+6. Central Receiving → Sample verification and distribution
+7. Test Processing → Result entry by Lab Technician
+8. Result Validation → Review by Senior Technician/Pathologist
+9. Report Generation → Automated report creation
+10. Report Release → Approval and release by Lab HOD
+11. Report Handover → Distribution to patient/doctor
+12. Result Integration → Update to EHR and Doctor Desk
+6.2 LIS Workflow - Home Collection
+Workflow for home collection services:
+1. Home Collection Request → Patient submits request with address
+2. Appointment Scheduling → Date, time, and phlebotomist assignment
+3. Phlebotomist Assignment → Route planning and notification
+4. Sample Collection at Home → Patient identification and collection
+5. Sample Transportation → Delivery to lab with tracking
+6. Central Receiving → Sample receipt and processing
+7. Test Processing → Standard lab workflow
+8. Report Generation and Release → Standard approval process
+9. Report Delivery → Courier/digital delivery to patient
+6.3 LIS Workflow - Outsource Lab
+Workflow for outsourced tests:
+1. Test Ordering → Specialized test requiring external lab
+2. External Lab Selection → Mark is outsource flag true
+3. Sample Collection → Standard phlebotomy process
+4. Sample Dispatch → Packaging and courier to external lab
+5. External Processing → Test performed at external lab
+6. Result Receipt → Import results from external lab
+7. Result Validation → Internal review and approval
+8. Report Integration → Merge with internal report
+9. Report Release → Standard distribution process
+6.4 Workflow Integration Points
+Key integration points managed by HIS workflow engine:
+Test Order Trigger: Automatic notification to LIS when order placed
+Billing Integration: Real-time charge posting and payment verification
+Sample Collection Alert: Notification to phlebotomy team
+Critical Result Alert: Immediate notification to ordering physician
+Report Release Notification: Alert to patient and doctor
+Inventory Update: Automatic reagent consumption tracking
+Quality Control: Automated QC sample scheduling and monitoring
+Turnaround Time Monitoring: Alerts for delayed tests
+
+7. Integration Requirements
+7.1 HIS Module Integration
+The LIS module must integrate with the following HIS modules: 
+OPD Module: Test ordering, patient demographics, clinical information, result delivery
+IPD Module: Test ordering for admitted patients, bedside collection, result delivery
+Billing Module: Test charges, payment status, refunds, billing reports
+Doctor Desk: Test ordering, result viewing, clinical decision support, alerts
+Nursing Module: Sample collection coordination, test status, result notifications
+Pharmacy Module: Medication information for drug interaction analysis
+Front Office: Patient registration, appointment scheduling, report handover
+Back Office: Master data management, administrative reports, user management
+Inventory Module: Reagent consumption, stock levels, reorder triggers
+Finance Module: Revenue data, financial reports, cost analysis
+EHR System: Longitudinal test results, clinical data repository, analytics
+7.2 External System Integration
+Integration with external systems:
+Lab Analyzers: Bidirectional interface for test orders and results (HL7, ASTM)
+External Labs: Sample dispatch, result import, billing reconciliation
+Insurance Systems: Eligibility verification, pre-authorization, claims
+Government Portals: Regulatory reporting, disease surveillance
+Patient Portal: Test results access, report download, appointment booking
+Mobile App: Home collection management, phlebotomist tracking
+Barcode Printers: Label printing for samples and reports
+SMS/Email Gateway: Notifications and alerts
+7.3 Data Synchronization
+Real-time data synchronization requirements:
+Patient demographics synchronized across all HIS modules
+Test orders immediately visible in LIS/RIS worklists
+Billing charges updated in real-time
+Test results immediately available to ordering physicians
+Inventory consumption updated after each test
+Critical results trigger immediate alerts
+Appointment changes synchronized across modules
+Report status updated in real-time
+
+8. Reporting Requirements
+8.1 Operational Reports
+Daily Test Volume Report (by department, test type)
+Pending Tests Report (by status, priority, age)
+Turnaround Time Report (collection to result, by test type)
+Sample Rejection Report (by reason, department, collector)
+Critical Value Report (by test, patient, notification status)
+Phlebotomy Performance Report (collections, delays, rejections)
+Home Collection Report (requests, completions, revenue)
+Outsource Lab Report (tests sent, results received, costs)
+Report Handover Status Report
+8.2 Financial Reports
+Revenue Report (by department, test type, payment mode)
+Test-wise Revenue Analysis
+Referring Doctor Revenue Report
+Insurance Claims Report
+Discount and Concession Report
+Outstanding Payment Report
+Cost per Test Analysis
+Reagent Consumption Cost Report
+8.3 Quality and Compliance Reports
+Quality Control Report (QC results, failures, corrective actions)
+Proficiency Testing Report
+Equipment Maintenance Report
+Calibration and Validation Report
+Audit Trail Report (user actions, data changes)
+Compliance Report (regulatory requirements, accreditation)
+Incident and Error Report
+Patient Safety Report (critical values, adverse events)
+8.4 Management Reports
+Executive Dashboard (KPIs, trends, alerts)
+Referral Source Analysis
+Patient Demographics Report
+Comparative Analysis Report (month-over-month, year-over-year)
+Forecasting and Trend Analysis
+8.5 Report Features
+Customizable date ranges and filters
+Export to multiple formats (PDF, Excel, CSV)
+Scheduled report generation and email delivery
+Interactive dashboards with drill-down capability
+Graphical visualization (charts, graphs, heatmaps)
+Comparative analysis with previous periods
+Role-based report access control
+Report templates for standardization
+
+9. Security Requirements
+9.1 Authentication and Authorization
+Integration with HIS Single Sign-On (SSO)
+Multi-factor authentication for sensitive operations
+Role-Based Access Control (RBAC) managed through HIS
+Session timeout after 15 minutes of inactivity
+Password complexity requirements (minimum 8 characters, alphanumeric)
+Account lockout after 3 failed login attempts
+Privileged access management for administrators
+9.2 Data Security
+Encryption at rest (AES-256) for all patient data
+Encryption in transit (TLS 1.3) for all communications
+Database encryption for sensitive fields (patient identifiers, results)
+Secure API endpoints with token-based authentication
+Data masking for non-authorized users
+Secure file storage for reports and images
+Regular security vulnerability assessments
+Penetration testing annually
+9.3 Audit and Compliance
+Comprehensive audit trail for all user actions
+Logging of data access, modifications, and deletions
+Tamper-proof audit logs with digital signatures
+Audit log retention for 7 years
+Compliance with HIPAA, NABH, CAP, ISO 15189 standards
+Regular compliance audits and reporting
+Data retention and archival policies
+Right to be forgotten (data deletion on request)
+9.4 Patient Privacy
+Patient consent management for data sharing
+Access control for sensitive test results (HIV, genetic tests)
+Anonymization for research and analytics
+Patient portal with secure access to own results
+Notification of data breaches within 72 hours
+Data sharing agreements with external labs
+Privacy impact assessments for new features
+10. Assumptions and Constraints
+10.1 Assumptions
+HIS infrastructure (servers, network, database) is available and operational
+Users have basic computer literacy and training on HIS
+Lab analyzers support standard interfaces (HL7)
+Internet connectivity is available for cloud-based HIS deployment
+Barcode printers and scanners are available at required locations
+External labs provide results in standardized formats
+Mobile devices are available for home collection phlebotomists
+10.2 Constraints
+Must comply with local healthcare regulations and standards
+Integration limited by capabilities of existing lab analyzers 
+Performance dependent on network bandwidth and latency
+Mobile app functionality limited by device capabilities
+External lab integration dependent on their system capabilities
+Historical data migration limited by source system data quality
+Customization limited by HI S platform architecture
+
+12. Document Approval
+This document requires approval from the following stakeholders:
+Role
+Name 
+Signature 
+Date 
+Product Owner 
+ 
+ 
+ 
+CTO 
+ 
+ 
+ 
+Director  
+ 
+ 
+ 
+
+End of Document

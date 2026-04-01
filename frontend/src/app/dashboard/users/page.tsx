@@ -1,8 +1,11 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useEffect, useState } from "react";
 import { Users, Shield, Edit2, Trash2, X, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function UsersPage() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,32 +158,32 @@ export default function UsersPage() {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
             <Users className="text-blue-600" size={32} />
-            User Management
+            {t("users.title")}
           </h1>
-          <p className="mt-2 text-slate-500">Manage hospital staff access, roles, and security profiles.</p>
+          <p className="mt-2 text-slate-500">{t("users.subtitle")}</p>
         </div>
         <button onClick={handleOpenAdd} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium shadow-md transition-colors flex items-center gap-2">
-          <span>+ Add User</span>
+          <span>+ {t("users.addUser")}</span>
         </button>
       </div>
 
       <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden min-h-[400px]">
         {loading ? (
-          <div className="p-12 text-center text-slate-500">Loading users...</div>
+          <div className="p-12 text-center text-slate-500">{t("common.loading")}</div>
         ) : error ? (
           <div className="p-12 text-center text-rose-500 bg-rose-50 border border-rose-200 m-4 rounded-xl">{error}</div>
         ) : users.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">No users found in the system.</div>
+          <div className="p-12 text-center text-slate-500">{t("users.noUsers")}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">User</th>
-                  <th className="px-6 py-4 font-semibold">Role / Security</th>
-                  <th className="px-6 py-4 font-semibold">Contact</th>
-                  <th className="px-6 py-4 font-semibold">Status</th>
-                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                  <th className="px-6 py-4 font-semibold">{t("common.name")}</th>
+                  <th className="px-6 py-4 font-semibold">{t("users.role")}</th>
+                  <th className="px-6 py-4 font-semibold">{t("users.email")}</th>
+                  <th className="px-6 py-4 font-semibold">{t("common.status")}</th>
+                  <th className="px-6 py-4 font-semibold text-right">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -246,7 +249,7 @@ export default function UsersPage() {
             <div className="flex items-center justify-between p-6 border-b border-slate-100">
               <h3 className="text-xl font-bold flex items-center gap-2 text-slate-800">
                 {modalMode === "add" ? <Users className="text-blue-600"/> : <Edit2 className="text-blue-600"/>}
-                {modalMode === "add" ? "Register New User" : `Manage Roles: ${selectedUser?.full_name}`}
+                {modalMode === "add" ? t("users.addUser") : `${t("users.editUser")}: ${selectedUser?.full_name}`}
               </h3>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 hover:bg-slate-200 p-2 rounded-xl"><X size={18} /></button>
             </div>
@@ -257,27 +260,27 @@ export default function UsersPage() {
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">First Name <span className="text-red-500">*</span></label>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">{t("users.firstName")} <span className="text-red-500">*</span></label>
                       <input type="text" className="w-full border-slate-200 rounded-lg text-sm p-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none border transition-all" value={formData.first_name} onChange={e => setFormData(p => ({...p, first_name: e.target.value}))} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Last Name <span className="text-red-500">*</span></label>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">{t("users.lastName")} <span className="text-red-500">*</span></label>
                       <input type="text" className="w-full border-slate-200 rounded-lg text-sm p-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none border transition-all" value={formData.last_name} onChange={e => setFormData(p => ({...p, last_name: e.target.value}))} />
                     </div>
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Email Address <span className="text-red-500">*</span></label>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">{t("users.email")} <span className="text-red-500">*</span></label>
                     <input type="email" className="w-full border-slate-200 rounded-lg text-sm p-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none border transition-all" value={formData.email} onChange={e => setFormData(p => ({...p, email: e.target.value}))} />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Temporary Password <span className="text-red-500">*</span></label>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">{t("users.password")} <span className="text-red-500">*</span></label>
                       <input type="text" className="w-full border-slate-200 rounded-lg text-sm p-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none border transition-all font-mono" value={formData.password} onChange={e => setFormData(p => ({...p, password: e.target.value}))} />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Phone (Optional)</label>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">{t("users.phone")} ({t("common.optional")})</label>
                       <input type="text" className="w-full border-slate-200 rounded-lg text-sm p-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none border transition-all" value={formData.phone} onChange={e => setFormData(p => ({...p, phone: e.target.value}))} />
                     </div>
                   </div>
@@ -323,10 +326,10 @@ export default function UsersPage() {
             </div>
             
             <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
-              <button onClick={() => setShowModal(false)} className="px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-lg transition-colors">Cancel</button>
+              <button onClick={() => setShowModal(false)} className="px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-lg transition-colors">{t("common.cancel")}</button>
               <button onClick={handleSubmit} className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
                 <CheckCircle2 size={16}/> 
-                {modalMode === "add" ? "Create User" : "Save Role Assignments"}
+                {modalMode === "add" ? t("users.addUser") : t("common.save")}
               </button>
             </div>
 

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect, useCallback } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
@@ -80,6 +82,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function IPReturnsPage() {
+  const { t } = useTranslation();
   const [returns, setReturns] = useState<IPReturnOut[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<IPReturnOut | null>(null);
   const [auditLogs, setAuditLogs] = useState<IPReturnLogOut[]>([]);
@@ -163,9 +166,9 @@ export default function IPReturnsPage() {
             <svg className="w-7 h-7 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
             </svg>
-            IP Returns & Rejections
+            {t("ipPharmacyReturns.title")}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Review Nursing medication return and rejection requests, add stock back, and credit IPD bills.</p>
+          <p className="text-slate-500 text-sm mt-1">{t("ipPharmacyReturns.subtitle")}</p>
         </div>
       </div>
 

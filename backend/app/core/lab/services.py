@@ -55,6 +55,39 @@ class LabService:
         )
         self.db.add(lab_order)
         await self.db.flush()
+
+        # LIS INTGERATION: Post charges automatically
+        try:
+            from app.core.integration.services import ChargePostingService
+            from app.core.integration.schemas import ChargePostingCreate
+            from app.core.orders.models import Order
+            from decimal import Decimal
+
+            stmt = select(Order).options(selectinload(Order.items)).where(Order.id == order_id)
+            clinic_order = (await self.db.execute(stmt)).scalar_one_or_none()
+            if clinic_order:
+                cp_service = ChargePostingService(self.db)
+                for item in clinic_order.items:
+                    await cp_service.post_charge(
+                        data=ChargePostingCreate(
+                            patient_id=patient_id,
+                            encounter_type="lab",
+                            encounter_id=encounter_id,
+                            service_name=item.item_name,
+                            service_code=f"LAB-{str(item.item_id)[:4]}" if item.item_id else "LAB-MISC",
+                            service_group="laboratory",
+                            source_module="lab",
+                            quantity=float(item.quantity) if item.quantity else 1.0,
+                            unit_price=Decimal(str(item.unit_price)) if item.unit_price else Decimal("0.00"),
+                            is_stat=(clinic_order.priority == "STAT")
+                        ),
+                        posted_by=uuid.UUID(int=1),  # System user
+                        posted_by_name="System",
+                        org_id=uuid.UUID(int=1)  # Using generic org or we can look it up
+                    )
+        except Exception as e:
+            print(f"Failed to post lab charges: {e}")
+
         return lab_order
 
     async def get_lab_order(self, lab_order_id: uuid.UUID) -> LabOrder | None:

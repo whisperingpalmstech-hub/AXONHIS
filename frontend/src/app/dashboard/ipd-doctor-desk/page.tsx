@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useState, useEffect } from "react";
 import { User, Activity, AlertCircle, Phone, Stethoscope, Plus, Save, FileText, ActivitySquare, ShieldAlert } from "lucide-react";
@@ -6,6 +8,7 @@ import { TopNav } from "@/components/ui/TopNav";
 import { ipdApi } from "@/lib/ipd-api";
 
 export default function IpdDoctorDeskPage() {
+  const { t } = useTranslation();
   const [patients, setPatients] = useState<any[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState("COVERSHEET");

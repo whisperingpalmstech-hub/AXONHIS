@@ -1,8 +1,11 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useEffect, useState } from "react";
 import { Activity, ShieldAlert, Clock, Database } from "lucide-react";
 
 export default function AuditLogsPage() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,9 +37,9 @@ export default function AuditLogsPage() {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
             <Activity className="text-emerald-600" size={32} />
-            System Audit Logs
+            {t("audit.title")}
           </h1>
-          <p className="mt-2 text-slate-500 max-w-2xl">Read-only event stream tracking all hospital administrative and clinical actions for compliance.</p>
+          <p className="mt-2 text-slate-500 max-w-2xl">{t("audit.subtitle")}</p>
         </div>
       </div>
 
@@ -44,25 +47,25 @@ export default function AuditLogsPage() {
         {loading ? (
           <div className="p-12 text-center text-slate-500 flex flex-col items-center">
             <Clock className="animate-spin text-slate-300 mb-4" size={32} />
-            Loading immutable system logs...
+            {t("audit.loading")}
           </div>
         ) : error ? (
           <div className="p-12 text-center text-rose-500 bg-rose-50 border border-rose-200 m-4 rounded-xl">{error}</div>
         ) : logs.length === 0 ? (
           <div className="p-20 text-center flex flex-col items-center">
               <Database className="text-slate-300 mb-4" size={48} />
-              <p className="text-slate-500 text-lg">No audit events found.</p>
+              <p className="text-slate-500 text-lg">{t("audit.noEvents")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">Timestamp</th>
-                  <th className="px-6 py-4 font-semibold">Action</th>
-                  <th className="px-6 py-4 font-semibold">Resource</th>
-                  <th className="px-6 py-4 font-semibold">Actor ID</th>
-                  <th className="px-6 py-4 font-semibold">Client IP</th>
+                  <th className="px-6 py-4 font-semibold">{t("audit.timestamp")}</th>
+                  <th className="px-6 py-4 font-semibold">{t("audit.action")}</th>
+                  <th className="px-6 py-4 font-semibold">{t("audit.resource")}</th>
+                  <th className="px-6 py-4 font-semibold">{t("audit.user")}</th>
+                  <th className="px-6 py-4 font-semibold">{t("audit.ipAddress")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

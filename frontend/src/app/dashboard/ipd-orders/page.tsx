@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useState, useEffect } from "react";
 import { ClipboardList, FlaskConical, ScanLine, Pill, Wrench, Plus, RefreshCw, ChevronRight, Clock, CheckCircle2, XCircle, AlertTriangle, Activity } from "lucide-react";
@@ -27,6 +29,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export default function IpdOrdersPage() {
+  const { t } = useTranslation();
   const [patients, setPatients] = useState<any[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
@@ -110,7 +113,7 @@ export default function IpdOrdersPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 relative">
-      <TopNav title="IPD Clinical Orders" />
+      <TopNav title={t("ipdOrders.title")} />
 
       <div className="flex h-[calc(100vh-64px)] overflow-hidden">
         {/* LEFT PANEL: PATIENT LIST */}
@@ -120,7 +123,7 @@ export default function IpdOrdersPage() {
               <ClipboardList size={18} className="text-indigo-600" />
               Admitted Patients
             </h2>
-            <p className="text-xs text-slate-500 mt-1">Select a patient to manage orders</p>
+            <p className="text-xs text-slate-500 mt-1">{t("ipdOrders.selectPatient")}</p>
           </div>
           <div className="p-3 space-y-2">
             {loading ? (

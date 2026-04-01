@@ -1,0 +1,185 @@
+import json
+import os
+
+locales_dir = "frontend/src/i18n/locales"
+
+translations = {
+    "en": {
+        "nursingTriageEngine": "Opd Nursing Triage Engine",
+        "triageSubtitle": "Record vitals, perform clinical templates, and detect risks automatically.",
+        "worklistDashboard": "Worklist Dashboard",
+        "activeTriage": "Active Triage",
+        "doctorContextViewer": "Doctor Context Viewer",
+        "patientsPendingTriage": "Patients Pending Triage",
+        "latestPatient": "Latest Patient",
+        "simulatePatientArrival": "Simulate Patient Arrival",
+        "uhid": "UHID",
+        "patientName": "Patient Name",
+        "priorityTag": "Priority Tag",
+        "status": "Status",
+        "action": "Action",
+        "noPatientsWaiting": "No patients waiting in queue.",
+        "startTriage": "Start Triage",
+        "pleaseSelectPatient": "Please select a patient from the Worklist Dashboard.",
+        "triageActiveTimestamp": "Triage Active Timestamp",
+        "completeTriageNotify": "Complete Triage & Notify Doctor",
+        "clinicalVitals": "Clinical Vitals",
+        "pullFromDevices": "Pull from Devices",
+        "sysBp": "SYS BP (mmHg)",
+        "diaBp": "DIA BP (mmHg)",
+        "heartRate": "Heart Rate",
+        "spo2": "SpO2 (%)",
+        "temperature": "Temp. (°C)",
+        "respRate": "Resp. Rate",
+        "weight": "Weight (kg)",
+        "height": "Height (cm)",
+        "recordAndEvaluateRisk": "Record & Evaluate Risk",
+        "externalDocuments": "External Documents",
+        "outsideLabReport": "Outside Lab Report (PDF)",
+        "imagingCd": "Imaging CD (DICOM Link)",
+        "oldPrescription": "Old Prescription",
+        "uploadFileTrace": "Upload file trace/name",
+        "attachToChart": "Attach to Chart",
+        "clinicalHistoryAssessment": "Clinical History & Nursing Assessment",
+        "generalTemplate": "General Template",
+        "chiefComplaint": "Chief Complaint (Reason for Visit)",
+        "chiefComplaintPlaceholder": "e.g. Chest pain radiating to left arm...",
+        "allergies": "Allergies",
+        "allergiesPlaceholder": "e.g. Penicillin",
+        "currentMedications": "Current Medications",
+        "currentMedicationsPlaceholder": "Medications brought by patient",
+        "pastMedicalHistory": "Past Medical History / Surgeries",
+        "pastMedicalHistoryPlaceholder": "Chronic conditions, past surgeries...",
+        "nursingObservations": "Nursing Observations (Triage Notes)",
+        "nursingObservationsPlaceholder": "Any additional contextual risk identifiers observed...",
+        "saveClinicalHistory": "Save Clinical History",
+        "doctorConsoleContextPreview": "Doctor Console Context Preview",
+        "whenTriageCompletes": "When triage completes, this highly structured timeline payload is passed to the doctor."
+    },
+    "hi": {
+        "nursingTriageEngine": "ओपीडी नर्सिंग ट्राइएज इंजन",
+        "triageSubtitle": "वाइटल दर्ज करें, क्लिनिकल टेम्पलेट निष्पादित करें, और स्वचालित रूप से जोखिम का पता लगाएं।",
+        "worklistDashboard": "कार्य सूची डैशबोर्ड",
+        "activeTriage": "सक्रिय ट्राइएज",
+        "doctorContextViewer": "डॉक्टर संदर्भ व्यूअर",
+        "patientsPendingTriage": "ट्राइएज के लिए लंबित मरीज",
+        "latestPatient": "नवीनतम मरीज",
+        "simulatePatientArrival": "रोगी के आगमन का अनुकरण करें",
+        "uhid": "UHID",
+        "patientName": "रोगी का नाम",
+        "priorityTag": "प्राथमिकता टैग",
+        "status": "स्थिति",
+        "action": "कार्रवाई",
+        "noPatientsWaiting": "कतार में कोई मरीज इंतजार नहीं कर रहा है।",
+        "startTriage": "ट्राइएज शुरू करें",
+        "pleaseSelectPatient": "कृपया कार्य सूची डैशबोर्ड से एक रोगी का चयन करें।",
+        "triageActiveTimestamp": "ट्राइएज सक्रिय टाइमस्टैम्प",
+        "completeTriageNotify": "ट्राइएज पूरा करें और डॉक्टर को सूचित करें",
+        "clinicalVitals": "नैदानिक ​​​​महत्वपूर्ण",
+        "pullFromDevices": "उपकरणों से खींचें",
+        "sysBp": "SYS बीपी (mmHg)",
+        "diaBp": "DIA बीपी (mmHg)",
+        "heartRate": "हृदय गति",
+        "spo2": "SpO2 (%)",
+        "temperature": "अस्थायी। (°C)",
+        "respRate": "रेस्प। दर",
+        "weight": "वजन (kg)",
+        "height": "ऊंचाई (cm)",
+        "recordAndEvaluateRisk": "रिकॉर्ड करें और जोखिम का आकलन करें",
+        "externalDocuments": "बाहरी दस्तावेज़",
+        "outsideLabReport": "बाहरी लैब रिपोर्ट (पीडीएफ)",
+        "imagingCd": "इमेजिंग सीडी (डीआईसीओएम लिंक)",
+        "oldPrescription": "पुराना प्रिस्क्रिप्शन",
+        "uploadFileTrace": "फ़ाइल ट्रेस/नाम अपलोड करें",
+        "attachToChart": "चार्ट में संलग्न करें",
+        "clinicalHistoryAssessment": "नैदानिक ​​इतिहास और नर्सिंग मूल्यांकन",
+        "generalTemplate": "सामान्य टेम्पलेट",
+        "chiefComplaint": "मुख्य शिकायत (यात्रा का कारण)",
+        "chiefComplaintPlaceholder": "उदा. छाती में दर्द बांह तक जा रहा है...",
+        "allergies": "एलर्जी",
+        "allergiesPlaceholder": "उदा. पेनिसिलिन",
+        "currentMedications": "वर्तमान दवाएं",
+        "currentMedicationsPlaceholder": "मरीज द्वारा लाई गई दवाएं",
+        "pastMedicalHistory": "पिछला मेडिकल इतिहास / सर्जरी",
+        "pastMedicalHistoryPlaceholder": "पुरानी स्थिति, पिछली सर्जरी...",
+        "nursingObservations": "नर्सिंग टिप्पणियां (ट्राइएज नोट्स)",
+        "nursingObservationsPlaceholder": "अवलोकन किए गए कोई अतिरिक्त प्रासंगिक जोखिम पहचानकर्ता...",
+        "saveClinicalHistory": "नैदानिक ​​इतिहास सहेजें",
+        "doctorConsoleContextPreview": "डॉक्टर कंसोल संदर्भ पूर्वावलोकन",
+        "whenTriageCompletes": "जब ट्राइएज पूरा हो जाता है, तो यह अत्यधिक संरक्षित टाइमलाइन पेलोड डॉक्टर को भेज दिया जाता है।"
+    },
+    "mr": {
+        "nursingTriageEngine": "ओपीडी नर्सिंग ट्रायज इंजिन",
+        "triageSubtitle": "महत्त्वाच्या गोष्टींची नोंद घ्या, वैद्यकीय टेम्पलेट्स चालवा आणि स्वयंचलितरित्या धोके ओळखा.",
+        "worklistDashboard": "कार्य सूची डॅशबोर्ड",
+        "activeTriage": "सक्रिय ट्रायज",
+        "doctorContextViewer": "डॉक्टर संदर्भ पाहणारा",
+        "patientsPendingTriage": "ट्रायजसाठी प्रलंबित रुग्ण",
+        "latestPatient": "नवीनतम रुग्ण",
+        "simulatePatientArrival": "रुग्णाचे आगमन अनुकरण करा",
+        "uhid": "UHID",
+        "patientName": "रुग्णाचे नाव",
+        "priorityTag": "प्राधान्य टॅग",
+        "status": "स्थिती",
+        "action": "कृती",
+        "noPatientsWaiting": "रांगेत कोणीही रुग्ण थांबलेला नाही.",
+        "startTriage": "ट्रायज सुरू करा",
+        "pleaseSelectPatient": "कृपया कार्य सूची डॅशबोर्ड वरून रुग्ण निवडा.",
+        "triageActiveTimestamp": "ट्रायज सक्रिय टाइमस्टॅम्प",
+        "completeTriageNotify": "ट्रायज पूर्ण करा आणि डॉक्टरांना सूचित करा",
+        "clinicalVitals": "नैदानिक महत्त्वपूर्ण",
+        "pullFromDevices": "डिव्हाइसवरून मिळवा",
+        "sysBp": "SYS बीपी (mmHg)",
+        "diaBp": "DIA बीपी (mmHg)",
+        "heartRate": "हृदयाचे ठोके",
+        "spo2": "SpO2 (%)",
+        "temperature": "तापमान (°C)",
+        "respRate": "श्वसन दर",
+        "weight": "वजन (kg)",
+        "height": "उंची (cm)",
+        "recordAndEvaluateRisk": "रेकॉर्ड करा आणि धोक्याचे मूल्यांकन करा",
+        "externalDocuments": "बाह्य दस्तऐवज",
+        "outsideLabReport": "बाह्य प्रयोगशाळा अहवाल (PDF)",
+        "imagingCd": "इमेजिंग सीडी (DICOM लिंक)",
+        "oldPrescription": "जुने प्रिस्क्रिप्शन",
+        "uploadFileTrace": "फाइल ट्रेस/नाव अपलोड करा",
+        "attachToChart": "चार्टला जोडा",
+        "clinicalHistoryAssessment": "क्लिनिकल इतिहास आणि नर्सिंग मूल्यांकन",
+        "generalTemplate": "सामान्य टेम्पलेट",
+        "chiefComplaint": "मुख्य तक्रार (भेटीचे कारण)",
+        "chiefComplaintPlaceholder": "उदा. छातीत दुखणे डाव्या हाताकडे जात आहे...",
+        "allergies": "अॅलर्जी",
+        "allergiesPlaceholder": "उदा. पेनिसिलिन",
+        "currentMedications": "सध्याची औषधे",
+        "currentMedicationsPlaceholder": "रुग्णाने आणलेली औषधे",
+        "pastMedicalHistory": "मागील वैद्यकीय इतिहास / शस्त्रक्रिया",
+        "pastMedicalHistoryPlaceholder": "दीर्घकालीन आजार, पूर्वीच्या शस्त्रक्रिया...",
+        "nursingObservations": "नर्सिंग निरीक्षणे (ट्रायज नोट्स)",
+        "nursingObservationsPlaceholder": "कोणतेही अतिरिक्त धोके दर्शविणारे निरीक्षक आढळले...",
+        "saveClinicalHistory": "क्लिनिकल इतिहास जतन करा",
+        "doctorConsoleContextPreview": "डॉक्टर कन्सोल संदर्भ पूर्वावलोकन",
+        "whenTriageCompletes": "ट्रायज पूर्ण झाल्यावर, हा संरक्षित टाइमलाइन पेलोड डॉक्टरांना पाठविला जातो."
+    }
+}
+
+for lang_code in ['en', 'hi', 'mr', 'ar', 'es', 'fr', 'pt', 'de', 'ru', 'zh', 'ja']:
+    file_path = os.path.join(locales_dir, f"{lang_code}.json")
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            try:
+                data = json.load(f)
+            except:
+                data = {}
+        
+        final_translations = translations["en"].copy()
+        if lang_code in translations:
+            final_translations.update(translations[lang_code])
+            
+        if "triage" not in data:
+            data["triage"] = {}
+        
+        data["triage"].update(final_translations)
+        
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"Updated triage in {file_path}")

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation } from "@/i18n";
 import React, { useState, useEffect } from "react";
 import { 
   Pill, AlertCircle, Clock, CheckCircle2, Search, ArrowRight,
@@ -10,6 +11,7 @@ import { WorkflowPipeline } from "@/components/ui/WorkflowPipeline";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
 
 export default function PharmacyDashboardPage() {
+  const { t } = useTranslation();
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [lowStock, setLowStock] = useState<any[]>([]);
   const [nearExpiry, setNearExpiry] = useState<any[]>([]);
@@ -66,17 +68,15 @@ export default function PharmacyDashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Pharmacy Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-1">Real-time overview of dispensary operations and inventory.</p>
+          <h1 className="text-2xl font-bold text-slate-800">{t("pharmacy.pharmacyDashboard")}</h1>
+          <p className="text-slate-500 text-sm mt-1">{t("pharmacy.realTimeOverviewOfDispensaryOp")}</p>
         </div>
         <div className="flex gap-4">
           <Link
             href="/dashboard/pharmacy/inventory"
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-colors shadow-sm text-sm font-medium"
           >
-            <Package className="w-4 h-4" />
-            Manage Inventory
-          </Link>
+            <Package className="w-4 h-4" />{t("pharmacy.manageInventory")}</Link>
         </div>
       </div>
 
@@ -100,7 +100,7 @@ export default function PharmacyDashboardPage() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-slate-500 mb-1">Pending Prescriptions</p>
+              <p className="text-sm font-medium text-slate-500 mb-1">{t("pharmacy.pendingPrescriptions")}</p>
               <h3 className="text-3xl font-bold text-slate-800">{pendingRx.length}</h3>
             </div>
             <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
@@ -108,15 +108,13 @@ export default function PharmacyDashboardPage() {
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-4 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            Awaiting dispensing
-          </p>
+            <span className="w-2 h-2 rounded-full bg-blue-500"></span>{t("pharmacy.awaitingDispensing")}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-slate-500 mb-1">Low Stock Alerts</p>
+              <p className="text-sm font-medium text-slate-500 mb-1">{t("pharmacy.lowStockAlerts")}</p>
               <h3 className="text-3xl font-bold text-amber-600">{lowStock.length}</h3>
             </div>
             <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
@@ -124,15 +122,13 @@ export default function PharmacyDashboardPage() {
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-4 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-            Items below threshold
-          </p>
+            <span className="w-2 h-2 rounded-full bg-amber-500"></span>{t("pharmacy.itemsBelowThreshold")}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-slate-500 mb-1">Near Expiry</p>
+              <p className="text-sm font-medium text-slate-500 mb-1">{t("pharmacy.nearExpiry")}</p>
               <h3 className="text-3xl font-bold text-rose-600">{nearExpiry.length}</h3>
             </div>
             <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center">
@@ -140,15 +136,13 @@ export default function PharmacyDashboardPage() {
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-4 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-            Expiring in 60 days
-          </p>
+            <span className="w-2 h-2 rounded-full bg-rose-500"></span>{t("pharmacy.expiringIn60Days")}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-slate-500 mb-1">Dispensed Today</p>
+              <p className="text-sm font-medium text-slate-500 mb-1">{t("pharmacy.dispensedToday")}</p>
               <h3 className="text-3xl font-bold text-emerald-600">
                 {prescriptions.filter(r => r.status === "dispensed").length}
               </h3>
@@ -158,9 +152,7 @@ export default function PharmacyDashboardPage() {
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-4 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Completed processes
-          </p>
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>{t("pharmacy.completedProcesses")}</p>
         </div>
       </div>
 
@@ -169,16 +161,14 @@ export default function PharmacyDashboardPage() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
           <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
             <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-slate-400" />
-              Pending Prescriptions
-            </h2>
+              <ClipboardList className="w-5 h-5 text-slate-400" />{t("pharmacy.pendingPrescriptions")}</h2>
           </div>
           
           <div className="p-0 flex-1">
             {pendingRx.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                 <CheckCircle2 className="w-12 h-12 mb-3 text-emerald-100" />
-                <p>No pending prescriptions</p>
+                <p>{t("pharmacy.noPendingPrescriptions")}</p>
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
@@ -216,16 +206,14 @@ export default function PharmacyDashboardPage() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
           <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
             <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-slate-400" />
-              Critical Inventory Alerts
-            </h2>
+              <ShieldAlert className="w-5 h-5 text-slate-400" />{t("pharmacy.criticalInventoryAlerts")}</h2>
           </div>
           
           <div className="p-0 flex-1">
             {lowStock.length === 0 && nearExpiry.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                 <ShieldAlert className="w-12 h-12 mb-3 text-slate-100" />
-                <p>No inventory alerts</p>
+                <p>{t("pharmacy.noInventoryAlerts")}</p>
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
@@ -238,14 +226,9 @@ export default function PharmacyDashboardPage() {
                       </div>
                     </div>
                     <div>
-                      <p className="font-medium text-slate-800 flex items-center gap-2">
-                        Low Stock Alert
-                        <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider border border-amber-200">
-                          Critical
-                        </span>
+                      <p className="font-medium text-slate-800 flex items-center gap-2">{t("pharmacy.lowStockAlert")}<span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider border border-amber-200">{t("pharmacy.critical")}</span>
                       </p>
-                      <p className="text-sm text-slate-600 mt-1">
-                        Drug ID <span className="font-mono text-xs">{item.drug_id.split("-")[0]}</span> has dropped below the threshold.
+                      <p className="text-sm text-slate-600 mt-1">{t("pharmacy.drugId")}<span className="font-mono text-xs">{item.drug_id.split("-")[0]}</span> has dropped below the threshold.
                       </p>
                       <div className="flex items-center gap-4 mt-2">
                         <div className="flex items-center gap-1.5 min-w-[120px]">
@@ -270,14 +253,9 @@ export default function PharmacyDashboardPage() {
                       </div>
                     </div>
                     <div>
-                      <p className="font-medium text-slate-800 flex items-center gap-2">
-                        Near Expiry Warning
-                        <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[10px] font-bold uppercase tracking-wider border border-rose-200">
-                          Warning
-                        </span>
+                      <p className="font-medium text-slate-800 flex items-center gap-2">{t("pharmacy.nearExpiryWarning")}<span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[10px] font-bold uppercase tracking-wider border border-rose-200">{t("pharmacy.warning")}</span>
                       </p>
-                      <p className="text-sm text-slate-600 mt-1">
-                        Batch <span className="font-mono text-xs font-semibold">{batch.batch_number}</span> is nearing its expiration date.
+                      <p className="text-sm text-slate-600 mt-1">{t("pharmacy.batch")}<span className="font-mono text-xs font-semibold">{batch.batch_number}</span> is nearing its expiration date.
                       </p>
                       <div className="flex items-center gap-4 mt-2">
                         <div className="flex items-center gap-1.5 min-w-[120px]">

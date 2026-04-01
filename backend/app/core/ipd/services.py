@@ -747,9 +747,21 @@ class IPDService:
         return res.scalars().all()
 
     async def add_diagnosis(self, adm_no: str, data: dict, user_name: str = "Doctor"):
-        from .models import IpdDiagnosis
+        from .models import IpdDiagnosis, IpdAdmissionRecord
 
-        diag = IpdDiagnosis(admission_number=adm_no, diagnosed_by_name=user_name, **data)
+        adm_res = await self.db.execute(
+            select(IpdAdmissionRecord).where(IpdAdmissionRecord.admission_number == adm_no)
+        )
+        adm = adm_res.scalars().first()
+        if not adm:
+            raise ValueError("Admission not found")
+
+        diag = IpdDiagnosis(
+            admission_number=adm_no,
+            patient_uhid=adm.patient_uhid,
+            diagnosed_by_name=user_name,
+            **data,
+        )
         self.db.add(diag)
         await self.db.flush()
         return diag
@@ -765,9 +777,21 @@ class IPDService:
         return res.scalars().all()
 
     async def add_treatment_plan(self, adm_no: str, data: dict, user_name: str = "Doctor"):
-        from .models import IpdTreatmentPlan
+        from .models import IpdTreatmentPlan, IpdAdmissionRecord
 
-        plan = IpdTreatmentPlan(admission_number=adm_no, created_by_name=user_name, **data)
+        adm_res = await self.db.execute(
+            select(IpdAdmissionRecord).where(IpdAdmissionRecord.admission_number == adm_no)
+        )
+        adm = adm_res.scalars().first()
+        if not adm:
+            raise ValueError("Admission not found")
+
+        plan = IpdTreatmentPlan(
+            admission_number=adm_no,
+            patient_uhid=adm.patient_uhid,
+            created_by_name=user_name,
+            **data,
+        )
         self.db.add(plan)
         await self.db.flush()
         return plan
@@ -1764,6 +1788,36 @@ class IPDService:
             .scalars()
             .all()
         )
+
+    async def process_insurance_claim(self, claim_id: str, data: dict, user_name: str):
+        from .models import IpdInsuranceClaim, IpdBillingAuditLog
+        from datetime import datetime, timezone
+
+        claim = (
+            await self.db.execute(
+                select(IpdInsuranceClaim).where(
+                    IpdInsuranceClaim.id == claim_id
+                )
+            )
+        ).scalar_one_or_none()
+        if not claim:
+            return None
+
+        claim.approved_amount = data.get("approved_amount", 0)
+        claim.patient_share = data.get("patient_share", 0)
+        claim.status = data.get("status", "Approved")
+        claim.updated_at = datetime.now(timezone.utc)
+
+        log = IpdBillingAuditLog(
+            admission_number=claim.admission_number,
+            action=f"Insurance Claim {claim.status}",
+            performed_by=user_name,
+            details=f"Provider: {claim.insurance_provider}, Approved: ₹{claim.approved_amount}, Share: ₹{claim.patient_share}",
+        )
+        self.db.add(log)
+        await self.db.flush()
+        await self.recalculate_billing(claim.admission_number)
+        return claim
 
     async def process_payment(self, admission_number: str, data: dict, user_name: str):
         from .models import IpdPaymentTransaction, IpdBillingAuditLog, IpdAdmissionRecord

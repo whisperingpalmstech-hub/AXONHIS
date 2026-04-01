@@ -9,10 +9,12 @@ import {
   UploadCloud, AlertTriangle, HeartPulse, Clock, CheckCircle, Search
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { useTranslation } from "@/i18n";
 
 type TabTypes = "worklist" | "triage" | "doctor_view";
 
 export default function NursingTriagePage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabTypes>("worklist");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -171,9 +173,9 @@ export default function NursingTriagePage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3 text-slate-800">
             <Stethoscope className="text-teal-600" size={32} />
-            Opd Nursing Triage Engine
+            {t("triage.nursingTriageEngine")}
           </h1>
-          <p className="text-slate-500 mt-1">Record vitals, perform clinical templates, and detect risks automatically.</p>
+          <p className="text-slate-500 mt-1">{t("triage.triageSubtitle")}</p>
         </div>
       </div>
 
@@ -181,18 +183,18 @@ export default function NursingTriagePage() {
 
       <div className="flex bg-white rounded-lg p-1 shadow-sm w-fit border border-slate-200">
         {[
-          { id: "worklist", icon: ClipboardList, label: "Worklist Dashboard" },
-          { id: "triage", icon: Activity, label: "Active Triage" },
-          { id: "doctor_view", icon: HeartPulse, label: "Doctor Context Viewer" }
-        ].map(t => (
+          { id: "worklist", icon: ClipboardList, label: t("triage.worklistDashboard") },
+          { id: "triage", icon: Activity, label: t("triage.activeTriage") },
+          { id: "doctor_view", icon: HeartPulse, label: t("triage.doctorContextViewer") }
+        ].map(tab => (
           <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id as TabTypes)}
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as TabTypes)}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-medium transition-all ${
-              activeTab === t.id ? "bg-teal-50 text-teal-700 border-teal-100 shadow-sm" : "text-slate-600 hover:bg-slate-50"
+              activeTab === tab.id ? "bg-teal-50 text-teal-700 border-teal-100 shadow-sm" : "text-slate-600 hover:bg-slate-50"
             }`}
           >
-            <t.icon size={16} /> {t.label}
+            <tab.icon size={16} /> {tab.label}
           </button>
         ))}
       </div>
@@ -201,30 +203,30 @@ export default function NursingTriagePage() {
       {activeTab === "worklist" && (
         <div className="card p-0 overflow-hidden border border-slate-200">
           <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-            <h3 className="font-bold text-slate-700">Patients Pending Triage</h3>
+            <h3 className="font-bold text-slate-700">{t("triage.patientsPendingTriage")}</h3>
             <div className="flex items-center gap-2">
               <select className="border border-slate-300 rounded text-xs px-2 py-1.5 focus:border-teal-500 focus:outline-none" value={simPatientId} onChange={e => setSimPatientId(e.target.value)}>
-                <option value="">Latest Patient</option>
+                <option value="">{t("triage.latestPatient")}</option>
                 {patients.slice().reverse().map(p => (
                   <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
                 ))}
               </select>
-              <button onClick={seedWorklist} className="btn-secondary text-xs border border-slate-300">Simulate Patient Arrival</button>
+              <button onClick={seedWorklist} className="btn-secondary text-xs border border-slate-300">{t("triage.simulatePatientArrival")}</button>
             </div>
           </div>
           <table className="w-full text-sm text-left">
             <thead className="bg-slate-50 text-slate-500 uppercase text-xs font-semibold border-b">
               <tr>
-                <th className="px-6 py-4">UHID</th>
-                <th className="px-6 py-4">Patient Name</th>
-                <th className="px-6 py-4">Priority Tag</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Action</th>
+                <th className="px-6 py-4">{t("triage.uhid")}</th>
+                <th className="px-6 py-4">{t("triage.patientName")}</th>
+                <th className="px-6 py-4">{t("triage.priorityTag")}</th>
+                <th className="px-6 py-4">{t("triage.status")}</th>
+                <th className="px-6 py-4 text-right">{t("triage.action")}</th>
               </tr>
             </thead>
             <tbody>
               {worklist.length === 0 ? (
-                <tr><td colSpan={5} className="p-8 text-center text-slate-400">No patients waiting in queue.</td></tr>
+                <tr><td colSpan={5} className="p-8 text-center text-slate-400">{t("triage.noPatientsWaiting")}</td></tr>
               ) : worklist.map((wl) => (
                 <tr key={wl.id} className="border-b hover:bg-slate-50">
                   <td className="px-6 py-4 font-mono">{getPatientUhid(wl.patient_id)}</td>
@@ -247,7 +249,7 @@ export default function NursingTriagePage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     {wl.triage_status !== 'completed' && (
-                      <button onClick={() => startTriage(wl)} className="btn-primary text-xs bg-teal-600 hover:bg-teal-700">Start Triage</button>
+                      <button onClick={() => startTriage(wl)} className="btn-primary text-xs bg-teal-600 hover:bg-teal-700">{t("triage.startTriage")}</button>
                     )}
                   </td>
                 </tr>
@@ -260,7 +262,7 @@ export default function NursingTriagePage() {
       {/* ═ ACTIVE TRIAGE DASHBOARD ═ */}
       {activeTab === "triage" && (
         !activePatient ? (
-           <div className="card p-12 text-center text-slate-400">Please select a patient from the Worklist Dashboard.</div>
+           <div className="card p-12 text-center text-slate-400">{t("triage.pleaseSelectPatient")}</div>
         ) : (
           <div className="grid grid-cols-12 gap-6">
             <div className="col-span-12">
@@ -271,11 +273,11 @@ export default function NursingTriagePage() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold">{activePatient.name}</h2>
-                    <p className="text-teal-100 mt-1">UHID: {activePatient.uhid} | Triage Active Timestamp: {new Date().toLocaleTimeString()}</p>
+                    <p className="text-teal-100 mt-1">{t("triage.uhid")}: {activePatient.uhid} | {t("triage.triageActiveTimestamp")}: {new Date().toLocaleTimeString()}</p>
                   </div>
                 </div>
                 <button onClick={completeTriageProcess} className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-3 px-6 rounded-lg shadow-sm border border-emerald-400">
-                  Complete Triage & Notify Doctor
+                  {t("triage.completeTriageNotify")}
                 </button>
               </div>
             </div>
@@ -285,9 +287,9 @@ export default function NursingTriagePage() {
               <div className="card p-6 border-slate-200 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10"><Activity size={64}/></div>
                 <h3 className="font-bold text-lg text-slate-800 mb-4 flex justify-between items-center z-10 relative">
-                  Clinical Vitals
+                  {t("triage.clinicalVitals")}
                   <button onClick={fetchDeviceData} className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1 rounded font-medium border border-indigo-100 hover:bg-indigo-100 flex items-center gap-1">
-                    <HeartPulse size={12}/> Pull from Devices
+                    <HeartPulse size={12}/> {t("triage.pullFromDevices")}
                   </button>
                 </h3>
                 
@@ -299,31 +301,31 @@ export default function NursingTriagePage() {
                 )}
                 
                 <div className="grid grid-cols-2 gap-4 relative z-10">
-                  <div><label className="text-xs font-bold text-slate-500 uppercase">SYS BP (mmHg)</label><input type="number" className="input-field mt-1" value={vitalsData.blood_pressure_systolic} onChange={e=>setVitalsData({...vitalsData, blood_pressure_systolic: e.target.value})}/></div>
-                  <div><label className="text-xs font-bold text-slate-500 uppercase">DIA BP (mmHg)</label><input type="number" className="input-field mt-1" value={vitalsData.blood_pressure_diastolic} onChange={e=>setVitalsData({...vitalsData, blood_pressure_diastolic: e.target.value})}/></div>
-                  <div><label className="text-xs font-bold text-slate-500 uppercase">Heart Rate</label><input type="number" className="input-field mt-1" value={vitalsData.heart_rate} onChange={e=>setVitalsData({...vitalsData, heart_rate: e.target.value})}/></div>
-                  <div><label className="text-xs font-bold text-rose-500 uppercase">SpO2 (%)</label><input type="number" className="input-field mt-1 border-rose-200 focus:border-rose-400" value={vitalsData.oxygen_saturation_spo2} onChange={e=>setVitalsData({...vitalsData, oxygen_saturation_spo2: e.target.value})}/></div>
-                  <div><label className="text-xs font-bold text-slate-500 uppercase">Temp. (°C)</label><input type="number" className="input-field mt-1" value={vitalsData.temperature_celsius} onChange={e=>setVitalsData({...vitalsData, temperature_celsius: e.target.value})}/></div>
-                  <div><label className="text-xs font-bold text-slate-500 uppercase">Resp. Rate</label><input type="number" className="input-field mt-1" value={vitalsData.respiratory_rate} onChange={e=>setVitalsData({...vitalsData, respiratory_rate: e.target.value})}/></div>
-                  <div><label className="text-xs font-bold text-slate-500 uppercase">Weight (kg)</label><input type="number" className="input-field mt-1" value={vitalsData.weight_kg} onChange={e=>setVitalsData({...vitalsData, weight_kg: e.target.value})}/></div>
-                  <div><label className="text-xs font-bold text-slate-500 uppercase">Height (cm)</label><input type="number" className="input-field mt-1" value={vitalsData.height_cm} onChange={e=>setVitalsData({...vitalsData, height_cm: e.target.value})}/></div>
+                  <div><label className="text-xs font-bold text-slate-500 uppercase">{t("triage.sysBp")}</label><input type="number" className="input-field mt-1" value={vitalsData.blood_pressure_systolic} onChange={e=>setVitalsData({...vitalsData, blood_pressure_systolic: e.target.value})}/></div>
+                  <div><label className="text-xs font-bold text-slate-500 uppercase">{t("triage.diaBp")}</label><input type="number" className="input-field mt-1" value={vitalsData.blood_pressure_diastolic} onChange={e=>setVitalsData({...vitalsData, blood_pressure_diastolic: e.target.value})}/></div>
+                  <div><label className="text-xs font-bold text-slate-500 uppercase">{t("triage.heartRate")}</label><input type="number" className="input-field mt-1" value={vitalsData.heart_rate} onChange={e=>setVitalsData({...vitalsData, heart_rate: e.target.value})}/></div>
+                  <div><label className="text-xs font-bold text-rose-500 uppercase">{t("triage.spo2")}</label><input type="number" className="input-field mt-1 border-rose-200 focus:border-rose-400" value={vitalsData.oxygen_saturation_spo2} onChange={e=>setVitalsData({...vitalsData, oxygen_saturation_spo2: e.target.value})}/></div>
+                  <div><label className="text-xs font-bold text-slate-500 uppercase">{t("triage.temperature")}</label><input type="number" className="input-field mt-1" value={vitalsData.temperature_celsius} onChange={e=>setVitalsData({...vitalsData, temperature_celsius: e.target.value})}/></div>
+                  <div><label className="text-xs font-bold text-slate-500 uppercase">{t("triage.respRate")}</label><input type="number" className="input-field mt-1" value={vitalsData.respiratory_rate} onChange={e=>setVitalsData({...vitalsData, respiratory_rate: e.target.value})}/></div>
+                  <div><label className="text-xs font-bold text-slate-500 uppercase">{t("triage.weight")}</label><input type="number" className="input-field mt-1" value={vitalsData.weight_kg} onChange={e=>setVitalsData({...vitalsData, weight_kg: e.target.value})}/></div>
+                  <div><label className="text-xs font-bold text-slate-500 uppercase">{t("triage.height")}</label><input type="number" className="input-field mt-1" value={vitalsData.height_cm} onChange={e=>setVitalsData({...vitalsData, height_cm: e.target.value})}/></div>
                 </div>
                 <button onClick={submitVitals} className="btn-secondary w-full mt-6 flex justify-center items-center gap-2 border-slate-300">
-                   <Thermometer size={16}/> Record & Evaluate Risk
+                   <Thermometer size={16}/> {t("triage.recordAndEvaluateRisk")}
                 </button>
               </div>
 
               {/* Document upload box */}
               <div className="card p-5 border-slate-200 border-dashed bg-slate-50">
-                 <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-2"><UploadCloud size={16}/> External Documents</h4>
+                 <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-2"><UploadCloud size={16}/> {t("triage.externalDocuments")}</h4>
                  <div className="space-y-3">
                     <select className="input-field" value={docType} onChange={e=>setDocType(e.target.value)}>
-                      <option value="lab">Outside Lab Report (PDF)</option>
-                      <option value="radiology">Imaging CD (DICOM Link)</option>
-                      <option value="prescription">Old Prescription</option>
+                      <option value="lab">{t("triage.outsideLabReport")}</option>
+                      <option value="radiology">{t("triage.imagingCd")}</option>
+                      <option value="prescription">{t("triage.oldPrescription")}</option>
                     </select>
-                    <input type="text" className="input-field" placeholder="Upload file trace/name" value={fileName} onChange={e=>setFileName(e.target.value)}/>
-                    <button onClick={submitUpload} className="btn-primary w-full bg-slate-800 text-white">Attach to Chart</button>
+                    <input type="text" className="input-field" placeholder={t("triage.uploadFileTrace")} value={fileName} onChange={e=>setFileName(e.target.value)}/>
+                    <button onClick={submitUpload} className="btn-primary w-full bg-slate-800 text-white">{t("triage.attachToChart")}</button>
                  </div>
               </div>
             </div>
@@ -332,34 +334,34 @@ export default function NursingTriagePage() {
             <div className="col-span-8">
               <div className="card p-6 h-full shadow-sm">
                 <h3 className="font-bold text-lg text-slate-800 mb-6 flex justify-between items-center border-b pb-4">
-                  Clinical History & Nursing Assessment
-                  <span className="badge bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs">General Template</span>
+                  {t("triage.clinicalHistoryAssessment")}
+                  <span className="badge bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs">{t("triage.generalTemplate")}</span>
                 </h3>
                 
                 <div className="space-y-5">
                   <div>
-                    <label className="text-sm font-bold text-slate-700 mb-1 block">Chief Complaint (Reason for Visit)</label>
-                    <textarea className="input-field min-h-[80px]" value={assessmentData.chief_complaint} onChange={e=>setAssessmentData({...assessmentData, chief_complaint: e.target.value})} placeholder="e.g. Chest pain radiating to left arm..."/>
+                    <label className="text-sm font-bold text-slate-700 mb-1 block">{t("triage.chiefComplaint")}</label>
+                    <textarea className="input-field min-h-[80px]" value={assessmentData.chief_complaint} onChange={e=>setAssessmentData({...assessmentData, chief_complaint: e.target.value})} placeholder={t("triage.chiefComplaintPlaceholder")}/>
                   </div>
                   <div className="grid grid-cols-2 gap-5">
                     <div>
-                      <label className="text-sm font-bold text-slate-700 mb-1 block">Allergies</label>
-                      <input type="text" className="input-field" value={assessmentData.allergy_information} onChange={e=>setAssessmentData({...assessmentData, allergy_information: e.target.value})} placeholder="e.g. Penicillin"/>
+                      <label className="text-sm font-bold text-slate-700 mb-1 block">{t("triage.allergies")}</label>
+                      <input type="text" className="input-field" value={assessmentData.allergy_information} onChange={e=>setAssessmentData({...assessmentData, allergy_information: e.target.value})} placeholder={t("triage.allergiesPlaceholder")}/>
                     </div>
                     <div>
-                      <label className="text-sm font-bold text-slate-700 mb-1 block">Current Medications</label>
-                      <input type="text" className="input-field" value={assessmentData.medication_history} onChange={e=>setAssessmentData({...assessmentData, medication_history: e.target.value})} placeholder="Medications brought by patient"/>
+                      <label className="text-sm font-bold text-slate-700 mb-1 block">{t("triage.currentMedications")}</label>
+                      <input type="text" className="input-field" value={assessmentData.medication_history} onChange={e=>setAssessmentData({...assessmentData, medication_history: e.target.value})} placeholder={t("triage.currentMedicationsPlaceholder")}/>
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-bold text-slate-700 mb-1 block">Past Medical History / Surgeries</label>
-                    <textarea className="input-field min-h-[60px]" value={assessmentData.past_medical_history} onChange={e=>setAssessmentData({...assessmentData, past_medical_history: e.target.value})} placeholder="Chronic conditions, past surgeries..."/>
+                    <label className="text-sm font-bold text-slate-700 mb-1 block">{t("triage.pastMedicalHistory")}</label>
+                    <textarea className="input-field min-h-[60px]" value={assessmentData.past_medical_history} onChange={e=>setAssessmentData({...assessmentData, past_medical_history: e.target.value})} placeholder={t("triage.pastMedicalHistoryPlaceholder")}/>
                   </div>
                   <div>
-                    <label className="text-sm font-bold text-slate-700 mb-1 block">Nursing Observations (Triage Notes)</label>
-                    <textarea className="input-field min-h-[60px] bg-amber-50" value={assessmentData.nursing_observations} onChange={e=>setAssessmentData({...assessmentData, nursing_observations: e.target.value})} placeholder="Any additional contextual risk identifiers observed..."/>
+                    <label className="text-sm font-bold text-slate-700 mb-1 block">{t("triage.nursingObservations")}</label>
+                    <textarea className="input-field min-h-[60px] bg-amber-50" value={assessmentData.nursing_observations} onChange={e=>setAssessmentData({...assessmentData, nursing_observations: e.target.value})} placeholder={t("triage.nursingObservationsPlaceholder")}/>
                   </div>
-                  <button onClick={submitAssessment} className="btn-primary bg-indigo-600 hover:bg-indigo-700 px-8 ml-auto block">Save Clinical History</button>
+                  <button onClick={submitAssessment} className="btn-primary bg-indigo-600 hover:bg-indigo-700 px-8 ml-auto block">{t("triage.saveClinicalHistory")}</button>
                 </div>
               </div>
             </div>
@@ -373,8 +375,8 @@ export default function NursingTriagePage() {
         <div className="card p-12 bg-slate-900 text-white rounded-2xl shadow-2xl relative overflow-hidden">
           <div className="text-center mb-8 pb-8 border-b border-slate-700 relative z-10">
             <HeartPulse size={48} className="mx-auto text-rose-500 mb-4" />
-            <h2 className="text-3xl font-black">Doctor Console Context Preview</h2>
-            <p className="text-slate-400 mt-2">When triage completes, this highly structured timeline payload is passed to the doctor.</p>
+            <h2 className="text-3xl font-black">{t("triage.doctorConsoleContextPreview")}</h2>
+            <p className="text-slate-400 mt-2">{t("triage.whenTriageCompletes")}</p>
           </div>
           <div className="text-center text-slate-300">
              <Search size={32} className="mx-auto text-slate-500 mb-4 opacity-50"/>

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
@@ -11,6 +13,7 @@ import Link from "next/link";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
 
 export default function DispensePrescriptionPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
   const rxId = params.id as string;

@@ -1,8 +1,11 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useEffect, useState } from "react";
 import { ipdApi as api } from "@/lib/ipd-api";
 
 export default function VisitorMlcDashboard() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("visitors");
   const [admissions, setAdmissions] = useState<any[]>([]);
   const [selectedAdm, setSelectedAdm] = useState("");
@@ -98,8 +101,8 @@ export default function VisitorMlcDashboard() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Visitor Management & MLC Engine</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage visitor access, medico-legal cases, and security notifications</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("visitorMlc.title")}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t("visitorMlc.subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
           {notifications.filter((n: any) => !n.is_read).length > 0 && (
@@ -145,7 +148,7 @@ export default function VisitorMlcDashboard() {
               <>
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-lg">Visitors for {selectedAdm}</h3>
-                  <button onClick={() => setShowVisitorModal(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 shadow-sm">+ Register Visitor</button>
+                  <button onClick={() => setShowVisitorModal(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 shadow-sm">+ {t("visitorMlc.registerVisitor")}</button>
                 </div>
 
                 {/* Registered Visitors Table */}
@@ -153,11 +156,11 @@ export default function VisitorMlcDashboard() {
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b">
                       <tr>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Visitor Name</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Relationship</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Contact</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">ID Proof</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Action</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-600">{t("visitorMlc.visitorName")}</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-600">{t("visitorMlc.relationship")}</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-600">{t("visitorMlc.contactNumber")}</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-600">{t("visitorMlc.idProof")}</th>
+                        <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.actions")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -172,7 +175,7 @@ export default function VisitorMlcDashboard() {
                           </td>
                         </tr>
                       ))}
-                      {visitors.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400 italic">No visitors registered yet</td></tr>}
+                      {visitors.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400 italic">{t("visitorMlc.noVisitors")}</td></tr>}
                     </tbody>
                   </table>
                 </div>
@@ -281,7 +284,7 @@ export default function VisitorMlcDashboard() {
       {showVisitorModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setShowVisitorModal(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4">Register New Visitor</h3>
+            <h3 className="text-lg font-bold mb-4">{t("visitorMlc.registerVisitor")}</h3>
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1">Visitor Name *</label>
@@ -309,8 +312,8 @@ export default function VisitorMlcDashboard() {
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowVisitorModal(false)} className="flex-1 border py-2.5 rounded-lg text-sm hover:bg-gray-50">Cancel</button>
-              <button onClick={handleRegisterVisitor} className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm hover:bg-blue-700 font-medium shadow-sm">Register Visitor</button>
+              <button onClick={() => setShowVisitorModal(false)} className="flex-1 border py-2.5 rounded-lg text-sm hover:bg-gray-50">{t("common.cancel")}</button>
+              <button onClick={handleRegisterVisitor} className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm hover:bg-blue-700 font-medium shadow-sm">{t("visitorMlc.registerVisitor")}</button>
             </div>
           </div>
         </div>
@@ -363,8 +366,8 @@ export default function VisitorMlcDashboard() {
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowMlcModal(false)} className="flex-1 border py-2.5 rounded-lg text-sm hover:bg-gray-50">Cancel</button>
-              <button onClick={handleRegisterMlc} className="flex-1 bg-red-600 text-white py-2.5 rounded-lg text-sm hover:bg-red-700 font-medium shadow-sm">Register MLC Case</button>
+              <button onClick={() => setShowMlcModal(false)} className="flex-1 border py-2.5 rounded-lg text-sm hover:bg-gray-50">{t("common.cancel")}</button>
+              <button onClick={handleRegisterMlc} className="flex-1 bg-red-600 text-white py-2.5 rounded-lg text-sm hover:bg-red-700 font-medium shadow-sm">{t("visitorMlc.createMlc")}</button>
             </div>
           </div>
         </div>

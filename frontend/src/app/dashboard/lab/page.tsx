@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation } from "@/i18n";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { TopNav } from "@/components/ui/TopNav";
@@ -46,6 +47,7 @@ const FLAG_STYLES: Record<string, { badge: string; label: string }> = {
 type TabKey = "dashboard" | "catalog" | "samples" | "results" | "validation";
 
 export default function LabPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
   const [loading, setLoading] = useState(true);
@@ -264,7 +266,7 @@ export default function LabPage() {
                             <Icon size={20} className={c.cIcon} />
                           </div>
                           {c.label === "Critical Results" && c.value > 0 && (
-                            <span className="badge-error text-[10px] animate-pulse">ALERT</span>
+                            <span className="badge-error text-[10px] animate-pulse">{t("lab.alert")}</span>
                           )}
                         </div>
                         <p className="stat-value !text-2xl">{c.value}</p>
@@ -279,7 +281,7 @@ export default function LabPage() {
                   {/* Test Categories */}
                   <div className="card">
                     <div className="card-header">
-                      <h3 className="font-semibold text-sm">Test Categories</h3>
+                      <h3 className="font-semibold text-sm">{t("lab.testCategories")}</h3>
                       <button onClick={() => setActiveTab("catalog")} className="text-xs text-[var(--accent-primary)] hover:underline">
                         View all &rarr;
                       </button>
@@ -309,7 +311,7 @@ export default function LabPage() {
                   {/* Recent Samples */}
                   <div className="lg:col-span-2 card">
                     <div className="card-header">
-                      <h3 className="font-semibold text-sm">Recent Samples</h3>
+                      <h3 className="font-semibold text-sm">{t("lab.recentSamples")}</h3>
                       <button onClick={() => setActiveTab("samples")} className="text-xs text-[var(--accent-primary)] hover:underline">
                         View all &rarr;
                       </button>
@@ -329,10 +331,10 @@ export default function LabPage() {
                               <div className="flex items-center gap-3">
                                 <span className={st.badge}>{st.label}</span>
                                 {s.status === "COLLECTED" && (
-                                  <button onClick={() => handleReceiveSample(s.id)} className="btn-secondary btn-sm">Receive</button>
+                                  <button onClick={() => handleReceiveSample(s.id)} className="btn-secondary btn-sm">{t("lab.receive")}</button>
                                 )}
                                 {s.status === "RECEIVED_IN_LAB" && (
-                                  <button onClick={() => handleProcessSample(s.id)} className="btn-primary btn-sm">Process</button>
+                                  <button onClick={() => handleProcessSample(s.id)} className="btn-primary btn-sm">{t("lab.process")}</button>
                                 )}
                               </div>
                             </div>
@@ -342,7 +344,7 @@ export default function LabPage() {
                     ) : (
                       <div className="card-body text-center text-[var(--text-secondary)]">
                         <TestTubes size={36} className="mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No samples yet. Samples are created when lab orders are collected.</p>
+                        <p className="text-sm">{t("lab.noSamplesYetSamplesAreCreatedW")}</p>
                       </div>
                     )}
                   </div>
@@ -361,13 +363,12 @@ export default function LabPage() {
                         placeholder="Search by name or code…" className="input-field pl-9" />
                     </div>
                     <select value={categoryFilter} onChange={(e: any) => setCategoryFilter(e.target.value)} className="input-field w-auto">
-                      <option value="">All Categories</option>
+                      <option value="">{t("lab.allCategories")}</option>
                       {CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                     </select>
                   </div>
                   <button onClick={() => setShowAddTest(true)} className="btn-primary">
-                    <Plus size={16} /> Add Test
-                  </button>
+                    <Plus size={16} />{t("lab.addTest")}</button>
                 </div>
 
                 {filteredTests.length > 0 ? (
@@ -394,12 +395,12 @@ export default function LabPage() {
                           
                           <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
                             <div className="flex flex-col">
-                              <span className="text-[10px] uppercase font-semibold text-slate-400 mb-0.5">Reference Range</span>
+                              <span className="text-[10px] uppercase font-semibold text-slate-400 mb-0.5">{t("lab.referenceRange")}</span>
                               <span className="font-medium text-slate-700">{test.reference_range || "—"}</span>
                             </div>
                             
                             <div className="flex flex-col">
-                              <span className="text-[10px] uppercase font-semibold text-slate-400 mb-0.5">Normal Limits</span>
+                              <span className="text-[10px] uppercase font-semibold text-slate-400 mb-0.5">{t("lab.normalLimits")}</span>
                               <span className="font-medium text-slate-700">
                                 {(test.normal_range_low == null && test.normal_range_high == null) ? "—" : 
                                  `${test.normal_range_low ?? ""} - ${test.normal_range_high ?? ""} ${test.unit || ""}`}
@@ -407,7 +408,7 @@ export default function LabPage() {
                             </div>
 
                             <div className="flex flex-col">
-                              <span className="text-[10px] uppercase font-semibold text-slate-400 mb-0.5">Critical Limits</span>
+                              <span className="text-[10px] uppercase font-semibold text-slate-400 mb-0.5">{t("lab.criticalLimits")}</span>
                               {(test.critical_low != null || test.critical_high != null) ? (
                                 <span className="font-medium text-red-600 flex items-center gap-1">
                                   <AlertTriangle size={12} className="shrink-0" />
@@ -419,7 +420,7 @@ export default function LabPage() {
                             </div>
                             
                             <div className="flex flex-col">
-                              <span className="text-[10px] uppercase font-semibold text-slate-400 mb-0.5">Price</span>
+                              <span className="text-[10px] uppercase font-semibold text-slate-400 mb-0.5">{t("lab.price")}</span>
                               <span className="font-medium text-[var(--accent-primary)]">
                                 {test.price ? `$${test.price}` : "—"}
                               </span>
@@ -448,7 +449,7 @@ export default function LabPage() {
                       placeholder="Search by barcode…" className="input-field pl-9" />
                   </div>
                   <select value={sampleStatusFilter} onChange={(e: any) => setSampleStatusFilter(e.target.value)} className="input-field w-auto">
-                    <option value="">All Statuses</option>
+                    <option value="">{t("lab.allStatuses")}</option>
                     {Object.entries(SAMPLE_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
@@ -474,21 +475,21 @@ export default function LabPage() {
 
                           <div className="space-y-2 mb-5">
                             <div className="flex justify-between items-center text-xs">
-                              <span className="text-slate-500 flex items-center gap-1"><Clock size={12} /> Collected</span>
+                              <span className="text-slate-500 flex items-center gap-1"><Clock size={12} />{t("lab.collected")}</span>
                               <span className="font-medium text-slate-700">{new Date(s.collection_time).toLocaleString()}</span>
                             </div>
                             {s.received_at && (
                               <div className="flex justify-between items-center text-xs">
-                                <span className="text-slate-500 flex items-center gap-1"><Activity size={12} /> Received</span>
+                                <span className="text-slate-500 flex items-center gap-1"><Activity size={12} />{t("lab.received")}</span>
                                 <span className="font-medium text-slate-700">{new Date(s.received_at).toLocaleString()}</span>
                               </div>
                             )}
                           </div>
 
                           <div className="flex gap-2 w-full mt-auto">
-                            {s.status === "COLLECTED" && <button onClick={() => handleReceiveSample(s.id)} className="btn-secondary btn-sm flex-1">Receive</button>}
-                            {s.status === "RECEIVED_IN_LAB" && <button onClick={() => handleProcessSample(s.id)} className="btn-primary btn-sm flex-1">Process In Analyzer</button>}
-                            {s.status === "PROCESSING" && <button onClick={() => setShowResultModal(s)} className="btn bg-violet-600 text-white hover:bg-violet-700 btn-sm flex-1"><Plus size={14}/> Enter Result</button>}
+                            {s.status === "COLLECTED" && <button onClick={() => handleReceiveSample(s.id)} className="btn-secondary btn-sm flex-1">{t("lab.receive")}</button>}
+                            {s.status === "RECEIVED_IN_LAB" && <button onClick={() => handleProcessSample(s.id)} className="btn-primary btn-sm flex-1">{t("lab.processInAnalyzer")}</button>}
+                            {s.status === "PROCESSING" && <button onClick={() => setShowResultModal(s)} className="btn bg-violet-600 text-white hover:bg-violet-700 btn-sm flex-1"><Plus size={14}/>{t("lab.enterResult")}</button>}
                           </div>
                         </div>
                       );
@@ -497,7 +498,7 @@ export default function LabPage() {
                 ) : (
                   <div className="card card-body text-center py-16">
                     <TestTubes size={40} className="mx-auto mb-3 text-slate-300" />
-                    <p className="text-[var(--text-secondary)]">No samples found.</p>
+                    <p className="text-[var(--text-secondary)]">{t("lab.noSamplesFound")}</p>
                   </div>
                 )}
               </div>
@@ -508,7 +509,7 @@ export default function LabPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <FileText size={18} className="text-[var(--accent-primary)]" />
-                  <h3 className="font-semibold">All Lab Results</h3>
+                  <h3 className="font-semibold">{t("lab.allLabResults")}</h3>
                 </div>
                 {pendingValidation.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -546,7 +547,7 @@ export default function LabPage() {
                 ) : (
                   <div className="card card-body text-center py-16">
                     <FileText size={40} className="mx-auto mb-3 text-slate-300" />
-                    <p className="text-[var(--text-secondary)]">No results yet. Results appear after entering values for processed samples.</p>
+                    <p className="text-[var(--text-secondary)]">{t("lab.noResultsYetResultsAppearAfter")}</p>
                   </div>
                 )}
               </div>
@@ -583,11 +584,9 @@ export default function LabPage() {
                             <div className="flex gap-2 flex-shrink-0">
                               <button onClick={() => handleValidate(r.id, "VALIDATED")}
                                 className="btn bg-[var(--success)] text-white hover:bg-green-700 focus:ring-green-400 btn-sm">
-                                <CheckCircle2 size={14} /> Validate
-                              </button>
+                                <CheckCircle2 size={14} />{t("lab.validate")}</button>
                               <button onClick={() => handleValidate(r.id, "REJECTED")} className="btn-danger btn-sm">
-                                <X size={14} /> Reject
-                              </button>
+                                <X size={14} />{t("lab.reject")}</button>
                             </div>
                           </div>
                         </div>
@@ -597,8 +596,8 @@ export default function LabPage() {
                 ) : (
                   <div className="card card-body text-center py-16">
                     <CheckCircle2 size={40} className="mx-auto mb-3 text-emerald-300" />
-                    <p className="font-medium text-[var(--text-primary)]">All results validated!</p>
-                    <p className="text-sm text-[var(--text-secondary)] mt-1">No pending validations at this time.</p>
+                    <p className="font-medium text-[var(--text-primary)]">{t("lab.allResultsValidated")}</p>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">{t("lab.noPendingValidationsAtThisTime")}</p>
                   </div>
                 )}
               </div>
@@ -613,9 +612,7 @@ export default function LabPage() {
           <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="font-semibold flex items-center gap-2">
-                <FlaskConical size={18} className="text-[var(--accent-primary)]" />
-                Add Lab Test
-              </h3>
+                <FlaskConical size={18} className="text-[var(--accent-primary)]" />{t("lab.addLabTest")}</h3>
               <button onClick={() => setShowAddTest(false)} className="btn-ghost p-1 rounded">
                 <X size={18} />
               </button>
@@ -623,24 +620,24 @@ export default function LabPage() {
             <div className="modal-body space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="input-label">Test Code</label>
+                  <label className="input-label">{t("lab.testCode")}</label>
                   <input className="input-field" placeholder="e.g. CBC" value={newTest.code}
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, code: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="input-label">Test Name</label>
+                  <label className="input-label">{t("lab.testName")}</label>
                   <input className="input-field" placeholder="Complete Blood Count" value={newTest.name}
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, name: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="input-label">Category</label>
+                  <label className="input-label">{t("lab.category")}</label>
                   <select className="input-field" value={newTest.category}
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, category: e.target.value }))}>
                     {CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="input-label">Sample Type</label>
+                  <label className="input-label">{t("lab.sampleType")}</label>
                   <select className="input-field" value={newTest.sample_type}
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, sample_type: e.target.value }))}>
                     {["blood","urine","serum","plasma","csf","stool","sputum","swab"].map(s => (
@@ -649,47 +646,46 @@ export default function LabPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="input-label">Unit</label>
+                  <label className="input-label">{t("lab.unit")}</label>
                   <input className="input-field" placeholder="e.g. g/dL" value={newTest.unit}
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, unit: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="input-label">Reference Range</label>
+                  <label className="input-label">{t("lab.referenceRange")}</label>
                   <input className="input-field" placeholder="e.g. 12-16 g/dL" value={newTest.reference_range}
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, reference_range: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="input-label">Normal Low</label>
+                  <label className="input-label">{t("lab.normalLow")}</label>
                   <input className="input-field" type="number" step="any" placeholder="12" value={newTest.normal_range_low}
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, normal_range_low: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="input-label">Normal High</label>
+                  <label className="input-label">{t("lab.normalHigh")}</label>
                   <input className="input-field" type="number" step="any" placeholder="16" value={newTest.normal_range_high}
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, normal_range_high: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="input-label">Critical Low</label>
+                  <label className="input-label">{t("lab.criticalLow")}</label>
                   <input className="input-field" type="number" step="any" placeholder="5" value={newTest.critical_low}
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, critical_low: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="input-label">Critical High</label>
+                  <label className="input-label">{t("lab.criticalHigh")}</label>
                   <input className="input-field" type="number" step="any" placeholder="20" value={newTest.critical_high}
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, critical_high: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="input-label">Price</label>
+                  <label className="input-label">{t("lab.price")}</label>
                   <input className="input-field" type="number" step="any" placeholder="0" value={newTest.price}
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, price: e.target.value }))} />
                 </div>
               </div>
             </div>
             <div className="modal-footer">
-              <button onClick={() => setShowAddTest(false)} className="btn-secondary">Cancel</button>
+              <button onClick={() => setShowAddTest(false)} className="btn-secondary">{t("lab.cancel")}</button>
               <button onClick={handleAddTest} className="btn-primary">
-                <Plus size={16} /> Create Test
-              </button>
+                <Plus size={16} />{t("lab.createTest")}</button>
             </div>
           </div>
         </div>
@@ -701,9 +697,7 @@ export default function LabPage() {
           <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="font-semibold flex items-center gap-2">
-                <FileText size={18} className="text-[var(--accent-primary)]" />
-                Enter Lab Result
-              </h3>
+                <FileText size={18} className="text-[var(--accent-primary)]" />{t("lab.enterLabResult")}</h3>
               <button onClick={() => setShowResultModal(null)} className="btn-ghost p-1 rounded">
                 <X size={18} />
               </button>
@@ -711,18 +705,18 @@ export default function LabPage() {
             <div className="modal-body space-y-4">
               <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center mb-4 text-sm">
                 <div>
-                  <span className="text-slate-500 block text-xs">Sample Barcode</span>
+                  <span className="text-slate-500 block text-xs">{t("lab.sampleBarcode")}</span>
                   <span className="font-semibold text-slate-800">{showResultModal.sample_barcode}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-slate-500 block text-xs">Type</span>
+                  <span className="text-slate-500 block text-xs">{t("lab.type")}</span>
                   <span className="font-medium capitalize text-slate-800">{showResultModal.sample_type}</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="input-label">Select Test <span className="text-red-500">*</span></label>
+                  <label className="input-label">{t("lab.selectTest")}<span className="text-red-500">*</span></label>
                   <select className="input-field" value={resultForm.test_id} onChange={(e: any) => {
                     const test = tests.find((t: any) => t.id === e.target.value);
                     setResultForm((p: any) => ({ 
@@ -741,12 +735,12 @@ export default function LabPage() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="input-label">Result Value (Text) <span className="text-red-500">*</span></label>
+                    <label className="input-label">{t("lab.resultValueText")}<span className="text-red-500">*</span></label>
                     <input className="input-field" placeholder="e.g. 14.5 or Positive" value={resultForm.value}
                       onChange={(e: any) => setResultForm((p: any) => ({ ...p, value: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="input-label">Numeric Value (Optional)</label>
+                    <label className="input-label">{t("lab.numericValueOptional")}</label>
                     <input className="input-field" type="number" step="any" placeholder="For triggers" value={resultForm.numeric_value}
                       onChange={(e: any) => setResultForm((p: any) => ({ ...p, numeric_value: e.target.value }))} />
                   </div>
@@ -754,29 +748,28 @@ export default function LabPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="input-label">Unit</label>
+                    <label className="input-label">{t("lab.unit")}</label>
                     <input className="input-field" placeholder="e.g. g/dL" value={resultForm.unit}
                       onChange={(e: any) => setResultForm((p: any) => ({ ...p, unit: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="input-label">Reference Range</label>
+                    <label className="input-label">{t("lab.referenceRange")}</label>
                     <input className="input-field" placeholder="e.g. 12-16" value={resultForm.reference_range}
                       onChange={(e: any) => setResultForm((p: any) => ({ ...p, reference_range: e.target.value }))} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="input-label">Notes / Remarks</label>
+                  <label className="input-label">{t("lab.notesRemarks")}</label>
                   <textarea className="input-field min-h-[80px]" placeholder="Add any clinical remarks..." value={resultForm.notes}
                     onChange={(e: any) => setResultForm((p: any) => ({ ...p, notes: e.target.value }))}></textarea>
                 </div>
               </div>
             </div>
             <div className="modal-footer">
-              <button onClick={() => setShowResultModal(null)} className="btn-secondary">Cancel</button>
+              <button onClick={() => setShowResultModal(null)} className="btn-secondary">{t("lab.cancel")}</button>
               <button onClick={handleSubmitResult} className="btn bg-[var(--success)] text-white hover:bg-green-700">
-                <CheckCircle2 size={16} /> Submit Result
-              </button>
+                <CheckCircle2 size={16} />{t("lab.submitResult")}</button>
             </div>
           </div>
         </div>

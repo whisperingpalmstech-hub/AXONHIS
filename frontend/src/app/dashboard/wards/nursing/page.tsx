@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -9,6 +11,7 @@ import {
 } from "lucide-react";
 
 export default function NursingWardView() {
+  const { t } = useTranslation();
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
   const [activeWardId, setActiveWardId] = useState<string | null>(null);
   const [wards, setWards] = useState<any[]>([]);

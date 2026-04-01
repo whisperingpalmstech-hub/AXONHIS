@@ -151,6 +151,7 @@ export const ipdApi = {
   addDeposit: (admNo: string, data: any) => api.post<any>(`/ipd/billing/${admNo}/deposits`, data),
   getInsuranceClaims: (admNo: string) => api.get<any[]>(`/ipd/billing/${admNo}/insurance`),
   addInsuranceClaim: (admNo: string, data: any) => api.post<any>(`/ipd/billing/${admNo}/insurance`, data),
+  approveInsuranceClaim: (claimId: string, data: any) => api.post<any>(`/ipd/billing/insurance/${claimId}/approve`, data),
   getAvailableInsurance: (admNo: string) => api.get<any[]>(`/ipd/billing/${admNo}/available-insurance`),
   getPayments: (admNo: string) => api.get<any[]>(`/ipd/billing/${admNo}/payments`),
   addPayment: (admNo: string, data: any) => api.post<any>(`/ipd/billing/${admNo}/payments`, data),

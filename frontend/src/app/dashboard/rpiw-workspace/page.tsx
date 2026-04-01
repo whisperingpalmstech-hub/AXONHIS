@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "@/i18n";
 import PatientSummaryPanel from "./PatientSummaryPanel";
 import ClinicalActionPanel from "./ClinicalActionPanel";
 import AiAssistantPanel from "./AiAssistantPanel";
@@ -40,6 +41,7 @@ const ROLE_THEMES: Record<string, { bg: string; accent: string; gradient: string
 };
 
 export default function RpiwWorkspacePage() {
+  const { t } = useTranslation();
   const [selectedRole, setSelectedRole] = useState("doctor");
   const [config, setConfig] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
@@ -58,9 +60,18 @@ export default function RpiwWorkspacePage() {
       setLogs(l || []);
     } catch (e) { console.error(e); }
     setLoading(false);
+    setLoading(false);
   };
 
-  const theme = ROLE_THEMES[selectedRole] || ROLE_THEMES.doctor;
+  const themeConfig: Record<string, { bg: string; accent: string; gradient: string }> = {
+    doctor: { bg: "bg-indigo-50", accent: "bg-indigo-600", gradient: "from-indigo-600 to-blue-500" },
+    nurse: { bg: "bg-emerald-50", accent: "bg-emerald-600", gradient: "from-emerald-600 to-teal-500" },
+    phlebotomist: { bg: "bg-amber-50", accent: "bg-amber-600", gradient: "from-amber-600 to-orange-500" },
+  };
+
+  const theme = themeConfig[selectedRole] || themeConfig.doctor;
+  const tWorkspaceLabel = t(`rpiw.${selectedRole}Workspace`); // Dynamic translation
+  
   const workflows = config?.workflows || [];
   const components = config?.components || [];
   const permissions = config?.permissions || [];
@@ -71,8 +82,8 @@ export default function RpiwWorkspacePage() {
       <div className={`bg-gradient-to-r ${theme.gradient} text-white px-6 py-4 shadow-lg`}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{theme.label}</h1>
-            <p className="text-white/70 text-sm mt-0.5">Role-Based Patient Interaction Workspace (RPIW)</p>
+            <h1 className="text-2xl font-bold">{tWorkspaceLabel}</h1>
+            <p className="text-white/70 text-sm mt-0.5">{t("rpiw.subtitle")}</p>
           </div>
           <div className="flex items-center gap-3">
             {/* Role Switcher */}
@@ -110,15 +121,15 @@ export default function RpiwWorkspacePage() {
                 </div>
               </div>
               <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between"><span className="text-gray-500">User ID</span><span className="font-mono">STAFF-{selectedRole.toUpperCase().slice(0, 3)}-001</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Department</span><span>General Medicine</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Active Session</span><span className="text-green-600 font-semibold">● Online</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{t("rpiw.userId")}</span><span className="font-mono">STAFF-{selectedRole.toUpperCase().slice(0, 3)}-001</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{t("rpiw.department")}</span><span>{t("rpiw.generalMedicine")}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{t("rpiw.activeSession")}</span><span className="text-green-600 font-semibold">● {t("rpiw.online")}</span></div>
               </div>
             </div>
 
             {/* Workflow Navigation */}
             <div className="bg-white rounded-2xl shadow-sm border p-5">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Workflows</h3>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t("rpiw.workflowsTitle")}</h3>
               <div className="space-y-1">
                 {workflows.map((wf: any) => (
                   <button key={wf.workflow_key} onClick={() => setActiveWorkflow(wf.workflow_key)}
@@ -136,7 +147,7 @@ export default function RpiwWorkspacePage() {
 
             {/* Permissions Summary */}
             <div className="bg-white rounded-2xl shadow-sm border p-5">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Permissions</h3>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t("rpiw.permissionsTitle")}</h3>
               <div className="space-y-2">
                 {permissions.map((p: any) => (
                   <div key={p.permission_key} className="flex items-center gap-2">
@@ -161,9 +172,9 @@ export default function RpiwWorkspacePage() {
               <div className={`bg-white rounded-2xl shadow-sm border p-6 relative overflow-hidden`}>
                 <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${theme.gradient}`} />
                 <h2 className="text-lg font-bold mb-1">
-                  {workflows.find((w: any) => w.workflow_key === activeWorkflow)?.workflow_label || "Workflow"}
+                  {workflows.find((w: any) => w.workflow_key === activeWorkflow)?.workflow_label || t("rpiw.workflow")}
                 </h2>
-                <p className="text-sm text-gray-500 mb-6">Active clinical workflow panel</p>
+                <p className="text-sm text-gray-500 mb-6">{t("rpiw.activeWorkflowSubtitle")}</p>
 
                 {/* Simulated workflow content */}
                 {activeWorkflow === "patient_summary" || activeWorkflow === "review_summary" ? (
@@ -215,11 +226,11 @@ export default function RpiwWorkspacePage() {
                       {workflows.find((w: any) => w.workflow_key === activeWorkflow)?.workflow_label}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">
-                       Route: {workflows.find((w: any) => w.workflow_key === activeWorkflow)?.route_path}
+                       {t("rpiw.route")}: {workflows.find((w: any) => w.workflow_key === activeWorkflow)?.route_path}
                     </p>
                     <p className="text-xs text-slate-400 mt-4 italic font-medium">
-                      This panel is linked to the {selectedRole} workspace module.
-                      <br />Ensuring live data synchronization with AxonHIS Core.
+                      {t("rpiw.linkedPanelInfo").replace("{role}", selectedRole)}
+                      <br />{t("rpiw.syncInfo")}
                     </p>
                   </div>
                 )}
@@ -227,8 +238,8 @@ export default function RpiwWorkspacePage() {
             ) : (
               <div className="bg-white rounded-2xl shadow-sm border p-8 text-center">
                 <div className="text-5xl mb-4">🏥</div>
-                <h2 className="text-lg font-bold text-gray-800">Welcome to {theme.label}</h2>
-                <p className="text-sm text-gray-500 mt-1">Select a workflow from the left panel to get started</p>
+                <h2 className="text-lg font-bold text-gray-800">{t("rpiw.welcomeTo")} {tWorkspaceLabel}</h2>
+                <p className="text-sm text-gray-500 mt-1">{t("rpiw.selectWorkflowToStart")}</p>
               </div>
             )}
 
@@ -284,7 +295,7 @@ export default function RpiwWorkspacePage() {
           {/* Right: Activity Feed */}
           <div className="col-span-3 space-y-5">
             <div className="bg-white rounded-2xl shadow-sm border p-5">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Recent Activity</h3>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t("rpiw.recentActivity")}</h3>
               {logs.length > 0 ? (
                 <div className="space-y-3 max-h-[50vh] overflow-y-auto">
                   {logs.map((log: any) => (
@@ -298,28 +309,28 @@ export default function RpiwWorkspacePage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400 italic">No activity recorded yet. Actions performed in the workspace will appear here.</p>
+                <p className="text-xs text-gray-400 italic">{t("rpiw.noActivityRecord")}</p>
               )}
             </div>
 
             {/* Quick Stats */}
             <div className="bg-white rounded-2xl shadow-sm border p-5">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Session Stats</h3>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t("rpiw.sessionStats")}</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Workflows Available</span>
+                  <span className="text-xs text-gray-500">{t("rpiw.workflowsAvailable")}</span>
                   <span className="text-sm font-bold">{workflows.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Active Permissions</span>
+                  <span className="text-xs text-gray-500">{t("rpiw.activePermissions")}</span>
                   <span className="text-sm font-bold">{permissions.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">UI Components</span>
+                  <span className="text-xs text-gray-500">{t("rpiw.uiComponents")}</span>
                   <span className="text-sm font-bold">{components.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Activity Logs</span>
+                  <span className="text-xs text-gray-500">{t("rpiw.activityLogs")}</span>
                   <span className="text-sm font-bold">{logs.length}</span>
                 </div>
               </div>
@@ -327,19 +338,19 @@ export default function RpiwWorkspacePage() {
 
             {/* Access Control Info */}
             <div className={`rounded-2xl p-5 bg-gradient-to-br ${theme.gradient} text-white`}>
-              <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-white/70">RBAC Status</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-white/70">{t("rpiw.rbacStatus")}</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 bg-white/20 rounded flex items-center justify-center text-xs">🔒</span>
-                  <span>Access Control Active</span>
+                  <span>{t("rpiw.accessControlActive")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 bg-white/20 rounded flex items-center justify-center text-xs">📝</span>
-                  <span>Audit Logging Enabled</span>
+                  <span>{t("rpiw.auditLoggingEnabled")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 bg-white/20 rounded flex items-center justify-center text-xs">🔐</span>
-                  <span>Encrypted Session</span>
+                  <span>{t("rpiw.encryptedSession")}</span>
                 </div>
               </div>
             </div>

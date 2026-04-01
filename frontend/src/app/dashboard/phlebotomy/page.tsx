@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useEffect, useState } from "react";
 import {
@@ -23,6 +25,7 @@ const LOCATIONS = ["OPD", "IPD", "EMERGENCY", "HOME", "BEDSIDE", "PHLEBOTOMY_CEN
 const VERIFY_METHODS = ["UHID", "MOBILE", "ID_CARD", "BIOMETRIC"];
 
 export default function PhlebotomyPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabTypes>("worklist");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

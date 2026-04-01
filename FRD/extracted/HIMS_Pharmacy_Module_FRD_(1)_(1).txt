@@ -1,0 +1,717 @@
+Functional Requirements Document
+Pharmacy Module (OP & IP Pharmacy)
+Hospital Information System (HIS)
+1.Document Control
+Document Title 
+Functional Requirements Document – Pharmacy Module 
+Module Name 
+Pharmacy Module 
+Parent System 
+Hospital Information System (HIS) 
+Version 
+Document Version  
+Date 
+December 17, 2025 
+Status 
+Draft 
+ Document Conventions
+HIS: Hospital Information System (parent system)
+OP: Outpatient Pharmacy
+IP: Inpatient Pharmacy
+OPD: Outpatient Department
+IPD: Inpatient Department
+EHR: Electronic Health Record
+RBAC: Role-Based Access Control
+UHID: Unique Hospital Identification Number
+COP: Cost of Purchase 
+OTC: Over-The-Counter - Medications available without prescription
+FIFO: First In First Out - Inventory management method
+FEFO: First Expiry First Out - Inventory management method
+ABC Analysis: Inventory categorization based on value
+VED Analysis: Vital, Essential, Desirable - Inventory categorization
+SSO: Single Sign-On
+API: Application Programming Interface
+PCI-DSS: Payment Card Industry Data Security Standard
+2. Introduction 2.1 Purpose
+This Functional Requirements Document (FRD) defines the functional and non-functional requirements for the Pharmacy Module (OP & IP Pharmacy) within the Hospital Information System (HIS). The Pharmacy Module is designed to manage medication dispensing, inventory control, billing, narcotics tracking, and comprehensive pharmaceutical services for both outpatient (OP) and inpatient (IP) settings. This document serves as a comprehensive guide for stakeholders, developers, and implementation teams.
+2.2 Enhancement 
+The Pharmacy Module encompasses the following functionalities:Walk In Sales : 
+Give Option to Scan prescription on ‘Walk In Sales’, so that system should able to autofill / fetch all medication (Item) details and reflect under respective fields
+For Mandatory Prescription – Doctor name is essential 
+For specific medications which is prescribed by doctor, particular doctor name should have to given on prescription (Configuration needed -OTC flag should be true for medication ( for prescription is not mandatory )-> should have to reflect doctor name, when prescription is mandatory) 
+Upload prescription option for schedule X & Schedule M, H Drugs (In Schedule master -> Add prescription flag- Also doctor name is compulsory ) 
+(Map generic to schedule master) 
+Drug-Drug interaction in HIS (Drug Monograph) Integration with drug formulary like CIMS, MIMS 
+Enable Global Codification Framework for Multi-Country HIS Deployment
+Configure HIS with a flexible, country-agnostic codification framework that supports multiple clinical and billing code systems (e.g., Pharmacological classification, Generic, local billing codes, etc). The system should allow country-wise configuration, mapping, and switching of code standards without core system changes, enabling global usability and compliance.
+Interchange -> Generic with Item Name column, vice-visa (Filter should be given for both) , Search should be on Generic 
+Give Dosage Calculator for medication (eg. As per Adult, pediatric, geriatric- as per weight)
+2.3 Existing Flow Details : 
+OP Pharmacy: Walk-in sales, sales worklist, sales return, walk-in prescriptions
+IP Pharmacy: Medication dispensing for admitted patients, pending issue management
+Narcotics Store: Controlled substance management with strict tracking
+Patient issue acceptance and rejection workflows
+Return acceptance and rejected rejection management
+Item kit management for bundled medications 
+Integration with OPD, IPD, Doctor Desk, Nursing, and Billing modules
+Real-time inventory and stock management
+Multiple payment modes and discount management
+Billing integration for OP and IP patients
+Comprehensive reporting and analytics
+Regulatory compliance for pharmaceutical operations
+2.4 Module Context within HIS
+The Pharmacy Module is a critical component of the Hospital Information System (HIS), serving as the central hub for all pharmaceutical operations. It interfaces with multiple HIS modules:
+OPD Module: Receives prescriptions from outpatient consultations
+IPD Module: Manages medication orders for admitted patients
+Doctor Desk: Receives medication prescriptions from physicians
+Nursing Module: Coordinates medication administration and returns
+Billing Module: Integrates for medication billing and payment processing
+Inventory/Store Module: Synchronizes stock levels and procurement
+Front Office: Coordinates patient flow and billing
+EHR System: Maintains medication history and drug interaction alerts
+Finance Module: Tracks revenue, discounts, and financial transactions
+Reporting Module: Provides operational and compliance analytics
+3. System Architecture and Integration
+3.1 Module Architecture
+The Pharmacy Module follows a three-tier architecture integrated within the HIMS ecosystem:
+Presentation Layer: Web-based user interface accessible through HIMS portal
+Business Logic Layer: Medication dispensing, inventory management, billing, and workflow engine
+Data Layer: Integrated with HIMS central database for patient records, medication data, inventory, and billing
+3.2 Integration Points
+The Pharmacy Module integrates with the following HIS modules:
+HIS Module 
+Integration Type 
+Data Exchange 
+OPD Module
+Bi-directional 
+ Patient registration, visit     management, doctor consultation, medication order, Prescription 
+Billing 
+Bi-directional 
+ Medication Charges,  Payment collection, bill settlement, refunds  
+Nursing Station 
+Bi-directional 
+Display Medication order, Process patient issue acceptance and rejection
+Doctor Desk/EMR 
+Bi-directional 
+Order medications- prescription,
+Pharmacy 
+Inbound-Outbound 
+Patient details, medication orders, prescription details 
+Inventory 
+Inbound 
+Consumable items, stock availability-Batch, expiry- date
+
+
+3.3 Data Flow
+The typical data flow within the Pharmacy Module involves:
+Prescription data flows from Doctor Desk/OPD/IPD to Pharmacy
+Patient demographics flow from Registration to Pharmacy
+Medication orders flow from Nursing Cover Sheet to IP Pharmacy
+Dispensing data flows to Billing Module
+Stock updates flow to Inventory Module
+Billing data flows to Finance Module
+Medication history flows to EHR System
+Narcotics tracking data flows to Compliance Module
+Return data flows back to Billing for refund processing
+Analytics data flows to Reporting Module
+
+4. User Roles and Permissions
+The Pharmacy Module implements role-based access control (RBAC) through HIS centralized user management system. The following roles are defined:
+Pharmacist
+Access OP and IP pharmacy workbenches
+Dispense medications
+Process walk-in sales
+Handle sales returns
+Manage pending issues for IP patients
+Accept/reject patient issue returns
+Check stock availability
+Add substitute medications
+Apply discounts as per policy
+Generate pharmacy receipts
+Process billing and payments
+Pharmacy Manager
+All Senior Pharmacist permissions
+Configure item kits
+Manage pricing and tariffs
+Approve stock adjustments
+Review department performance
+Manage staff schedules
+Access financial reports
+Configure pharmacy settings
+Narcotics In-charge
+Manage narcotics store
+Process narcotics issuance
+Validate narcotics orders
+Track empty ampoule returns
+Generate narcotics reports
+Ensure regulatory compliance
+Billing Executive
+Process pharmacy billing
+Apply discounts
+Handle payment collection
+Generate invoices
+Process refunds
+View payment status
+Doctor
+Prescribe medications
+View medication history
+Access drug information
+View dispensing status
+Nurse
+Order medications from nursing cover sheet
+Accept/reject patient issues
+Process medication returns
+Update drug administration records
+Return empty narcotics ampoules
+Store Manager
+View pharmacy inventory
+Process store indents
+Manage stock transfers
+Monitor stock levels across stores
+Hospital Administrator
+Access all module functionalities
+Configure system settings
+View comprehensive reports
+Manage user roles and permissions
+Audit pharmacy operations
+
+5. Functional Requirements
+5.1 OP Pharmacy - Walk-In Sales
+5.1.1: Walk-In Sales Management
+The system shall support walk-in sales for customers without prior appointments:
+Two modes: Patient Search (for registered patients) and Walk-In Sales toggle
+Patient search by UHID, name, gender, mobile, DOB, identification type/number
+Display visit number and doctor name for registered patients
+Add medications as per prescription or Patient request
+Manual instruction entry or dropdown selection
+Stock availability check for each medication
+Generic combination search
+Add/remove medications dynamically
+Add substitute medications
+Clear field functionality
+Payment entitlement selection (self, insurance, corporate)
+Item kit support for bundled medications
+At COP checkbox for cost-of-purchase pricing
+Cash Settle checkbox for immediate payment settlement
+Bill generation and settlement
+Automatic stock deduction
+5.1.2: Patient Search and Registration
+The system shall enable patient search and walk-in registration:
+Search registered patients by multiple criteria
+Display patient demographics and visit history
+Support for walk-in patient without registration
+Quick registration for new walk-in customers
+Integration with HIS patient master
+5.1.3: Medication Selection and Dispensing
+The system shall support comprehensive medication selection:
+Medication search by name, generic name
+Display medication details (strength, form, pack size)
+Stock availability indicator
+Batch and expiry date selection
+Quantity entry with validation
+Dosage and instruction capture
+Drug interaction alerts
+Allergy checking
+Substitute medication suggestions
+Non-formulary medication addition
+5.2 OP Pharmacy - Sales Worklist
+5.2.1: Sales Worklist Management
+The system shall manage sales worklist from OPD nursing orders:
+Receive medication orders from OPD Nursing Cover Sheet
+Display patient queue with order details
+View prescription details
+Process medication dispensing
+Add non-formulary medications
+Status tracking (pending, in-progress, completed)
+Bill settlement integration
+Automatic entry in Bill List upon completion
+5.3 OP Pharmacy - Sales Return
+5.3.1: Sales Return Processing
+The system shall handle medication returns from customers:
+Access settled bills for walk-in sales and sales worklist
+Search and retrieve bills for return
+Select medications for return
+Enter return quantity
+Specify return reason
+Validate return eligibility (time limits, condition)
+Process refund calculation
+Generate return receipt
+Update stock levels (add returned quantity)
+Update billing records
+Status change to completed upon processing
+5.4 OP Pharmacy - Walk-In Prescription
+5.4.1: Walk-In Prescription Management
+The system shall support walk-in prescriptions:
+Create prescriptions for registered OPD/IPD patients
+Capture prescription details
+Item kit support
+Medication dispensing
+Billing integration
+Prescription history tracking
+5.5 IP Pharmacy - Pending Issue
+5.5.1: Pending Issue Management
+The system shall manage medication orders for IPD patients:
+Receive medication orders from IPD Nursing/Doctor Cover Sheet
+Display patient details (name, admission date, doctor)
+Show medication type, priority, and status
+View detailed medication list
+Check stock availability
+Add substitute medications if stock unavailable
+Multi-store stock checking
+Non-formulary medication support (free text orders)
+Add medications directly from pending issue screen
+Discount application (hospital, doctor, staff)
+Discount by percentage or amount
+Dispensed quantity entry
+Generate pharmacy receipt
+Status change to completed upon dispensing
+5.6 IP Pharmacy - IPD Charges and Billing
+5.6.1: IPD Billing Integration
+The system shall integrate with IPD billing:
+Reflection of medication charges to IPD bill
+Bill generation after medication dispensing
+View bills in IPD Charges Bill List
+Bill settlement functionality
+Multiple payment mode support
+Final bill report generation
+Outstanding amount tracking
+Partial payment support
+Advance adjustment
+Discharge billing integration
+5.7 IP Pharmacy - Patient Issue Acceptance
+5.7.1: Patient Issue Acceptance by Nursing
+The system shall enable nursing staff to accept/reject issued medications:
+View medications issued by pharmacy
+Patient and medication details display
+Accept medications for administration
+Reject medications with reason
+Partial acceptance support
+Rejected quantity entry
+Reason selection from predefined list
+Status change to closed upon acceptance
+Notification to pharmacy for rejections
+Integration with drug administration records
+5.8 IP Pharmacy - Patient Issue Rejection
+5.8.1: Rejection Handling by Pharmacy
+The system shall handle medications rejected by nursing:
+View rejected medications from nursing
+Display rejection reason and quantity
+Accept rejection (medication accepted by nursing)
+Reject rejection (medications not accepted by nursing)
+Enter accepted quantity for partial rejections
+Update patient bill (deduct rejected amount)
+Process refund for rejected medications
+Update stock levels (add back rejected quantity)
+Status change to completed
+5.9 IP Pharmacy - Rejected Rejection
+5.9.1: Rejected Rejection Management
+The system shall manage rejected rejections:
+Display medications where pharmacy rejected nursing rejection
+View details of disputed rejections
+Final decision by pharmacy
+Accept or reject with justification
+Escalation workflow if needed
+Status change to completed
+Billing adjustment based on final decision
+Communication with nursing staff
+5.10 IP Pharmacy - Patient Issue Return
+5.10.1: Patient Issue Return by Nursing
+The system shall handle medication returns from patients:
+Nursing initiates return for medications 
+Select medications to return
+Enter return quantity
+Select return reason (unused, wrong medication, adverse drug reaction)
+Status remains pending until pharmacy acceptance
+Notification to pharmacy (Entry fetches to pharmacy) 
+Return details accessible to pharmacy
+5.11 IP Pharmacy - Return Acceptance
+5.11.1: Return Acceptance by Pharmacy
+The system shall process return acceptance:
+View return requests from nursing
+Display return details and reason
+Accept returned quantity
+Validate medication condition
+Generate pharmacy return receipt
+Update stock levels (add returned quantity)
+Update patient bill (deduct returned amount)
+Process refund or credit
+Status change to completed
+Billing adjustment in IPD charges
+5. 12 Narcotics Store Management - Narcotics Issuance and Tracking
+The system shall provide strict narcotics control:
+Precondition: Item master flag "Is Narcotics" enabled
+Narcotics orders from IPD Nursing Cover Sheet
+Issuance Worklist with pending status
+Validation workflow before dispensing
+Status change to closed upon validation
+Delivery Worklist with completed status
+Integration with Nursing Module (drug administration) 
+Empty ampoule return tracking
+Return Empty Ampoules workflow
+Acceptance of empty ampoules by pharmacy
+Regulatory compliance reporting
+
+5.13 Item Kit Management
+5.13.1 Item Kit Configuration and Usage
+The system shall support item kit management:
+Configure medication kits in Unit Master
+Define kit contents (multiple medications)
+Set kit pricing
+Select and add entire kit in one action
+Automatic addition of all kit medications
+Stock validation for all kit items
+Kit-based billing
+Kit usage tracking
+Popular kit recommendations
+5.14 Billing and Payment Processing
+5.14.1: Comprehensive Billing Support
+The system shall support comprehensive billing:
+Multiple payment modes (cash, card, UPI, net banking)
+Insurance billing support
+Corporate billing support
+Credit billing
+Split payment support
+Receipt generation
+Invoice generation
+Bill settlement workflow
+Outstanding tracking
+Payment reconciliation
+Refund processing
+Credit note generation
+5.15 Discount Management
+5.15.1: Discount and Concession Management
+The system shall support discount management:
+Discount categories (hospital, doctor, staff, promotional)
+Discount by percentage
+Discount by amount
+Item-level discount
+Bill-level discount
+Discount authorization workflow
+Discount limits by user role
+Discount approval for high values
+Discount tracking and reporting
+Audit trail for all discounts
+5.16 Reporting and Analytics
+5.16.1: Comprehensive Reporting
+The system shall provide comprehensive reporting:
+Daily sales reports (OP and IP)
+Medication dispensing reports
+Stock movement reports
+Narcotics tracking reports
+Return and rejection reports 
+Discount and concession reports
+Revenue reports
+Payment mode analysis
+Pharmacist productivity reports
+Patient-wise medication history
+Expiry and near-expiry reports
+ABC/VED analysis
+Compliance reports
+
+6. Process Workflows
+6.1 OP Pharmacy Workflow
+Complete workflow for outpatient pharmacy:
+1: Patient Registration/Walk-In
+Patient visits pharmacy with prescription
+Search registered patient or enable Walk-In Sales toggle
+ Enter patient details if new
+2: Prescription Entry
+ Add medications from prescription
+ Check stock availability
+  Add substitutes if needed
+  Add item kits if applicable
+3: Billing
+Apply discounts if applicable
+Select payment entitlement
+Calculate total amount
+Generate bill
+4: Payment
+Select payment mode
+Process payment
+ Settle bill
+ Generate receipt
+ 5: Dispensing
+ Dispense medications
+ Provide instructions to patient
+ Update stock levels as per requirement 
+6: Sales Return (if applicable)
+ Patient returns medication
+ Search bill in Sales Return
+ Select medications to return
+ Enter return quantity and reason
+ Process refund
+ Update stock and billing
+6.2 IP Pharmacy Workflow
+Complete workflow for inpatient pharmacy:
+1: Medication Order
+  Doctor/Nurse orders medication from IPD Nursing/Doctor Cover Sheet
+  Order appears in IP Pharmacy Pending Issue
+2: Order Processing
+   Pharmacist reviews order in Pending Issue
+  Check patient details and medication list
+  Verify stock availability
+  Add substitutes if needed
+   Add non-formulary medications if required
+ 3: Dispensing
+  Enter dispensed quantity
+  Apply discounts if applicable
+  Generate pharmacy receipt
+  Status changes to completed
+4: Billing
+  Charges reflected to IPD bill
+  View in IPD Charges Bill List
+  Bill settlement at discharge
+ 5: Patient Issue Acceptance
+  Nursing staff views issued medications
+  Accept medications for administration
+  Or reject with reason if clinically inappropriate 
+  Status changes to closed
+
+6: Patient Issue Rejection (if applicable)
+Pharmacy reviews rejected medications
+ Accept rejection or reject rejection
+ Bill adjusted for accepted rejections
+ Refund processed
+  Stock updated
+7: Patient Issue Return (if applicable)
+ Nursing initiates return for unused/wrong medications
+  Enter return quantity and reason
+  Pharmacy accepts return
+  Generate return receipt
+  Bill adjusted
+  Stock updatedIn Patient Pharmacy Flow Nursing-> Pharmacy-> Patient Indent -> Add New Items -> SAVE Pharmacy -> IP Pharmacy -> Patient Consumable Issue -> Nursing Issue Acceptance
+6.3 Narcotics Management Workflow
+Strict workflow for controlled substances:
+1: Narcotics Order
+Doctor orders narcotics from IPD Nursing Cover Sheet
+ Medication must have "Is Narcotics" flag enabled
+ Order appears in Narcotics Store Issuance Worklist
+ 2: Validation
+  Narcotics In-charge reviews order
+  Validate prescription and patient details
+  Verify regulatory compliance
+  Approve and save
+  Status changes to closed
+Step 3: Delivery
+ Order appears in Delivery Worklist with completed status
+  Dispense narcotics to nursing staff
+ Document handover
+4: Administration
+  Nursing staff administers narcotics
+  Update Drug Administration record
+  Document time and dosage
+
+ 5: Empty Ampoule Return
+  Nursing returns empty ampoules
+  Entry in Return Empty Ampoules with pending status
+ Pharmacy accepts empty ampoules
+ Complete audit trail maintained
+  Status changes to completed
+6.4 Return and Rejection Workflow
+Workflow for medication returns and rejections:
+ 1: Initiation
+ Nursing staff identifies medication to return/reject
+  Select medication and enter quantity
+  Select reason from dropdown
+  Save (status: pending)
+2: Pharmacy Review
+Pharmacist reviews return/rejection request
+ Verify reason and quantity
+ Check medication condition
+3: Decision
+  Accept return/rejection
+  Or reject return/rejection with justification
+  Enter accepted quantity
+4: Processing
+ Generate return receipt
+  Update stock levels
+  Adjust patient bill
+  Process refund or credit
+  Status changes to completed
+
+5: Billing Update
+ Returned amount deducted from IPD bill
+  Refund reflected in final bill
+  Financial records updated
+7. Integration Requirements 
+7.1 Workflow Integration Points
+
+The Pharmacy Module workflows integrate with HIS at the following points:
+Patient registration triggers HIS patient master update
+Prescription orders trigger HIS workflow engine notifications
+Medication dispensing updates HIS EHR
+Billing transactions sync with HIS Finance Module
+Stock updates sync with HIS Inventory Module in real-time
+Narcotics tracking updates HIS Compliance Module
+Return processing triggers billing adjustment workflow
+Drug administration updates nursing records
+Discharge billing integrates with IPD discharge workflow
+7.2 External System Integration
+Insurance portals for claim submission and verification
+Drug database for medication information
+Regulatory systems for narcotics reporting
+Supplier systems for procurement
+Payment gateways for card/UPI transactions
+Patient portal for prescription refills
+Laboratory systems for test-based prescriptions
+7.3 Data Synchronization
+Real-time synchronization for stock levels
+Real-time synchronization for billing transactions
+Near real-time synchronization for clinical data (within 2 minutes)
+Batch synchronization for reporting data (hourly)
+Conflict resolution mechanisms for stock discrepancies
+Data consistency checks
+Synchronization error logging and alerts
+Automatic retry for failed synchronizations
+8. Reporting Requirements
+8.1 Operational Reports
+Daily Sales Report (OP and IP)
+Medication Dispensing Report
+Pharmacist Productivity Report
+Patient Queue Status Report
+Walk-In Sales Report
+Sales Worklist Report
+Pending Issue Report
+Return and Rejection Summary
+Narcotics Issuance Report
+Empty Ampoule Return Report
+Stock Movement Report
+Low Stock Alert Report
+Expiry Alert Report
+Near-Expiry Report (30/60/90 days)
+8.2 Financial Reports
+Revenue by Medication
+Revenue by Pharmacist
+Revenue by Payment Mode
+Discount and Concession Summary
+Outstanding Amount Report
+Refund Report
+Payment Mode Analysis
+OP vs IP Revenue Comparison
+Daily Collection Report
+Monthly Revenue Trend
+Profit Margin Analysis
+Cost of Goods Sold (COGS) Report
+8.3 Inventory Reports
+Stock Summary Report
+Stock Movement Report
+Batch-wise Stock Report
+Expiry Date Report
+ABC Analysis Report
+VED Analysis Report
+Fast-Moving Items Report
+Slow-Moving Items Report
+Dead Stock Report
+Stock Valuation Report
+Reorder Level Report
+Stock Reconciliation Report
+8.4 Compliance Reports
+Narcotics Tracking Report
+Controlled Substance Report
+Audit Trail Report
+Regulatory Compliance Report
+Prescription Audit Report
+Discount Approval Report
+Return and Rejection Audit
+User Activity Log
+Billing Accuracy Report
+Stock Discrepancy Report
+Report Features
+Customizable date ranges
+Multiple export formats (PDF, Excel, CSV)
+Scheduled report generation
+Email delivery of reports
+Interactive dashboards
+Drill-down capabilities
+Graphical visualizations
+Comparison with previous periods
+Filtering and sorting options
+Print-friendly formats
+Real-time report generation
+
+9. Security Requirements
+9.1 Authentication and Authorization
+Integration with HIS Single Sign-On (SSO)
+Role-based access control (RBAC) through HIS
+Strong password policies
+Multi-factor authentication for narcotics access
+Session timeout after inactivity
+Concurrent session management
+User activity logging
+Biometric authentication support for high-value transactions
+9.2 Data Security
+Encryption of data in transit (TLS/SSL)
+Encryption of data at rest
+Secure API communications
+Database access controls
+Regular security audits
+Vulnerability assessments
+Penetration testing
+Secure payment processing (PCI-DSS compliance)
+9.3 Audit and Compliance
+Comprehensive audit trail for all transactions
+User action logging (create, read, update, delete)
+Login/logout tracking
+Failed access attempt logging
+Data modification history
+Audit log retention as per regulatory requirements
+Tamper-proof audit logs
+Compliance with healthcare regulations
+Regular compliance reporting
+Stock discrepancy investigation trail
+9.4 Narcotics Control
+Strict access control for narcotics store
+Multi-level approval for narcotics dispensing
+Complete audit trail from order to administration
+Empty ampoule return tracking
+Regulatory reporting for controlled substances
+Discrepancy alerts and investigation
+Periodic narcotics stock reconciliation
+Compliance with narcotics regulations
+
+10. Assumptions and Dependencies
+Assumptions
+HIS core platform is operational and accessible
+Network infrastructure supports real-time data exchange
+Users have appropriate devices for system access
+Staff training will be provided before go-live
+Master data (medications, pricing, kits) is configured
+Integration APIs are available and documented
+Billing tariffs are defined and approved
+Hospital policies and workflows are documented
+Barcode scanners are available for medication scanning
+Regulatory licenses for pharmacy operations are in place
+Dependencies
+HIS Patient Master for patient demographics
+HIS User Management for authentication and authorization
+HIS Billing Module for payment processing
+HIS Inventory Module for stock management
+HIS EHR for medication history
+HIS Reporting Module for analytics
+Network connectivity and bandwidth
+Browser compatibility and updates
+Third-party integrations (insurance, payment gateways)
+Regulatory compliance requirements
+Drug database for medication information
+
+12. Document Approval
+This document requires approval from the following stakeholders: 
+Role
+Name 
+Signature 
+Date 
+Product Owner 
+ 
+ 
+ 
+CTO 
+ 
+ 
+ 
+Director  
+ 
+ 
+ 
+ 
+End of Document
+

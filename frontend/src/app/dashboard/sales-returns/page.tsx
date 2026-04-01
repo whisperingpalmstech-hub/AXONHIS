@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect, useCallback } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
@@ -68,6 +70,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function SalesReturnsPage() {
+  const { t } = useTranslation();
   const [returns, setReturns] = useState<SalesReturn[]>([]);
   const [selectedReturn, setSelectedReturn] = useState<SalesReturn | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -230,7 +233,7 @@ export default function SalesReturnsPage() {
             <svg className="w-7 h-7 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
             </svg>
-            OP Pharmacy Sales Returns
+            OP Pharmacy {t("salesReturns.title")}
           </h1>
           <p className="text-slate-500 text-sm mt-1">Process medication returns, validate eligibility, generate refund receipts &amp; restore stock.</p>
         </div>

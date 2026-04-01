@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect, useCallback } from "react";
 import { TopNav } from "@/components/ui/TopNav";
 import Link from "next/link";
@@ -112,6 +114,7 @@ function statusColor(status: string): string {
    PATIENT WORKSPACE PAGE
    ══════════════════════════════════════════════════════════════════ */
 export default function PatientWorkspacePage() {
+  const { t } = useTranslation();
   const params = useParams();
   const router = useRouter();
   const patientId = params.id as string;

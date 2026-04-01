@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { TopNav } from "@/components/ui/TopNav";
@@ -20,6 +22,7 @@ interface LabTestOption { id: string; code: string; name: string; category: stri
 type Tab = "HOME" | "OUTSOURCE" | "QC" | "EQUIPMENT" | "DASHBOARD";
 
 export default function ExtendedLabPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>("DASHBOARD");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");

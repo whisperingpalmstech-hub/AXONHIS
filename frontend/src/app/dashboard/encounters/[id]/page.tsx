@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { 
@@ -54,6 +56,7 @@ declare global {
 }
 
 export default function DoctorWorkspace() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const router = useRouter();
 

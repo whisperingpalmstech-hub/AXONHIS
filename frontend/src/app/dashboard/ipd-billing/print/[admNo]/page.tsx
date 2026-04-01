@@ -1,10 +1,13 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useEffect, useState } from "react";
 import { ipdApi as api } from "@/lib/ipd-api";
 import { useParams } from "next/navigation";
 
 export default function IpdBillingPrint() {
+  const { t } = useTranslation();
   const params = useParams();
   const admNo = params.admNo as string;
 

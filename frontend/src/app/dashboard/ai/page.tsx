@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { TopNav } from "@/components/ui/TopNav";
 import {
@@ -106,6 +108,7 @@ const INSIGHT_ICON: Record<string, React.ElementType> = {
 // ─── Main AI Page ─────────────────────────────────────────────────────────────
 
 export default function AIPage() {
+  const { t } = useTranslation();
   const [encounterId, setEncounterId] = useState("");
   const [encounters, setEncounters] = useState<EncounterOption[]>([]);
   const [summary, setSummary] = useState<PatientSummary | null>(null);
@@ -386,7 +389,7 @@ export default function AIPage() {
               <Brain className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">AXONHIS AI Platform</h1>
+              <h1 className="text-2xl font-bold">AXONHIS {t("ai.title")}</h1>
               <p className="text-violet-200 text-sm mt-0.5">
                 Phase 9 — Powered by Llama-3.3-70b-versatile via Grok API
               </p>

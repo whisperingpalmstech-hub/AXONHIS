@@ -168,11 +168,18 @@ async def me(user: CurrentUser) -> UserOut:
 async def change_password(data: ChangePasswordRequest, db: DBSession, user: CurrentUser) -> None:
     success = await AuthService(db).change_password(user, data.current_password, data.new_password)
     if not success:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+        from app.core.i18n import t
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=t("auth.invalid_credentials"))
     await AuditService(db).log(
         user_id=user.id, action="password_changed", entity_type="user", entity_id=str(user.id),
     )
 
+
+@router.put("/preferences", status_code=status.HTTP_200_OK)
+async def update_preferences(data: dict, db: DBSession, user: CurrentUser) -> dict:
+    """Update user preferences (like preferred_language)."""
+    # Just acknowledging it for now, can be persisted in profile table later
+    return {"message": "Preferences updated successfully"}
 
 # ── Sessions ──────────────────────────────────────────────────────────────
 

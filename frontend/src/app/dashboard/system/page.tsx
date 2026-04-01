@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import { useEffect, useState } from "react";
 import { 
@@ -17,6 +19,7 @@ const authHeaders = () => {
 };
 
 export default function SystemAdminDashboard() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("health");
   const [health, setHealth] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
@@ -65,10 +68,10 @@ export default function SystemAdminDashboard() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-3">
             <ShieldCheck className="h-8 w-8 text-indigo-600" />
-            Control Center
+            {t("system.title")}
           </h1>
           <p className="mt-2 text-sm text-gray-500">
-            Enterprise infrastructure monitoring and security hardening (Phase 11)
+            {t("system.subtitle")}
           </p>
         </div>
         <button 
@@ -76,7 +79,7 @@ export default function SystemAdminDashboard() {
           className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all border border-gray-200 shadow-sm"
         >
           <RefreshCcw className="h-4 w-4" />
-          Force Refresh
+          {t("common.refresh")}
         </button>
       </div>
 

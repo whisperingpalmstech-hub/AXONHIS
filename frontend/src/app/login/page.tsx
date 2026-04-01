@@ -2,9 +2,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "@/i18n";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -54,11 +57,21 @@ export default function LoginPage() {
           for (const rp of rolePriority) {
             if (roleNames.includes(rp)) { primaryRole = rp; break; }
           }
-          localStorage.setItem("user", JSON.stringify({
+          const userObj = {
             ...profile,
             role: primaryRole,
             roleNames: roleNames,
-          }));
+          };
+          localStorage.setItem("user", JSON.stringify(userObj));
+
+          // Apply user's preferred language from profile if available
+          const prefLang = profile.preferences?.preferred_language || profile.preferred_language;
+          if (prefLang && prefLang !== localStorage.getItem("axonhis_locale")) {
+            localStorage.setItem("axonhis_locale", prefLang);
+            document.cookie = `axonhis_locale=${prefLang}; path=/; max-age=31536000`;
+            window.location.reload(); // Force reload to apply language context immediately before dashboard loads
+            return;
+          }
         }
       } catch { /* profile fetch failed, sidebar will default to admin */ }
 
@@ -85,14 +98,14 @@ export default function LoginPage() {
             </h1>
           </div>
           <p className="text-[var(--text-secondary)] text-sm">
-            Hospital Information System
+            {t("auth.loginTitle")}
           </p>
         </div>
 
         {/* Login Card */}
         <div className="card">
           <div className="card-body">
-            <h2 className="text-xl font-semibold text-center mb-6">Sign In</h2>
+            <h2 className="text-xl font-semibold text-center mb-6">{t("auth.login")}</h2>
 
             {error && (
               <div className="mb-4 p-3 rounded-lg bg-[var(--error-light)] text-[var(--error)] text-sm">
@@ -102,7 +115,7 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="input-label" htmlFor="email">Email Address</label>
+                <label className="input-label" htmlFor="email">{t("auth.email")}</label>
                 <input
                   id="email"
                   type="email"
@@ -116,7 +129,7 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="input-label" htmlFor="password">Password</label>
+                <label className="input-label" htmlFor="password">{t("auth.password")}</label>
                 <div className="relative">
                   <input
                     id="password"
@@ -149,10 +162,10 @@ export default function LoginPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Signing in...
+                    {t("common.loading")}
                   </span>
                 ) : (
-                  "Sign In"
+                  t("auth.login")
                 )}
               </button>
             </form>
@@ -168,7 +181,10 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-[var(--text-secondary)] mt-8">
+        <div className="flex justify-center mt-6">
+          <LanguageSelector />
+        </div>
+        <p className="text-center text-xs text-[var(--text-secondary)] mt-4">
           © 2026 Whispering Palms Tech Hub
         </p>
       </div>

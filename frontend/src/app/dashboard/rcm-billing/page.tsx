@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useState, useEffect } from "react";
 import { rcmApi } from "@/lib/rcm-api";
@@ -9,6 +11,7 @@ import {
 } from "lucide-react";
 
 export default function EnterpriseRCMBilling() {
+  const { t } = useTranslation();
   const [patients, setPatients] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>({ daily_revenue: 0, total_outstanding_ar: 0 });
   const [patientSearch, setPatientSearch] = useState("");

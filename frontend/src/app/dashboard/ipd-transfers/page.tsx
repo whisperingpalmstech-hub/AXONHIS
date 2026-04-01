@@ -1,9 +1,12 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useState, useEffect } from "react";
 import { ipdApi } from "@/lib/ipd-api";
 
 export default function IpdTransfersPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"requests" | "new_request">("requests");
   const [transfers, setTransfers] = useState<any[]>([]);
   const [admissions, setAdmissions] = useState<any[]>([]);

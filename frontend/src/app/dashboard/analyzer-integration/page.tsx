@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   CheckCircle2, XCircle, Clock, AlertCircle, RefreshCw, Shield,
@@ -19,6 +21,7 @@ const DEPARTMENTS = ["BIOCHEMISTRY","HEMATOLOGY","CLINICAL_PATHOLOGY","SEROLOGY"
 const PROTOCOLS = ["HL7", "ASTM", "SERIAL", "TCP_IP"];
 
 export default function AnalyzerIntegrationPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabTypes>("dashboard");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

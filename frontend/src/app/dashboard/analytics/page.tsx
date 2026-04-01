@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect } from "react";
 import { TopNav } from "@/components/ui/TopNav";
 import {
@@ -18,6 +20,7 @@ function authHeaders() {
 }
 
 export default function AnalyticsDashboard() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("executive");
   const [data, setData] = useState<any>({
     executive: null,
@@ -103,14 +106,14 @@ export default function AnalyticsDashboard() {
 
   return (
     <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
-      <TopNav title="Intelligence & Analytics" />
+      <TopNav title={t("analytics.title")} />
       <div className="p-8 max-w-7xl mx-auto w-full">
         {/* Header section with tabs */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Analytics Hub</h1>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{t("analytics.title")}</h1>
             <p className="mt-2 text-sm text-slate-500 max-w-2xl">
-              Comprehensive hospital insights powered by AI to drive better clinical, financial, and operational decisions.
+              {t("analytics.subtitle")}
             </p>
           </div>
           <div className="mt-4 sm:mt-0 flex items-center gap-4">

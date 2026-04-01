@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/i18n";
 import {
   UserPlus, AlertTriangle, Check, ArrowRight, ArrowLeft,
   Droplets, Activity, Weight, Heart, FileText, Phone, Mail, Shield,
@@ -27,6 +28,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
 
 export default function EnterpriseRegistrationPage() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   // ── Core form state ──
   const [formData, setFormData] = useState({
@@ -336,10 +338,10 @@ export default function EnterpriseRegistrationPage() {
   ];
 
   const steps = [
-    { num: 1, label: "Demographics", icon: <UserPlus size={16} /> },
-    { num: 2, label: "Medical & Address", icon: <Heart size={16} /> },
-    { num: 3, label: "Identity & Insurance", icon: <Shield size={16} /> },
-    { num: 4, label: "Notifications", icon: <Bell size={16} /> },
+    { num: 1, label: t("patients.demographics"), icon: <UserPlus size={16} /> },
+    { num: 2, label: t("patients.medicalInfo"), icon: <Heart size={16} /> },
+    { num: 3, label: t("patients.identityVerification"), icon: <Shield size={16} /> },
+    { num: 4, label: t("patients.consentNotification"), icon: <Bell size={16} /> },
   ];
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -353,10 +355,10 @@ export default function EnterpriseRegistrationPage() {
           <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2.5 rounded-xl text-white shadow-lg">
             <UserPlus size={24} />
           </div>
-          Enterprise Patient Registration
+          {t("patients.registration")}
         </h1>
         <p className="text-[var(--text-secondary)] mt-2 text-sm">
-          AI-powered smart registration with OCR, voice commands, face recognition, and duplicate detection.
+          {t("patients.registrationSub")}
         </p>
       </div>
 
@@ -704,7 +706,7 @@ export default function EnterpriseRegistrationPage() {
                   <div className="card">
                     <div className="card-header border-b border-[var(--border)] flex items-center gap-2">
                       <UserPlus size={18} className="text-[var(--accent-primary)]" />
-                      <h2 className="text-lg font-semibold">Patient Demographics</h2>
+                      <h2 className="text-lg font-semibold">{t("patients.demographics")}</h2>
                     </div>
                     <div className="card-body grid grid-cols-2 gap-4">
                       <div><label className="input-label">First Name *</label><input name="first_name" className="input-field" required value={formData.first_name} onChange={handleChange} /></div>
@@ -725,7 +727,7 @@ export default function EnterpriseRegistrationPage() {
                       <div><label className="input-label">Emergency Phone</label><input type="tel" name="emergency_contact_phone" className="input-field" value={formData.emergency_contact_phone} onChange={handleChange} /></div>
                     </div>
                     <div className="card-body border-t border-[var(--border)] flex justify-end">
-                      <button type="button" onClick={() => setActiveStep(2)} className="btn-primary flex items-center gap-2">Next <ArrowRight size={16} /></button>
+                      <button type="button" onClick={() => setActiveStep(2)} className="btn-primary flex items-center gap-2">{t("common.next")} <ArrowRight size={16} /></button>
                     </div>
                   </div>
                 )}
@@ -736,7 +738,7 @@ export default function EnterpriseRegistrationPage() {
                     <div className="card">
                       <div className="card-header border-b border-[var(--border)] flex items-center gap-2">
                         <Heart size={18} className="text-rose-500" />
-                        <h2 className="text-lg font-semibold">Medical Information</h2>
+                        <h2 className="text-lg font-semibold">{t("patients.medicalInfo")}</h2>
                       </div>
                       <div className="card-body grid grid-cols-2 gap-4">
                         <div>
@@ -772,8 +774,8 @@ export default function EnterpriseRegistrationPage() {
                       </div>
                     </div>
                     <div className="flex justify-between">
-                      <button type="button" onClick={() => setActiveStep(1)} className="btn-secondary flex items-center gap-2"><ArrowLeft size={16} /> Back</button>
-                      <button type="button" onClick={() => setActiveStep(3)} className="btn-primary flex items-center gap-2">Next <ArrowRight size={16} /></button>
+                      <button type="button" onClick={() => setActiveStep(1)} className="btn-secondary flex items-center gap-2"><ArrowLeft size={16} /> {t("common.back")}</button>
+                      <button type="button" onClick={() => setActiveStep(3)} className="btn-primary flex items-center gap-2">{t("common.next")} <ArrowRight size={16} /></button>
                     </div>
                   </div>
                 )}
@@ -782,7 +784,7 @@ export default function EnterpriseRegistrationPage() {
                 {activeStep === 3 && (
                   <div className="space-y-6">
                     <div className="card">
-                      <div className="card-header border-b border-[var(--border)] flex items-center gap-2"><Shield size={18} className="text-[var(--accent-primary)]" /><h2 className="text-lg font-semibold">Identity Verification</h2></div>
+                      <div className="card-header border-b border-[var(--border)] flex items-center gap-2"><Shield size={18} className="text-[var(--accent-primary)]" /><h2 className="text-lg font-semibold">{t("patients.identityVerification")}</h2></div>
                       <div className="card-body grid grid-cols-2 gap-4">
                         <div>
                           <label className="input-label">ID Type</label>
@@ -794,15 +796,15 @@ export default function EnterpriseRegistrationPage() {
                       </div>
                     </div>
                     <div className="card">
-                      <div className="card-header border-b border-[var(--border)]"><h2 className="text-lg font-semibold">Insurance</h2></div>
+                      <div className="card-header border-b border-[var(--border)]"><h2 className="text-lg font-semibold">{t("patients.insurance")}</h2></div>
                       <div className="card-body grid grid-cols-2 gap-4">
                         <div><label className="input-label">Provider</label><input name="insurance_provider" className="input-field" value={formData.insurance_provider} onChange={handleChange} /></div>
                         <div><label className="input-label">Policy Number</label><input name="policy_number" className="input-field" value={formData.policy_number} onChange={handleChange} /></div>
                       </div>
                     </div>
                     <div className="flex justify-between">
-                      <button type="button" onClick={() => setActiveStep(2)} className="btn-secondary flex items-center gap-2"><ArrowLeft size={16} /> Back</button>
-                      <button type="button" onClick={() => setActiveStep(4)} className="btn-primary flex items-center gap-2">Next <ArrowRight size={16} /></button>
+                      <button type="button" onClick={() => setActiveStep(2)} className="btn-secondary flex items-center gap-2"><ArrowLeft size={16} /> {t("common.back")}</button>
+                      <button type="button" onClick={() => setActiveStep(4)} className="btn-primary flex items-center gap-2">{t("common.next")} <ArrowRight size={16} /></button>
                     </div>
                   </div>
                 )}
@@ -833,7 +835,7 @@ export default function EnterpriseRegistrationPage() {
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
-                      <button type="button" onClick={() => setActiveStep(3)} className="btn-secondary flex items-center gap-2"><ArrowLeft size={16} /> Back</button>
+                      <button type="button" onClick={() => setActiveStep(3)} className="btn-secondary flex items-center gap-2"><ArrowLeft size={16} /> {t("common.back")}</button>
                       <button
                         type="submit"
                         className="btn-primary flex items-center gap-2 px-8"

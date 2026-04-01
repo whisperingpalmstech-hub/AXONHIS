@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -30,6 +32,7 @@ interface Kit {
 }
 
 export default function InventoryIntelligenceWorkbench() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("Alerts & Intelligence");
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [kits, setKits] = useState<Kit[]>([]);
@@ -163,7 +166,7 @@ export default function InventoryIntelligenceWorkbench() {
           <div>
             <h1 className="text-3xl font-extrabold flex items-center gap-3 text-indigo-900">
               <BarChart4 className="w-8 h-8 text-indigo-600" />
-              Inventory Intelligence Matrix
+              {t("inventoryIntelligence.title")} Matrix
             </h1>
             <p className="text-slate-500 mt-2 font-medium">ABC / VED Analysis, Reorders, Kits & Expiry Controls</p>
           </div>

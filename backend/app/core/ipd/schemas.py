@@ -803,6 +803,11 @@ class IpdInsuranceClaimCreate(BaseModel):
     coverage_limit: float = 0.0
     claimed_amount: float = 0.0
 
+class IpdInsuranceClaimApprove(BaseModel):
+    approved_amount: float
+    patient_share: float = 0.0
+    status: str = "Approved"
+
 class IpdInsuranceClaimOut(BaseModel):
     id: UUID
     admission_number: str

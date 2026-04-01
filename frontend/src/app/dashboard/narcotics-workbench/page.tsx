@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -31,6 +33,7 @@ interface NarcoticsOrder {
 }
 
 export default function NarcoticsWorkbench() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("Validation");
   const [orders, setOrders] = useState<NarcoticsOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -281,7 +284,7 @@ export default function NarcoticsWorkbench() {
                        </div>
                      </div>
                      <button onClick={handleDispense} className="w-full bg-rose-600 hover:bg-rose-500 text-white font-semibold py-3 rounded-lg shadow-[0_0_15px_rgba(225,29,72,0.3)] mt-4 items-center justify-center flex gap-2">
-                       <Syringe className="w-5 h-5"/> Dispense from Narcotics Vault
+                       <Syringe className="w-5 h-5"/> Dispense from {t("narcotics.title")}
                      </button>
                    </div>
                   )}

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   CheckCircle2, XCircle, FileText, Clock, AlertCircle, RefreshCw, Shield,
@@ -20,6 +22,7 @@ const RESULT_TYPES = ["NUMERIC","TEXT","QUALITATIVE","IMAGE"];
 const STATUS_FLOW = ["PENDING","IN_PROGRESS","RESULT_ENTERED","AWAITING_VALIDATION","VALIDATED","RELEASED"];
 
 export default function LabProcessingPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabTypes>("dashboard");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

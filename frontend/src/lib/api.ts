@@ -26,11 +26,15 @@ async function request<T>(
     ...options.headers,
   };
 
-  // Get token from localStorage (client-side only)
+  // Get token and locale from localStorage (client-side only)
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("access_token");
     if (token) {
       (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+    }
+    const locale = localStorage.getItem("axonhis_locale");
+    if (locale) {
+      (headers as Record<string, string>)["X-Locale"] = locale;
     }
   }
 

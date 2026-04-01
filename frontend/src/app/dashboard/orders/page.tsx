@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation } from "@/i18n";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -84,6 +85,7 @@ function CreateOrderModal({
   encounterId: string; patientId: string;
   onCreated: () => void;
 }) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0); // 0=type, 1=items, 2=review
   const [orderType, setOrderType] = useState("");
   const [priority, setPriority] = useState("ROUTINE");
@@ -197,8 +199,8 @@ function CreateOrderModal({
               <ClipboardList size={20} className="text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white">New Order</h3>
-              <p className="text-xs text-white/70">Step {step + 1} of 3</p>
+              <h3 className="text-lg font-semibold text-white">{t("orders.newOrder")}</h3>
+              <p className="text-xs text-white/70">{t("orders.stepXof3").replace("{x}", (step + 1).toString())}</p>
             </div>
           </div>
           <button onClick={() => { onClose(); resetForm(); }} className="text-white/70 hover:text-white transition-colors">
@@ -219,8 +221,8 @@ function CreateOrderModal({
           {step === 0 && (
             <div className="space-y-5">
               <div>
-                <h4 className="text-base font-semibold mb-1">Select Order Type</h4>
-                <p className="text-sm text-[var(--text-secondary)]">Choose the category for this clinical order</p>
+                <h4 className="text-base font-semibold mb-1">{t("orders.selectOrderType")}</h4>
+                <p className="text-sm text-[var(--text-secondary)]">{t("orders.chooseTheCategoryForThisClinic")}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {ORDER_TYPES.map(type => {
@@ -237,7 +239,7 @@ function CreateOrderModal({
                           <Icon size={20} />
                         </div>
                         <span className={`font-medium text-sm ${selected ? "text-[var(--accent-primary)]" : "text-[var(--text-primary)]"}`}>
-                          {type.label}
+                          {t(`orders.type_${type.value}`) || type.label}
                         </span>
                       </div>
                     </button>
@@ -247,7 +249,7 @@ function CreateOrderModal({
 
               {/* Priority */}
               <div>
-                <label className="input-label">Priority</label>
+                <label className="input-label">{t("orders.priority")}</label>
                 <div className="flex gap-2">
                   {Object.entries(PRIORITY_MAP).map(([key, val]) => (
                     <button key={key}
@@ -256,7 +258,7 @@ function CreateOrderModal({
                         priority === key ? "ring-2 ring-offset-1 shadow-sm" : "hover:opacity-80"}`}
                       style={{ background: val.bg, color: val.color, ...(priority === key ? { ringColor: val.color } : {}) }}>
                       {key === "STAT" && <Zap size={12} className="inline mr-1" />}
-                      {val.label}
+                      {t(`orders.priority_${key}`)}
                     </button>
                   ))}
                 </div>
@@ -268,8 +270,8 @@ function CreateOrderModal({
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <h4 className="text-base font-semibold mb-1">Add Order Items</h4>
-                <p className="text-sm text-[var(--text-secondary)]">Search or use voice to add tests, medications, or procedures</p>
+                <h4 className="text-base font-semibold mb-1">{t("orders.addOrderItems")}</h4>
+                <p className="text-sm text-[var(--text-secondary)]">{t("orders.searchOrUseVoiceToAddTestsMedi")}</p>
               </div>
 
               {/* Search bar with voice */}
@@ -278,7 +280,7 @@ function CreateOrderModal({
                 <input
                   value={searchQ}
                   onChange={e => setSearchQ(e.target.value)}
-                  placeholder='Search "CBC", "Aspirin", "ECG"...'
+                  placeholder={t("orders.searchTestsPlaceholder")}
                   className="input-field pl-10 pr-12"
                   autoFocus
                 />
@@ -292,8 +294,7 @@ function CreateOrderModal({
               {/* Search results */}
               {searching && (
                 <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] p-3">
-                  <Loader2 size={14} className="animate-spin" />Searching catalog...
-                </div>
+                  <Loader2 size={14} className="animate-spin" />{t("orders.searchingCatalog")}</div>
               )}
               {catalogResults.length > 0 && (
                 <div className="border border-[var(--border)] rounded-xl max-h-48 overflow-y-auto divide-y divide-[var(--border)]">
@@ -313,7 +314,7 @@ function CreateOrderModal({
                         <div className="flex-1">
                           <p className="text-sm font-medium">{item.item_name}</p>
                           <input
-                            placeholder="Special instructions..."
+                            placeholder={t("orders.specialInstructionsPlaceholder")}
                             value={item.instructions}
                             onChange={e => {
                               const updated = [...items];
@@ -324,7 +325,7 @@ function CreateOrderModal({
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <label className="text-xs text-[var(--text-secondary)]">Qty</label>
+                          <label className="text-xs text-[var(--text-secondary)]">{t("orders.qty")}</label>
                           <input type="number" min="1" value={item.quantity}
                             onChange={e => {
                               const updated = [...items];
@@ -344,10 +345,10 @@ function CreateOrderModal({
 
               {/* Notes */}
               <div>
-                <label className="input-label">Clinical Notes (Optional)</label>
+                <label className="input-label">{t("orders.clinicalNotesOptional")}</label>
                 <textarea
                   value={notes} onChange={e => setNotes(e.target.value)}
-                  placeholder="Additional instructions or clinical context..."
+                  placeholder={t("orders.additionalClinicalContextPlaceholder")}
                   className="input-field h-20 resize-none"
                 />
               </div>
@@ -358,28 +359,28 @@ function CreateOrderModal({
           {step === 2 && (
             <div className="space-y-5">
               <div>
-                <h4 className="text-base font-semibold mb-1">Review Order</h4>
-                <p className="text-sm text-[var(--text-secondary)]">Confirm details before submission</p>
+                <h4 className="text-base font-semibold mb-1">{t("orders.reviewOrder")}</h4>
+                <p className="text-sm text-[var(--text-secondary)]">{t("orders.confirmDetailsBeforeSubmission")}</p>
               </div>
 
               {/* Order type & priority */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl bg-slate-50 border border-[var(--border)]">
-                  <p className="text-xs text-[var(--text-secondary)] mb-1">Order Type</p>
-                  <p className="font-semibold text-sm">{ORDER_TYPES.find(t => t.value === orderType)?.label}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mb-1">{t("orders.orderType")}</p>
+                  <p className="font-semibold text-sm">{t(`orders.type_${orderType}`)}</p>
                 </div>
                 <div className="p-4 rounded-xl bg-slate-50 border border-[var(--border)]">
-                  <p className="text-xs text-[var(--text-secondary)] mb-1">Priority</p>
+                  <p className="text-xs text-[var(--text-secondary)] mb-1">{t("orders.priority")}</p>
                   <span className="px-2.5 py-1 rounded-full text-xs font-medium"
                     style={{ background: PRIORITY_MAP[priority]?.bg, color: PRIORITY_MAP[priority]?.color }}>
-                    {PRIORITY_MAP[priority]?.label}
+                    {t(`orders.priority_${priority}`)}
                   </span>
                 </div>
               </div>
 
               {/* Items list */}
               <div>
-                <p className="text-xs text-[var(--text-secondary)] mb-2 font-medium uppercase tracking-wider">Order Items</p>
+                <p className="text-xs text-[var(--text-secondary)] mb-2 font-medium uppercase tracking-wider">{t("orders.orderItems")}</p>
                 <div className="space-y-2">
                   {items.map((item, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-white border border-[var(--border)]">
@@ -397,14 +398,14 @@ function CreateOrderModal({
               {/* Notes */}
               {notes && (
                 <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
-                  <p className="text-xs text-amber-800 font-medium mb-1">Clinical Notes</p>
+                  <p className="text-xs text-amber-800 font-medium mb-1">{t("orders.clinicalNotes")}</p>
                   <p className="text-sm text-amber-900">{notes}</p>
                 </div>
               )}
 
               <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 flex items-center gap-2">
                 <ShieldCheck size={16} className="text-blue-600" />
-                <p className="text-xs text-blue-800">This order will be sent for approval after submission.</p>
+                <p className="text-xs text-blue-800">{t("orders.thisOrderWillBeSentForApproval")}</p>
               </div>
             </div>
           )}
@@ -413,22 +414,19 @@ function CreateOrderModal({
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[var(--border)] flex items-center justify-between bg-slate-50">
           {step > 0 ? (
-            <button onClick={() => setStep(s => s - 1)} className="btn-secondary btn-sm">
-              Back
-            </button>
+            <button onClick={() => setStep(s => s - 1)} className="btn-secondary btn-sm">{t("orders.back")}</button>
           ) : <div />}
           <div className="flex gap-2">
-            <button onClick={() => { onClose(); resetForm(); }} className="btn-secondary btn-sm">Cancel</button>
+            <button onClick={() => { onClose(); resetForm(); }} className="btn-secondary btn-sm">{t("orders.cancel")}</button>
             {step < 2 ? (
               <button
                 onClick={() => setStep(s => s + 1)}
                 disabled={step === 0 ? !orderType : items.length === 0}
-                className="btn-primary btn-sm">
-                Next <ChevronRight size={14} />
+                className="btn-primary btn-sm">{t("orders.next")}<ChevronRight size={14} />
               </button>
             ) : (
               <button onClick={submit} disabled={submitting} className="btn-primary btn-sm">
-                {submitting ? <><Loader2 size={14} className="animate-spin" />Submitting...</> : <><Check size={14} />Submit Order</>}
+                {submitting ? <><Loader2 size={14} className="animate-spin" />{t("orders.submitting")}</> : <><Check size={14} />{t("orders.submitOrder")}</>}
               </button>
             )}
           </div>
@@ -441,6 +439,7 @@ function CreateOrderModal({
 
 // ─── MAIN ORDERS PAGE ────────────────────────────────────────────────
 export default function OrdersPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -606,15 +605,14 @@ export default function OrdersPage() {
             <ClipboardList size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold">Order Management</h1>
-            <p className="text-xs text-[var(--text-secondary)]">Phase 4 — Enterprise Order Engine</p>
+            <h1 className="text-lg font-bold">{t("orders.orderManagement")}</h1>
+            <p className="text-xs text-[var(--text-secondary)]">{t("orders.subtitle") || 'Phase 4 - Enterprise Order Engine'}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           {selectedEncounter && (
             <button onClick={() => setShowCreate(true)} className="btn-primary btn-sm">
-              <Plus size={14} /> New Order
-            </button>
+              <Plus size={14} />{t("orders.newOrder")}</button>
           )}
         </div>
       </div>
@@ -630,15 +628,15 @@ export default function OrdersPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold">
-                  {selectedEncounter ? `Encounter: ${selectedEncounter.encounter_type || "Visit"} — ${selectedEncounter.department || "General"}` : "Select an Encounter"}
+                  {selectedEncounter ? `${t("orders.encounter")}: ${selectedEncounter.encounter_type || "Visit"} — ${selectedEncounter.department || "General"}` : t("orders.selectAnEncounterTitle")}
                 </p>
                 <p className="text-xs text-[var(--text-secondary)]">
-                  {selectedEncounter ? `Patient: ${selectedEncounter.patient_id?.slice(0, 8)}...` : "Choose an active encounter to manage orders"}
+                  {selectedEncounter ? `${t("orders.patient")}: ${selectedEncounter.patient_id?.slice(0, 8)}...` : t("orders.chooseActiveEncounterSubtitle")}
                 </p>
               </div>
             </div>
             <button onClick={() => setShowEncounterPicker(true)} className="btn-secondary btn-sm">
-              {selectedEncounter ? "Change" : "Select Encounter"}
+              {selectedEncounter ? t("orders.changeBtn") : t("orders.selectEncounterBtn")}
             </button>
           </div>
         </div>
@@ -656,7 +654,7 @@ export default function OrdersPage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === tab.key ? "bg-white shadow-sm text-[var(--accent-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
-                <Icon size={14} /> {tab.label}
+                <Icon size={14} /> {t(`orders.tab_${tab.key}`) || tab.label}
               </button>
             );
           })}
@@ -670,42 +668,41 @@ export default function OrdersPage() {
                 <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
                   <ClipboardList size={32} className="text-slate-400" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">No Encounter Selected</h3>
-                <p className="text-sm text-[var(--text-secondary)] mb-4">Select an active encounter to view and manage clinical orders</p>
+                <h3 className="text-lg font-semibold mb-2">{t("orders.noEncounterSelected")}</h3>
+                <p className="text-sm text-[var(--text-secondary)] mb-4">{t("orders.selectAnActiveEncounterToViewA")}</p>
                 <button onClick={() => setShowEncounterPicker(true)} className="btn-primary">
-                  <FileText size={14} /> Select Encounter
-                </button>
+                  <FileText size={14} />{t("orders.selectEncounter")}</button>
               </div>
             ) : (
               <>
                 {/* Filters */}
                 <div className="flex gap-3 items-center flex-wrap">
                   <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                    <Filter size={14} /> Filter:
+                    <Filter size={14} /> {t("orders.filterLabel")}
                   </div>
                   <select value={filterType} onChange={e => setFilterType(e.target.value)}
                     className="px-3 py-1.5 rounded-lg border border-[var(--border)] text-sm bg-white">
-                    <option value="">All Types</option>
-                    {ORDER_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                    <option value="">{t("orders.allTypes")}</option>
+                    {ORDER_TYPES.map(tOption => <option key={tOption.value} value={tOption.value}>{t(`orders.type_${tOption.value}`)}</option>)}
                   </select>
                   <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
                     className="px-3 py-1.5 rounded-lg border border-[var(--border)] text-sm bg-white">
-                    <option value="">All Statuses</option>
-                    {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                    <option value="">{t("orders.allStatuses")}</option>
+                    {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{t(`orders.status_${k}`)}</option>)}
                   </select>
-                  <span className="text-xs text-[var(--text-secondary)]">{filtered.length} order{filtered.length !== 1 ? "s" : ""}</span>
+                  <span className="text-xs text-[var(--text-secondary)]">{filtered.length} {t("orders.ordersCountLabel")}</span>
                 </div>
 
                 {/* Orders List */}
                 {loading ? (
                   <div className="card card-body text-center py-12">
                     <Loader2 size={24} className="animate-spin mx-auto text-[var(--accent-primary)]" />
-                    <p className="text-sm text-[var(--text-secondary)] mt-3">Loading orders...</p>
+                    <p className="text-sm text-[var(--text-secondary)] mt-3">{t("orders.loadingOrders")}</p>
                   </div>
                 ) : filtered.length === 0 ? (
                   <div className="card card-body text-center py-12">
                     <Package size={32} className="mx-auto text-slate-300 mb-3" />
-                    <p className="text-sm text-[var(--text-secondary)]">No orders found. Create the first order for this encounter.</p>
+                    <p className="text-sm text-[var(--text-secondary)]">{t("orders.noOrdersFoundCreateTheFirstOrd")}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -729,15 +726,15 @@ export default function OrdersPage() {
                                     <TypeIcon size={18} />
                                   </div>
                                   <div>
-                                    <p className="font-semibold text-sm">{typeInfo?.label || order.order_type}</p>
+                                    <p className="font-semibold text-sm">{t(`orders.type_${order.order_type}`)}</p>
                                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
                                         style={{ background: statusInfo.bg, color: statusInfo.color }}>
-                                        <StatusIcon size={10} /> {statusInfo.label}
+                                        <StatusIcon size={10} /> {t(`orders.status_${order.status}`)}
                                       </span>
                                       <span className="px-2 py-0.5 rounded-full text-xs font-medium"
                                         style={{ background: priorityInfo.bg, color: priorityInfo.color }}>
-                                        {priorityInfo.label}
+                                        {t(`orders.priority_${order.priority}`)}
                                       </span>
                                       <span className="text-xs text-[var(--text-secondary)]">
                                         {new Date(order.created_at).toLocaleString()}
@@ -770,16 +767,14 @@ export default function OrdersPage() {
                                       <button onClick={() => cancelOrder(order.id)}
                                         disabled={actionLoading === order.id}
                                         className="btn-sm px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-medium transition-colors inline-flex items-center gap-1">
-                                        <XCircle size={12} /> Cancel
-                                      </button>
+                                        <XCircle size={12} />{t("orders.cancel")}</button>
                                     </>
                                   )}
                                   {(order.status === "APPROVED" || order.status === "IN_PROGRESS") && (
                                     <button onClick={() => cancelOrder(order.id)}
                                       disabled={actionLoading === order.id}
                                       className="btn-sm px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-medium transition-colors inline-flex items-center gap-1">
-                                      <XCircle size={12} /> Cancel
-                                    </button>
+                                      <XCircle size={12} />{t("orders.cancel")}</button>
                                   )}
                                 </div>
                               </div>
@@ -801,12 +796,11 @@ export default function OrdersPage() {
             {/* Header bar */}
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-base">Order Templates</h3>
-                <p className="text-xs text-[var(--text-secondary)]">Reusable order combinations for fast clinical ordering</p>
+                <h3 className="font-semibold text-base">{t("orders.orderTemplates")}</h3>
+                <p className="text-xs text-[var(--text-secondary)]">{t("orders.reusableOrderCombinationsForFa")}</p>
               </div>
               <button onClick={() => setShowCreateTemplate(true)} className="btn-primary btn-sm">
-                <Plus size={14} /> New Template
-              </button>
+                <Plus size={14} />{t("orders.newTemplate")}</button>
             </div>
 
             {templates.length === 0 ? (
@@ -817,7 +811,7 @@ export default function OrdersPage() {
                     <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-200">
                       <Layers size={32} className="text-white" />
                     </div>
-                    <h3 className="text-lg font-bold mb-2">Create Your First Template</h3>
+                    <h3 className="text-lg font-bold mb-2">{t("orders.createYourFirstTemplate")}</h3>
                     <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto mb-5">
                       Templates save time during clinical ordering. Create reusable order combinations
                       like &quot;Pneumonia Workup&quot; or &quot;Diabetic Panel&quot; with pre-defined items.
@@ -840,8 +834,7 @@ export default function OrdersPage() {
                       })}
                     </div>
                     <button onClick={() => setShowCreateTemplate(true)} className="btn-primary">
-                      <Plus size={14} /> Create Template
-                    </button>
+                      <Plus size={14} />{t("orders.createTemplate")}</button>
                   </div>
                 </div>
               </div>
@@ -905,12 +898,11 @@ export default function OrdersPage() {
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-base">Order Sets</h3>
-                <p className="text-xs text-[var(--text-secondary)]">Multi-domain order bundles for clinical protocols</p>
+                <h3 className="font-semibold text-base">{t("orders.orderSets")}</h3>
+                <p className="text-xs text-[var(--text-secondary)]">{t("orders.multiDomainOrderBundlesForClin")}</p>
               </div>
               <button onClick={() => setShowCreateSet(true)} className="btn-primary btn-sm">
-                <Plus size={14} /> New Order Set
-              </button>
+                <Plus size={14} />{t("orders.newOrderSet")}</button>
             </div>
 
             {orderSets.length === 0 ? (
@@ -921,7 +913,7 @@ export default function OrdersPage() {
                     <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-sky-200">
                       <Package size={32} className="text-white" />
                     </div>
-                    <h3 className="text-lg font-bold mb-2">Create Your First Order Set</h3>
+                    <h3 className="text-lg font-bold mb-2">{t("orders.createYourFirstOrderSet")}</h3>
                     <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto mb-5">
                       Order sets bundle multiple orders across different domains.
                       Perfect for clinical protocols like &quot;ER Chest Pain&quot; or &quot;Sepsis Bundle&quot;.
@@ -938,12 +930,11 @@ export default function OrdersPage() {
                       })}
                       <div className="flex items-center gap-0.5 text-slate-400">
                         <ArrowRight size={14} />
-                        <span className="text-xs font-medium">Combined</span>
+                        <span className="text-xs font-medium">{t("orders.combined")}</span>
                       </div>
                     </div>
                     <button onClick={() => setShowCreateSet(true)} className="btn-primary">
-                      <Plus size={14} /> Create Order Set
-                    </button>
+                      <Plus size={14} />{t("orders.createOrderSet")}</button>
                   </div>
                 </div>
               </div>
@@ -1021,14 +1012,14 @@ export default function OrdersPage() {
         <div className="modal-overlay" onClick={() => setShowEncounterPicker(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="font-semibold">Select Active Encounter</h3>
+              <h3 className="font-semibold">{t("orders.selectActiveEncounter")}</h3>
               <button onClick={() => setShowEncounterPicker(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 <X size={18} />
               </button>
             </div>
             <div className="modal-body space-y-2 max-h-80 overflow-y-auto">
               {encounters.length === 0 ? (
-                <p className="text-sm text-[var(--text-secondary)] text-center py-8">No active encounters found. Create an encounter first.</p>
+                <p className="text-sm text-[var(--text-secondary)] text-center py-8">{t("orders.noActiveEncountersFoundCreateA")}</p>
               ) : encounters.map((enc: any) => (
                 <button key={enc.id}
                   onClick={() => { setSelectedEncounter(enc); setShowEncounterPicker(false); }}
@@ -1071,7 +1062,7 @@ export default function OrdersPage() {
                 <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
                   <Layers size={18} className="text-white" />
                 </div>
-                <h3 className="text-base font-semibold text-white">New Template</h3>
+                <h3 className="text-base font-semibold text-white">{t("orders.newTemplate")}</h3>
               </div>
               <button onClick={() => setShowCreateTemplate(false)} className="text-white/70 hover:text-white"><X size={18} /></button>
             </div>
@@ -1082,7 +1073,7 @@ export default function OrdersPage() {
                   placeholder="e.g., Pneumonia Workup" className="input-field" />
               </div>
               <div>
-                <label className="input-label">Description</label>
+                <label className="input-label">{t("orders.description")}</label>
                 <input value={tplForm.desc} onChange={e => setTplForm({...tplForm, desc: e.target.value})}
                   placeholder="Brief description of this template" className="input-field" />
               </div>
@@ -1138,9 +1129,9 @@ export default function OrdersPage() {
               </div>
             </div>
             <div className="px-6 py-4 border-t border-[var(--border)] flex justify-end gap-2 bg-slate-50">
-              <button onClick={() => setShowCreateTemplate(false)} className="btn-secondary btn-sm">Cancel</button>
+              <button onClick={() => setShowCreateTemplate(false)} className="btn-secondary btn-sm">{t("orders.cancel")}</button>
               <button onClick={submitTemplate} disabled={!tplForm.name || !tplForm.type || tplForm.items.length === 0}
-                className="btn-primary btn-sm"><Check size={14} /> Create Template</button>
+                className="btn-primary btn-sm"><Check size={14} />{t("orders.createTemplate")}</button>
             </div>
           </div>
         </div>
@@ -1156,7 +1147,7 @@ export default function OrdersPage() {
                 <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
                   <Package size={18} className="text-white" />
                 </div>
-                <h3 className="text-base font-semibold text-white">New Order Set</h3>
+                <h3 className="text-base font-semibold text-white">{t("orders.newOrderSet")}</h3>
               </div>
               <button onClick={() => setShowCreateSet(false)} className="text-white/70 hover:text-white"><X size={18} /></button>
             </div>
@@ -1168,20 +1159,20 @@ export default function OrdersPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="input-label">Description</label>
+                  <label className="input-label">{t("orders.description")}</label>
                   <input value={setForm.desc} onChange={e => setSetForm({...setForm, desc: e.target.value})}
                     placeholder="Brief description" className="input-field" />
                 </div>
                 <div>
-                  <label className="input-label">Clinical Context</label>
+                  <label className="input-label">{t("orders.clinicalContext")}</label>
                   <select value={setForm.context} onChange={e => setSetForm({...setForm, context: e.target.value})} className="input-field">
-                    <option value="">Select...</option>
-                    <option value="Emergency">Emergency</option>
-                    <option value="ICU">ICU</option>
-                    <option value="Surgery">Surgery</option>
-                    <option value="General">General</option>
-                    <option value="Pediatrics">Pediatrics</option>
-                    <option value="OPD">OPD</option>
+                    <option value="">{t("orders.select")}</option>
+                    <option value="Emergency">{t("orders.emergency")}</option>
+                    <option value="ICU">{t("orders.icu")}</option>
+                    <option value="Surgery">{t("orders.surgery")}</option>
+                    <option value="General">{t("orders.general")}</option>
+                    <option value="Pediatrics">{t("orders.pediatrics")}</option>
+                    <option value="OPD">{t("orders.opd")}</option>
                   </select>
                 </div>
               </div>
@@ -1232,9 +1223,9 @@ export default function OrdersPage() {
               </div>
             </div>
             <div className="px-6 py-4 border-t border-[var(--border)] flex justify-end gap-2 bg-slate-50">
-              <button onClick={() => setShowCreateSet(false)} className="btn-secondary btn-sm">Cancel</button>
+              <button onClick={() => setShowCreateSet(false)} className="btn-secondary btn-sm">{t("orders.cancel")}</button>
               <button onClick={submitOrderSet} disabled={!setForm.name || setForm.items.length === 0}
-                className="btn-primary btn-sm"><Check size={14} /> Create Order Set</button>
+                className="btn-primary btn-sm"><Check size={14} />{t("orders.createOrderSet")}</button>
             </div>
           </div>
         </div>

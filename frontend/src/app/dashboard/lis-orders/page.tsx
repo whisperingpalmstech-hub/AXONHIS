@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useEffect, useState } from "react";
 import {
@@ -42,6 +44,7 @@ interface DoctorRecord { id: string; username: string; full_name?: string; email
 type TabTypes = "new_order" | "orders" | "panels" | "worklist" | "scan";
 
 export default function LISOrdersPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabTypes>("new_order");
   const [orders, setOrders] = useState<TestOrderOut[]>([]);
   const [panels, setPanels] = useState<PanelOut[]>([]);

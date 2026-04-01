@@ -32,10 +32,9 @@ class EncounterService:
             
         encounter = Encounter(
             encounter_uuid=encounter_uuid,
-            org_id=self.user.org_id if self.user else data.org_id if hasattr(data, 'org_id') else None,
             patient_id=data.patient_id,
             encounter_type=data.encounter_type,
-            doctor_id=data.doctor_id,
+            doctor_id=data.doctor_id or author_id,
             department=data.department,
             status=data.status,
             start_time=start_time

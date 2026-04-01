@@ -8,6 +8,7 @@ import {
   Activity, Bed, Stethoscope, ChevronDown, X
 } from "lucide-react";
 import { ipdApi } from "@/lib/ipd-api";
+import { useTranslation } from "@/i18n";
 
 type NursingTab = "WORKLIST" | "COVERSHEETS" | "NOTES";
 
@@ -19,6 +20,7 @@ const PRIORITY_CONFIG: Record<string, { color: string; bg: string; border: strin
 };
 
 export default function NursingIPDDashboard() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<NursingTab>("WORKLIST");
   const [worklist, setWorklist] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -114,9 +116,9 @@ export default function NursingIPDDashboard() {
               <div className="bg-gradient-to-br from-purple-600 to-indigo-700 text-white p-2.5 rounded-xl shadow-lg shadow-purple-200">
                 <Stethoscope size={24}/>
               </div>
-              Nursing Coversheet & Ward Acceptance
+              {t('nursingIpd.title') || 'Nursing Coversheet & Ward Acceptance'}
             </h1>
-            <p className="text-slate-500 font-medium mt-1">IPD Patient Acceptance, Coversheets & Nursing Documentation</p>
+            <p className="text-slate-500 font-medium mt-1">{t('nursingIpd.subtitle') || 'IPD Patient Acceptance, Coversheets & Nursing Documentation'}</p>
           </div>
         </div>
 
@@ -124,7 +126,7 @@ export default function NursingIPDDashboard() {
         <div className="grid grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <div className="text-slate-500 font-bold text-xs uppercase mb-1 flex items-center gap-2">
-              <ClipboardList size={14}/> Total Worklist
+              <ClipboardList size={14}/> {t('nursingIpd.totalWorklist') || 'Total Worklist'}
             </div>
             <div className="text-3xl font-black text-slate-800">{worklist.length}</div>
           </div>
@@ -136,7 +138,7 @@ export default function NursingIPDDashboard() {
           </div>
           <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm">
             <div className="text-emerald-600 font-bold text-xs uppercase mb-1 flex items-center gap-2">
-              <CheckCircle2 size={14}/> Accepted
+              <CheckCircle2 size={14}/> {t('nursingIpd.accepted') || 'Accepted'}
             </div>
             <div className="text-3xl font-black text-emerald-600">{acceptedCount}</div>
           </div>
@@ -153,16 +155,16 @@ export default function NursingIPDDashboard() {
         {/* Tabs */}
         <div className="flex gap-2 p-1.5 bg-white/50 backdrop-blur border border-slate-200 rounded-2xl w-fit mb-8 shadow-sm">
           {[
-            { id: "WORKLIST", label: "Admission Worklist", icon: <ClipboardList size={16}/> },
-            { id: "COVERSHEETS", label: "Accepted Patients", icon: <FileText size={16}/> },
-            { id: "NOTES", label: "Nursing Notes", icon: <Heart size={16}/> },
-          ].map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id as NursingTab)}
+            { id: "WORKLIST", label: t('nursingIpd.tabWorklist') || 'Admission Worklist', icon: <ClipboardList size={16}/> },
+            { id: "COVERSHEETS", label: t('nursingIpd.tabCoversheets') || 'Accepted Patients', icon: <FileText size={16}/> },
+            { id: "NOTES", label: t('nursingIpd.tabNotes') || 'Nursing Notes', icon: <Heart size={16}/> },
+          ].map(tObj => (
+            <button key={tObj.id} onClick={() => setActiveTab(tObj.id as NursingTab)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                activeTab === t.id ? "bg-white text-purple-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
+                activeTab === tObj.id ? "bg-white text-purple-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
               }`}>
-              {t.icon} {t.label}
-              {t.id === "WORKLIST" && pendingCount > 0 && (
+              {tObj.icon} {tObj.label}
+              {tObj.id === "WORKLIST" && pendingCount > 0 && (
                 <span className="bg-amber-100 text-amber-600 text-[10px] px-1.5 py-0.5 rounded-full ml-1">{pendingCount}</span>
               )}
             </button>
@@ -180,13 +182,13 @@ export default function NursingIPDDashboard() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
-                      <th className="p-4 font-bold">Admission No</th>
-                      <th className="p-4 font-bold">Patient UHID</th>
-                      <th className="p-4 font-bold">Bed / Ward</th>
-                      <th className="p-4 font-bold">Admitting Doctor</th>
-                      <th className="p-4 font-bold">Admission Time</th>
-                      <th className="p-4 font-bold">Status</th>
-                      <th className="p-4 font-bold text-right">Actions</th>
+                      <th className="p-4 font-bold">{t('nursingIpd.colAdmNo') || 'Admission No'}</th>
+                      <th className="p-4 font-bold">{t('nursingIpd.colUHID') || 'Patient UHID'}</th>
+                      <th className="p-4 font-bold">{t('nursingIpd.colBed') || 'Bed / Ward'}</th>
+                      <th className="p-4 font-bold">{t('nursingIpd.colAdmittingDoctor') || 'Admitting Doctor'}</th>
+                      <th className="p-4 font-bold">{t('nursingIpd.colTime') || 'Admission Time'}</th>
+                      <th className="p-4 font-bold">{t('nursingIpd.colStatus') || 'Status'}</th>
+                      <th className="p-4 font-bold text-right">{t('nursingIpd.colActions') || 'Actions'}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">

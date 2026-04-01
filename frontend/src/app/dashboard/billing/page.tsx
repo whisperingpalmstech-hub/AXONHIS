@@ -1,1109 +1,276 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import {
-  Receipt, DollarSign, FileText, CheckCircle2, Clock, AlertCircle,
-  Plus, X, TrendingUp, ShieldCheck, CreditCard, Search, Eye,
-  Building2, ArrowRight, Loader2, BarChart3, Wallet, BadgeDollarSign,
-  Activity, Users, Stethoscope, ChevronDown
-} from "lucide-react";
+import { useTranslation } from "@/i18n";
+
+import React, { useEffect, useState, useCallback } from "react";
 import { TopNav } from "@/components/ui/TopNav";
+import {
+  Receipt, DollarSign, CreditCard, ArrowRightLeft, FileText, TrendingUp,
+  Search, Eye, AlertTriangle, CheckCircle2, Clock, Wallet, Building2,
+  X, ChevronDown, Zap, Shield, Activity, BarChart3
+} from "lucide-react";
+import { api } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
-
-function authHeaders() {
-  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-type TabKey = "overview" | "invoices" | "payments" | "claims" | "services" | "insurance" | "preauth";
+type Tab = "CHARGES" | "LEDGER" | "EVENTS" | "DEPOSITS" | "ESTIMATIONS";
 
 export default function BillingDashboard() {
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [loading, setLoading] = useState(true);
-
-  // Data states
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
-  const [claims, setClaims] = useState<any[]>([]);
-  const [patients, setPatients] = useState<any[]>([]);
-  const [encounters, setEncounters] = useState<any[]>([]);
-  const [providers, setProviders] = useState<any[]>([]);
-  const [packages, setPackages] = useState<any[]>([]);
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<Tab>("CHARGES");
+  const [loading, setLoading] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [deposits, setDeposits] = useState<any[]>([]);
+  const [estimates, setEstimates] = useState<any[]>([]);
   const [preAuths, setPreAuths] = useState<any[]>([]);
-  const [billingServices, setBillingServices] = useState<any[]>([]);
-  const [entries, setEntries] = useState<any[]>([]);
+  const [creditNotes, setCreditNotes] = useState<any[]>([]);
 
-  // Modal states
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showClaimModal, setShowClaimModal] = useState(false);
-  const [showProviderModal, setShowProviderModal] = useState(false);
-  const [showPackageModal, setShowPackageModal] = useState(false);
-  const [showPreAuthModal, setShowPreAuthModal] = useState(false);
-  const [showInvoiceDetail, setShowInvoiceDetail] = useState<any>(null);
-
-  // Form states
-  const [invoiceForm, setInvoiceForm] = useState({ patient_id: "", encounter_id: "" });
-  const [paymentForm, setPaymentForm] = useState({ invoice_id: "", payment_method: "cash", amount: "" });
-  const [claimForm, setClaimForm] = useState({ invoice_id: "", provider_id: "", claim_amount: "" });
-  const [providerForm, setProviderForm] = useState({ provider_name: "", provider_code: "", contact_details: "", billing_address: "" });
-  const [packageForm, setPackageForm] = useState({ provider_id: "", package_name: "", default_co_pay_percent: "0", default_deductible: "0" });
-  const [preAuthForm, setPreAuthForm] = useState({ patient_id: "", provider_id: "", service_id: "", request_amount: "", clinical_notes: "" });
-
-  // Search
-  const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => { fetchData(); }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
-    const headers = authHeaders();
     try {
-      const [invRes, payRes, claimRes, patRes, encRes, provRes, packRes, authRes, svcRes, entRes] = await Promise.all([
-        fetch(`${API_URL}/api/v1/billing/invoices`, { headers }),
-        fetch(`${API_URL}/api/v1/billing/payments`, { headers }),
-        fetch(`${API_URL}/api/v1/billing/insurance/claims`, { headers }),
-        fetch(`${API_URL}/api/v1/patients`, { headers }),
-        fetch(`${API_URL}/api/v1/encounters`, { headers }),
-        fetch(`${API_URL}/api/v1/billing/insurance/providers`, { headers }),
-        fetch(`${API_URL}/api/v1/billing/insurance/packages`, { headers }),
-        fetch(`${API_URL}/api/v1/billing/insurance/pre-auth`, { headers }),
-        fetch(`${API_URL}/api/v1/billing/services`, { headers }),
-        fetch(`${API_URL}/api/v1/billing/entries`, { headers }),
+      const [ev, dep, est, pa, cn] = await Promise.all([
+        api.get<any[]>("/integration/events").catch(() => []),
+        api.get<any[]>("/billing-masters/deposits").catch(() => []),
+        api.get<any[]>("/ipd-enhanced/estimates").catch(() => []),
+        api.get<any[]>("/ipd-enhanced/pre-auth").catch(() => []),
+        api.get<any[]>("/billing-masters/credit-debit-notes").catch(() => []),
       ]);
-      if (invRes.ok) setInvoices(await invRes.json());
-      if (payRes.ok) setPayments(await payRes.json());
-      if (claimRes.ok) setClaims(await claimRes.json());
-      if (patRes.ok) {
-        const pData = await patRes.json();
-        // Handle both list and {items: [...]} format
-        setPatients(Array.isArray(pData) ? pData : (pData.items || []));
-      }
-      if (encRes.ok) setEncounters(await encRes.json());
-      if (provRes.ok) setProviders(await provRes.json());
-      if (packRes.ok) setPackages(await packRes.json());
-      if (authRes.ok) setPreAuths(await authRes.json());
-      if (svcRes.ok) setBillingServices(await svcRes.json());
-      if (entRes.ok) setEntries(await entRes.json());
-    } catch (err) {
-      console.error("Failed to load billing data:", err);
-    } finally {
-      setLoading(false);
-    }
+      setEvents(ev || []); setDeposits(dep || []); setEstimates(est || []);
+      setPreAuths(pa || []); setCreditNotes(cn || []);
+    } catch (e) { console.error(e); }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const getEventIcon = (type: string) => {
+    const map: Record<string, React.ReactNode> = {
+      er_to_ipd: <ArrowRightLeft size={14} className="text-blue-500"/>,
+      order_to_bill: <Receipt size={14} className="text-emerald-500"/>,
+      discharge_settle: <CheckCircle2 size={14} className="text-purple-500"/>,
+      charge_posted: <DollarSign size={14} className="text-amber-500"/>,
+    };
+    return map[type] || <Activity size={14} className="text-slate-400"/>;
   };
-
-  // Helpers
-  const getPatientName = (pid: string) => {
-    const p = patients.find((pt: any) => pt.id === pid);
-    if (!p) return pid?.substring(0, 8) + "...";
-    return `${p.first_name} ${p.last_name}`;
-  };
-  const getPatientMRN = (pid: string) => {
-    const p = patients.find((pt: any) => pt.id === pid);
-    return p?.patient_uuid || p?.mrn || "—";
-  };
-
-  // KPI metrics
-  const totalRevenue = payments.reduce((acc: number, p: any) => acc + parseFloat(p.amount || 0), 0);
-  const pendingAmount = invoices.filter((i: any) => i.status === "issued").reduce((acc: number, i: any) => acc + parseFloat(i.total_amount || 0), 0);
-  const paidInvoices = invoices.filter((i: any) => i.status === "paid").length;
-  const activeClaims = claims.filter((c: any) => c.status !== "approved" && c.status !== "rejected").length;
-
-  // Filtered encounters for selected patient
-  const patientEncounters = encounters.filter((e: any) => e.patient_id === invoiceForm.patient_id);
-
-  // Invoice entries lookup
-  const getInvoiceEntries = (invId: string) => entries.filter((e: any) => e.encounter_id === showInvoiceDetail?.encounter_id && e.patient_id === showInvoiceDetail?.patient_id);
-
-  // Invoice search
-  const filteredInvoices = invoices.filter((i: any) => {
-    if (!searchTerm) return true;
-    const pName = getPatientName(i.patient_id).toLowerCase();
-    return pName.includes(searchTerm.toLowerCase()) || i.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-
-  const handleCreateInvoice = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/v1/billing/invoice`, {
-        method: "POST", headers: authHeaders(), body: JSON.stringify(invoiceForm)
-      });
-      if (res.ok) {
-        setShowInvoiceModal(false);
-        setInvoiceForm({ patient_id: "", encounter_id: "" });
-        fetchData();
-      } else {
-        const err = await res.json();
-        alert(err.detail ? JSON.stringify(err.detail) : "Error generating invoice");
-      }
-    } catch (e: any) { alert(e.message); }
-  };
-
-  const handleRecordPayment = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/v1/billing/payment`, {
-        method: "POST", headers: authHeaders(),
-        body: JSON.stringify({ ...paymentForm, amount: parseFloat(paymentForm.amount) })
-      });
-      if (res.ok) {
-        setShowPaymentModal(false);
-        setPaymentForm({ invoice_id: "", payment_method: "cash", amount: "" });
-        fetchData();
-      } else {
-        const err = await res.json();
-        alert(err.detail ? JSON.stringify(err.detail) : "Error recording payment");
-      }
-    } catch (e: any) { alert(e.message); }
-  };
-
-  const handleSubmitClaim = async () => {
-    try {
-      const selectedInvoice = invoices.find(i => i.id === claimForm.invoice_id);
-      const invEntries = entries.filter(e => e.encounter_id === selectedInvoice?.encounter_id);
-      
-      const payload = {
-        ...claimForm,
-        claim_amount: parseFloat(claimForm.claim_amount),
-        items: invEntries.map(e => ({
-          billing_entry_id: e.id,
-          amount: parseFloat(e.total_price),
-          status: "pended"
-        }))
-      };
-
-      const res = await fetch(`${API_URL}/api/v1/billing/insurance/claims`, {
-        method: "POST", headers: authHeaders(),
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        setShowClaimModal(false);
-        setClaimForm({ invoice_id: "", provider_id: "", claim_amount: "" });
-        fetchData();
-      } else {
-        const err = await res.json();
-        alert(err.detail ? JSON.stringify(err.detail) : "Error submitting claim");
-      }
-    } catch (e: any) { alert(e.message); }
-  };
-
-  const handleRegisterProvider = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/v1/billing/insurance/providers`, {
-        method: "POST", headers: authHeaders(),
-        body: JSON.stringify(providerForm)
-      });
-      if (res.ok) {
-        setShowProviderModal(false);
-        setProviderForm({ provider_name: "", provider_code: "", contact_details: "", billing_address: "" });
-        fetchData();
-      } else {
-        const err = await res.json();
-        alert(err.detail ? JSON.stringify(err.detail) : "Error registering provider");
-      }
-    } catch (e: any) { alert(e.message); }
-  };
-
-  const handleRegisterPackage = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/v1/billing/insurance/packages`, {
-        method: "POST", headers: authHeaders(),
-        body: JSON.stringify({
-          ...packageForm,
-          default_co_pay_percent: parseFloat(packageForm.default_co_pay_percent),
-          default_deductible: parseFloat(packageForm.default_deductible)
-        })
-      });
-      if (res.ok) {
-        setShowPackageModal(false);
-        setPackageForm({ provider_id: "", package_name: "", default_co_pay_percent: "0", default_deductible: "0" });
-        fetchData();
-      } else {
-        const err = await res.json();
-        alert(err.detail ? JSON.stringify(err.detail) : "Error registering package");
-      }
-    } catch (e: any) { alert(e.message); }
-  };
-
-  const handleCreatePreAuth = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/v1/billing/insurance/pre-auth`, {
-        method: "POST", headers: authHeaders(),
-        body: JSON.stringify({
-          ...preAuthForm,
-          request_amount: parseFloat(preAuthForm.request_amount)
-        })
-      });
-      if (res.ok) {
-        setShowPreAuthModal(false);
-        setPreAuthForm({ patient_id: "", provider_id: "", service_id: "", request_amount: "", clinical_notes: "" });
-        fetchData();
-      } else {
-        const err = await res.json();
-        alert(err.detail ? JSON.stringify(err.detail) : "Error creating pre-auth");
-      }
-    } catch (e: any) { alert(e.message); }
-  };
-
-  const TABS: { key: TabKey; label: string; icon: any; count?: number }[] = [
-    { key: "overview", label: "Dashboard", icon: BarChart3 },
-    { key: "invoices", label: "Invoices", icon: Receipt, count: invoices.length },
-    { key: "insurance", label: "Insurance", icon: ShieldCheck, count: providers.length },
-    { key: "preauth", label: "Pre-Auth", icon: Clock, count: preAuths.length },
-    { key: "claims", label: "Claims", icon: FileText, count: claims.length },
-    { key: "payments", label: "Payments", icon: Wallet, count: payments.length },
-    { key: "services", label: "Catalog", icon: Stethoscope },
-  ];
 
   return (
-    <div className="flex flex-col h-full">
-      <TopNav title="Billing & Revenue Cycle Management" />
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <TopNav title="Billing & Finance" />
+      <div className="flex-1 p-8 max-w-7xl mx-auto w-full">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+              <Wallet className="text-emerald-500" size={32}/>{t("billing.billingFinanceHub")}</h1>
+            <p className="text-slate-500 font-medium mt-1">Charges • Ledger • Deposits • Pre-Auth • Cross-Module Events</p>
+          </div>
+        </div>
 
-      <div className="p-6 space-y-6">
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.key;
-            return (
-              <button key={tab.key}
-                onClick={() => { setActiveTab(tab.key); setSearchTerm(""); }}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex-1 justify-center ${
-                  isActive
-                    ? "bg-white text-[var(--accent-primary)] shadow-sm border border-[var(--border)]"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-50"
-                }`}>
-                <Icon size={16} />
-                <span className="hidden sm:inline">{tab.label}</span>
-                {tab.count !== undefined && tab.count > 0 && (
-                  <span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center bg-slate-200 text-slate-600">{tab.count}</span>
-                )}
-              </button>
-            );
-          })}
+        {/* Summary Cards */}
+        <div className="grid grid-cols-5 gap-4 mb-6">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1"><Receipt size={12}/>{t("billing.deposits")}</div>
+            <div className="text-3xl font-black text-emerald-600">{deposits.length}</div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1"><FileText size={12}/>{t("billing.estimates")}</div>
+            <div className="text-3xl font-black text-blue-600">{estimates.length}</div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm">
+            <div className="text-[10px] font-bold text-amber-500 uppercase flex items-center gap-1"><Shield size={12}/>{t("billing.preAuth")}</div>
+            <div className="text-3xl font-black text-amber-600">{preAuths.length}</div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-purple-100 shadow-sm">
+            <div className="text-[10px] font-bold text-purple-500 uppercase flex items-center gap-1"><CreditCard size={12}/>{t("billing.creditNotes")}</div>
+            <div className="text-3xl font-black text-purple-600">{creditNotes.length}</div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1"><ArrowRightLeft size={12}/>{t("billing.crossEvents")}</div>
+            <div className="text-3xl font-black text-slate-700">{events.length}</div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1.5 p-1.5 bg-white/50 backdrop-blur border border-slate-200 rounded-2xl w-fit mb-6 shadow-sm">
+          {[
+            { id: "DEPOSITS", label: "Deposits", icon: <Wallet size={14}/> },
+            { id: "ESTIMATIONS", label: "Estimates & Pre-Auth", icon: <FileText size={14}/> },
+            { id: "EVENTS", label: "Cross-Module Events", icon: <ArrowRightLeft size={14}/> },
+          ].map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id as Tab)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === t.id ? "bg-white text-emerald-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700"
+              }`}>
+              {t.icon} {t.label}
+            </button>
+          ))}
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 size={28} className="animate-spin text-[var(--accent-primary)]" />
-          </div>
+          <div className="h-64 flex items-center justify-center text-slate-400 font-medium">{t("billing.loadingFinancialData")}</div>
         ) : (
-          <>
-            {/* ═══ DASHBOARD TAB ═══ */}
-            {activeTab === "overview" && (
-              <div className="space-y-6">
-                {/* KPI Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                  {[
-                    { label: "Total Invoices", value: invoices.length, icon: Receipt, cBg: "bg-blue-50", cIcon: "text-blue-600", cBorder: "border-blue-100" },
-                    { label: "Revenue Collected", value: `$${totalRevenue.toFixed(2)}`, icon: TrendingUp, cBg: "bg-emerald-50", cIcon: "text-emerald-600", cBorder: "border-emerald-100" },
-                    { label: "Pending Dues", value: `$${pendingAmount.toFixed(2)}`, icon: Clock, cBg: "bg-amber-50", cIcon: "text-amber-600", cBorder: "border-amber-100" },
-                    { label: "Paid Invoices", value: paidInvoices, icon: CheckCircle2, cBg: "bg-green-50", cIcon: "text-green-600", cBorder: "border-green-100" },
-                    { label: "Active Claims", value: activeClaims, icon: ShieldCheck, cBg: "bg-violet-50", cIcon: "text-violet-600", cBorder: "border-violet-100" },
-                    { label: "Patients Billed", value: new Set(invoices.map((i: any) => i.patient_id)).size, icon: Users, cBg: "bg-rose-50", cIcon: "text-rose-600", cBorder: "border-rose-100" },
-                  ].map((c, i) => {
-                    const Icon = c.icon;
-                    return (
-                      <div key={i} className={`card card-body !p-4 ${c.cBorder}`}>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className={`w-10 h-10 rounded-xl ${c.cBg} flex items-center justify-center`}>
-                            <Icon size={20} className={c.cIcon} />
-                          </div>
-                        </div>
-                        <p className="stat-value !text-2xl">{c.value}</p>
-                        <p className="stat-label !text-xs !mt-0.5">{c.label}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Quick Actions + Recent */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Quick Actions */}
-                  <div className="card">
-                    <div className="card-header"><h3 className="font-semibold text-sm">Quick Actions</h3></div>
-                    <div className="divide-y divide-[var(--border)]">
-                      {[
-                        { label: "Generate Invoice", desc: "Create invoice from encounter", icon: Receipt, color: "text-blue-600", bg: "bg-blue-50", action: () => { setShowInvoiceModal(true); setActiveTab("invoices"); } },
-                        { label: "Record Payment", desc: "Log a payment against an invoice", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50", action: () => { setShowPaymentModal(true); setActiveTab("payments"); } },
-                        { label: "Submit Claim", desc: "File an insurance claim", icon: ShieldCheck, color: "text-violet-600", bg: "bg-violet-50", action: () => { setShowClaimModal(true); setActiveTab("claims"); } },
-                      ].map((a, i) => {
-                        const Icon = a.icon;
-                        return (
-                          <button key={i} onClick={a.action}
-                            className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors text-left">
-                            <div className={`w-9 h-9 rounded-lg ${a.bg} flex items-center justify-center`}>
-                              <Icon size={18} className={a.color} />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-[var(--text-primary)]">{a.label}</p>
-                              <p className="text-xs text-[var(--text-secondary)]">{a.desc}</p>
-                            </div>
-                            <ArrowRight size={14} className="text-slate-400" />
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Recent Invoices */}
-                  <div className="lg:col-span-2 card">
-                    <div className="card-header">
-                      <h3 className="font-semibold text-sm">Recent Invoices</h3>
-                      <button onClick={() => setActiveTab("invoices")} className="text-xs text-[var(--accent-primary)] hover:underline">
-                        View all &rarr;
-                      </button>
-                    </div>
-                    {invoices.length > 0 ? (
-                      <div className="divide-y divide-[var(--border)]">
-                        {invoices.slice(0, 5).map((inv: any) => (
-                          <div key={inv.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
-                                <Receipt size={18} className="text-blue-600" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-semibold text-[var(--text-primary)]">{inv.invoice_number}</p>
-                                <p className="text-xs text-[var(--text-secondary)]">{getPatientName(inv.patient_id)}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-bold">${parseFloat(inv.total_amount).toFixed(2)}</p>
-                              <span className={`badge text-[10px] ${inv.status === 'paid' ? 'badge-success' : inv.status === 'issued' ? 'badge-warning' : 'badge-neutral'}`}>
-                                {inv.status}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="card-body text-center text-[var(--text-secondary)]">
-                        <Receipt size={36} className="mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No invoices yet. Generate one from an encounter.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ═══ INVOICES TAB ═══ */}
-            {activeTab === "invoices" && (
-              <div className="space-y-5">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="relative flex-1 max-w-sm">
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
-                    <input value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)}
-                      placeholder="Search invoices by patient or number…" className="input-field pl-9" />
-                  </div>
-                  <button onClick={() => setShowInvoiceModal(true)} className="btn-primary">
-                    <Plus size={16} /> Generate Invoice
-                  </button>
-                </div>
-
-                {filteredInvoices.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {filteredInvoices.map((inv: any) => (
-                      <div key={inv.id} className="card card-body !p-5 hover:shadow-md transition-shadow flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-start justify-between mb-4">
-                            <div>
-                              <code className="text-xs font-bold text-[var(--accent-primary)] bg-[var(--accent-primary-light)] px-2 py-1 rounded inline-block mb-2">
-                                {inv.invoice_number}
-                              </code>
-                              <p className="text-base font-semibold text-[var(--text-primary)]">{getPatientName(inv.patient_id)}</p>
-                              <p className="text-xs text-[var(--text-secondary)]">MRN: {getPatientMRN(inv.patient_id)}</p>
-                            </div>
-                            <span className={`badge ${inv.status === 'paid' ? 'badge-success' : inv.status === 'issued' ? 'badge-warning' : inv.status === 'cancelled' ? 'badge-error' : 'badge-neutral'}`}>
-                              {inv.status}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs mb-4">
-                            <div className="flex flex-col">
-                              <span className="text-[10px] uppercase font-semibold text-slate-400 mb-0.5">Total Amount</span>
-                              <span className="font-bold text-lg text-[var(--text-primary)]">${parseFloat(inv.total_amount).toFixed(2)}</span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[10px] uppercase font-semibold text-slate-400 mb-0.5">Generated</span>
-                              <span className="font-medium text-slate-700">{new Date(inv.generated_at).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <button onClick={() => setShowInvoiceDetail(inv)}
-                          className="btn-secondary btn-sm w-full flex items-center justify-center gap-2">
-                          <Eye size={14} /> View Details
-                        </button>
-                      </div>
+          <div>
+            {/* DEPOSITS */}
+            {activeTab === "DEPOSITS" && (
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                      <th className="p-4 font-bold">Receipt #</th><th className="p-4 font-bold">{t("billing.patient")}</th>
+                      <th className="p-4 font-bold">{t("billing.amount")}</th><th className="p-4 font-bold">{t("billing.utilized")}</th>
+                      <th className="p-4 font-bold">{t("billing.balance")}</th><th className="p-4 font-bold">{t("billing.status")}</th>
+                      <th className="p-4 font-bold">{t("billing.date")}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {deposits.length === 0 ? (
+                      <tr><td colSpan={7} className="p-8 text-center text-slate-400 font-medium">{t("billing.noDepositsRecordedYet")}</td></tr>
+                    ) : deposits.map((d: any) => (
+                      <tr key={d.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="p-4 font-mono text-xs font-bold text-slate-700">{d.receipt_number || d.id?.slice(0,8)}</td>
+                        <td className="p-4 text-sm font-bold text-slate-800">{d.patient_name || '—'}</td>
+                        <td className="p-4 text-sm font-bold text-emerald-700">₹{parseFloat(d.amount || 0).toLocaleString()}</td>
+                        <td className="p-4 text-sm text-amber-600">₹{parseFloat(d.utilized_amount || 0).toLocaleString()}</td>
+                        <td className="p-4 text-sm font-bold text-blue-700">₹{parseFloat(d.balance_amount || 0).toLocaleString()}</td>
+                        <td className="p-4"><span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${
+                          d.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
+                          d.status === 'fully_utilized' ? 'bg-slate-100 text-slate-600' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>{d.status || 'active'}</span></td>
+                        <td className="p-4 text-xs text-slate-500">{d.created_at ? new Date(d.created_at).toLocaleDateString() : '—'}</td>
+                      </tr>
                     ))}
-                  </div>
-                ) : (
-                  <div className="card card-body text-center py-16">
-                    <Receipt size={40} className="mx-auto mb-3 text-slate-300" />
-                    <p className="text-[var(--text-secondary)]">No invoices found. Generate one by selecting a patient and encounter.</p>
-                  </div>
-                )}
+                  </tbody>
+                </table>
               </div>
             )}
 
-            {/* ═══ PAYMENTS TAB ═══ */}
-            {activeTab === "payments" && (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold flex items-center gap-2"><Wallet size={18} className="text-emerald-600" /> Payment History</h3>
-                  <button onClick={() => setShowPaymentModal(true)} className="btn-primary">
-                    <DollarSign size={16} /> Record Payment
-                  </button>
-                </div>
-
-                {payments.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {payments.map((p: any) => {
-                      const inv = invoices.find((i: any) => i.id === p.invoice_id);
-                      return (
-                        <div key={p.id} className="card card-body !p-5 hover:shadow-md transition-shadow">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${p.payment_status === 'completed' ? 'bg-emerald-50' : 'bg-amber-50'}`}>
-                                <CreditCard size={20} className={p.payment_status === 'completed' ? 'text-emerald-600' : 'text-amber-600'} />
-                              </div>
-                              <div>
-                                <p className="text-lg font-bold text-[var(--text-primary)]">${parseFloat(p.amount).toFixed(2)}</p>
-                                <p className="text-xs text-[var(--text-secondary)] capitalize">{p.payment_method}</p>
-                              </div>
-                            </div>
-                            <span className={`badge ${p.payment_status === 'completed' ? 'badge-success' : p.payment_status === 'failed' ? 'badge-error' : 'badge-warning'}`}>
-                              {p.payment_status}
-                            </span>
-                          </div>
-                          <div className="space-y-2 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">Invoice</span>
-                              <span className="font-medium text-[var(--accent-primary)]">{inv?.invoice_number || "—"}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">Patient</span>
-                              <span className="font-medium">{inv ? getPatientName(inv.patient_id) : "—"}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">Time</span>
-                              <span className="font-medium">{new Date(p.payment_time).toLocaleString()}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="card card-body text-center py-16">
-                    <DollarSign size={40} className="mx-auto mb-3 text-slate-300" />
-                    <p className="text-[var(--text-secondary)]">No payments recorded yet.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ═══ INSURANCE TAB ═══ */}
-            {activeTab === "insurance" && (
+            {/* ESTIMATIONS & PRE-AUTH */}
+            {activeTab === "ESTIMATIONS" && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold flex items-center gap-2"><ShieldCheck size={18} className="text-blue-600" /> Insurance Providers & Packages</h3>
-                  <div className="flex gap-3">
-                    <button onClick={() => setShowProviderModal(true)} className="btn-primary">
-                      <Plus size={16} /> Add Provider
-                    </button>
-                    <button onClick={() => setShowPackageModal(true)} className="btn-secondary">
-                      <ShieldCheck size={16} /> Add Package
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Providers List */}
-                  <div className="card">
-                    <div className="card-header"><h4 className="text-sm font-semibold">Registered Providers</h4></div>
-                    <div className="divide-y divide-[var(--border)] max-h-[500px] overflow-y-auto">
-                      {providers.map(p => (
-                        <div key={p.id} className="p-4 hover:bg-slate-50 transition-colors">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-bold text-slate-800">{p.provider_name}</span>
-                            <code className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold">{p.provider_code || "NO_CODE"}</code>
-                          </div>
-                          <p className="text-xs text-slate-500">{p.billing_address || "No address provided"}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Packages List */}
-                  <div className="card">
-                    <div className="card-header"><h4 className="text-sm font-semibold">Coverage Packages</h4></div>
-                    <div className="divide-y divide-[var(--border)] max-h-[500px] overflow-y-auto">
-                      {packages.map(pkg => (
-                        <div key={pkg.id} className="p-4 hover:bg-slate-50 transition-colors">
-                          <p className="font-bold text-slate-800 mb-1">{pkg.package_name}</p>
-                          <div className="flex items-center gap-2 text-[10px]">
-                            <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold border border-blue-100">Co-pay: {pkg.default_co_pay_percent}%</span>
-                            <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-bold border border-emerald-100">Deductible: ${pkg.default_deductible}</span>
-                            <span className="text-slate-400 font-medium">Provider ID: {pkg.provider_id.substring(0,8)}...</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ═══ PRE-AUTH TAB ═══ */}
-            {activeTab === "preauth" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold flex items-center gap-2"><Clock size={18} className="text-amber-600" /> Pre-authorizations</h3>
-                  <button onClick={() => setShowPreAuthModal(true)} className="btn-primary">
-                    <Plus size={16} /> New Request
-                  </button>
-                </div>
-
-                {preAuths.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {preAuths.map((auth: any) => (
-                      <div key={auth.id} className="card card-body !p-5">
-                        <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2"><BarChart3 size={16}/>{t("billing.admissionEstimates")}</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {estimates.length === 0 ? (
+                      <div className="col-span-2 p-8 text-center text-slate-400 border-2 border-dashed rounded-2xl font-medium">{t("billing.noEstimatesCreatedYet")}</div>
+                    ) : estimates.map((e: any) => (
+                      <div key={e.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <div className="flex justify-between items-start mb-3">
                           <div>
-                            <p className="text-sm font-bold text-slate-800">{getPatientName(auth.patient_id)}</p>
-                            <p className="text-xs text-slate-500">Service ID: {auth.service_id.substring(0,8)}...</p>
+                            <div className="font-black text-slate-800">{e.patient_name}</div>
+                            <div className="text-xs text-slate-500">{e.bed_category || 'General'} • {e.expected_stay_days} days</div>
                           </div>
-                          <span className={`badge ${auth.status === 'approved' ? 'badge-success' : auth.status === 'denied' ? 'badge-error' : 'badge-warning'}`}>
-                            {auth.status}
-                          </span>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                            e.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                          }`}>{e.status?.toUpperCase()}</span>
                         </div>
-                        <div className="flex items-center justify-between p-2 bg-slate-50 rounded text-xs mb-3">
-                          <span className="text-slate-500">Requested</span>
-                          <span className="font-bold">${parseFloat(auth.request_amount).toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] text-slate-400">
-                          <span>Auth Code: {auth.auth_code || "PENDING"}</span>
-                          <span>{new Date(auth.request_date).toLocaleDateString()}</span>
+                        <div className="text-2xl font-black text-emerald-700">₹{parseFloat(e.total_estimated_cost || 0).toLocaleString()}</div>
+                        <div className="flex gap-4 mt-2 text-xs text-slate-500">
+                          <span>Deposit: ₹{parseFloat(e.deposit_required || 0).toLocaleString()}</span>
+                          <span>Liability: ₹{parseFloat(e.patient_liability || 0).toLocaleString()}</span>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="card card-body text-center py-16">
-                    <Clock size={40} className="mx-auto mb-3 text-slate-300" />
-                    <p className="text-[var(--text-secondary)]">No pre-authorizations found.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ═══ CLAIMS TAB ═══ */}
-            {activeTab === "claims" && (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold flex items-center gap-2"><FileText size={18} className="text-violet-600" /> Insurance Claims Tracking</h3>
-                  <button onClick={() => setShowClaimModal(true)} className="btn-primary">
-                    <FileText size={16} /> Submit New Claim
-                  </button>
                 </div>
 
-                {claims.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {claims.map((c: any) => {
-                      const inv = invoices.find((i: any) => i.id === c.invoice_id);
-                      const prov = providers.find((pr: any) => pr.id === c.provider_id);
-                      return (
-                        <div key={c.id} className="card card-body !p-5 hover:shadow-md transition-shadow">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${c.status === 'approved' ? 'bg-emerald-50' : c.status === 'rejected' ? 'bg-red-50' : 'bg-violet-50'}`}>
-                                <Building2 size={20} className={c.status === 'approved' ? 'text-emerald-600' : c.status === 'rejected' ? 'text-red-600' : 'text-violet-600'} />
-                              </div>
-                              <div>
-                                <p className="text-lg font-bold text-[var(--text-primary)]">${parseFloat(c.claim_amount).toFixed(2)}</p>
-                                <p className="text-xs text-[var(--text-secondary)] truncate w-32">{prov?.provider_name || "Unknown"}</p>
-                              </div>
-                            </div>
-                            <span className={`badge ${c.status === 'approved' ? 'badge-success' : c.status === 'rejected' ? 'badge-error' : 'badge-warning'}`}>
-                              {c.status}
-                            </span>
-                          </div>
-                          <div className="space-y-2 text-xs">
-                            <div className="flex justify-between font-medium">
-                              <span className="text-slate-500">Claim #</span>
-                              <span className="text-[var(--accent-primary)]">{c.claim_number || "—"}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">Inv: {inv?.invoice_number || "—"}</span>
-                              <span className="text-slate-500">{new Date(c.submitted_at).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="card card-body text-center py-16">
-                    <FileText size={40} className="mx-auto mb-3 text-slate-300" />
-                    <p className="text-[var(--text-secondary)]">No insurance claims filed yet.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ═══ SERVICE CATALOG TAB ═══ */}
-            {activeTab === "services" && (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold flex items-center gap-2"><Stethoscope size={18} className="text-blue-600" /> Service Catalog ({billingServices.length})</h3>
-                </div>
-                {billingServices.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {billingServices.map((svc: any) => (
-                      <div key={svc.id} className="card card-body !p-5 hover:shadow-md transition-shadow">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-                            <Stethoscope size={20} className="text-blue-600" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-base font-semibold text-[var(--text-primary)] truncate">{svc.service_name}</p>
-                            <code className="text-xs font-bold text-[var(--accent-primary)] bg-[var(--accent-primary-light)] px-1.5 py-0.5 rounded border border-blue-200">
-                              {svc.service_code}
-                            </code>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 p-2 bg-slate-50 rounded-lg text-xs">
-                          <div><span className="text-[10px] uppercase font-semibold text-slate-400">Category</span><br/><span className="font-medium capitalize">{svc.service_category || "—"}</span></div>
-                          <div><span className="text-[10px] uppercase font-semibold text-slate-400">Department</span><br/><span className="font-medium capitalize">{svc.department || "—"}</span></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="card card-body text-center py-16">
-                    <Stethoscope size={40} className="mx-auto mb-3 text-slate-300" />
-                    <p className="text-[var(--text-secondary)]">No billing services configured.</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* ═══ GENERATE INVOICE MODAL ═══ */}
-      {showInvoiceModal && (
-        <div className="modal-overlay" onClick={() => setShowInvoiceModal(false)}>
-          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="font-semibold flex items-center gap-2"><Receipt size={18} className="text-[var(--accent-primary)]" /> Generate Invoice</h3>
-              <button onClick={() => setShowInvoiceModal(false)} className="btn-ghost p-1 rounded"><X size={18} /></button>
-            </div>
-            <div className="modal-body space-y-4">
-              <div>
-                <label className="input-label">Select Patient <span className="text-red-500">*</span></label>
-                <select className="input-field" value={invoiceForm.patient_id}
-                  onChange={(e: any) => setInvoiceForm({ patient_id: e.target.value, encounter_id: "" })}>
-                  <option value="">-- Choose Patient ({patients.length} available) --</option>
-                  {patients.map((p: any) => (
-                    <option key={p.id} value={p.id}>
-                      {p.first_name} {p.last_name} — {p.patient_uuid || p.mrn || "No MRN"}
-                    </option>
-                  ))}
-                </select>
-                {patients.length === 0 && (
-                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertCircle size={12}/> No patients found. Register patients first.</p>
-                )}
-              </div>
-              <div>
-                <label className="input-label">Select Encounter <span className="text-red-500">*</span></label>
-                <select className="input-field" value={invoiceForm.encounter_id}
-                  onChange={(e: any) => setInvoiceForm((prev: any) => ({ ...prev, encounter_id: e.target.value }))}
-                  disabled={!invoiceForm.patient_id}>
-                  <option value="">-- Choose Encounter ({patientEncounters.length} for this patient) --</option>
-                  {patientEncounters.map((enc: any) => (
-                    <option key={enc.id} value={enc.id}>
-                      {enc.encounter_type} — {enc.department || "General"} — {new Date(enc.start_time || enc.created_at).toLocaleDateString()} ({enc.status})
-                    </option>
-                  ))}
-                </select>
-                {invoiceForm.patient_id && patientEncounters.length === 0 && (
-                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertCircle size={12}/> No encounters found for this patient.</p>
-                )}
-              </div>
-              {invoiceForm.patient_id && invoiceForm.encounter_id && (
-                <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                  <p className="text-xs text-emerald-700 font-medium flex items-center gap-1"><CheckCircle2 size={14}/> Ready to generate invoice. The system will consolidate all pending billing entries for this encounter.</p>
-                </div>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowInvoiceModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleCreateInvoice} className="btn-primary" disabled={!invoiceForm.patient_id || !invoiceForm.encounter_id}>
-                <Receipt size={16} /> Generate Invoice
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ RECORD PAYMENT MODAL ═══ */}
-      {showPaymentModal && (
-        <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
-          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="font-semibold flex items-center gap-2"><DollarSign size={18} className="text-emerald-600" /> Record Payment</h3>
-              <button onClick={() => setShowPaymentModal(false)} className="btn-ghost p-1 rounded"><X size={18} /></button>
-            </div>
-            <div className="modal-body space-y-4">
-              <div>
-                <label className="input-label">Select Invoice <span className="text-red-500">*</span></label>
-                <select className="input-field" value={paymentForm.invoice_id}
-                  onChange={(e: any) => {
-                    const inv = invoices.find((i: any) => i.id === e.target.value);
-                    setPaymentForm((prev: any) => ({
-                      ...prev,
-                      invoice_id: e.target.value,
-                      amount: inv ? parseFloat(inv.total_amount).toFixed(2) : ""
-                    }));
-                  }}>
-                  <option value="">-- Choose Invoice --</option>
-                  {invoices.filter((i: any) => i.status !== 'paid').map((inv: any) => (
-                    <option key={inv.id} value={inv.id}>
-                      {inv.invoice_number} — {getPatientName(inv.patient_id)} — ${parseFloat(inv.total_amount).toFixed(2)} ({inv.status})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="input-label">Payment Method <span className="text-red-500">*</span></label>
-                <select className="input-field" value={paymentForm.payment_method}
-                  onChange={(e: any) => setPaymentForm((prev: any) => ({ ...prev, payment_method: e.target.value }))}>
-                  <option value="cash">💵 Cash</option>
-                  <option value="card">💳 Card</option>
-                  <option value="online">🌐 Online</option>
-                  <option value="insurance">🏥 Insurance</option>
-                </select>
-              </div>
-              <div>
-                <label className="input-label">Amount <span className="text-red-500">*</span></label>
-                <input className="input-field" type="number" step="0.01" placeholder="0.00" value={paymentForm.amount}
-                  onChange={(e: any) => setPaymentForm((prev: any) => ({ ...prev, amount: e.target.value }))} />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowPaymentModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleRecordPayment} className="btn bg-[var(--success)] text-white hover:bg-green-700 focus:ring-green-400">
-                <CheckCircle2 size={16} /> Confirm Payment
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ SUBMIT CLAIM MODAL ═══ */}
-      {showClaimModal && (
-        <div className="modal-overlay" onClick={() => setShowClaimModal(false)}>
-          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="font-semibold flex items-center gap-2"><ShieldCheck size={18} className="text-violet-600" /> Submit Insurance Claim</h3>
-              <button onClick={() => setShowClaimModal(false)} className="btn-ghost p-1 rounded"><X size={18} /></button>
-            </div>
-            <div className="modal-body space-y-4">
-              <div>
-                <label className="input-label">Select Invoice <span className="text-red-500">*</span></label>
-                <select className="input-field" value={claimForm.invoice_id}
-                  onChange={(e: any) => {
-                    const inv = invoices.find((i: any) => i.id === e.target.value);
-                    setClaimForm((prev: any) => ({
-                      ...prev,
-                      invoice_id: e.target.value,
-                      claim_amount: inv ? parseFloat(inv.total_amount).toFixed(2) : ""
-                    }));
-                  }}>
-                  <option value="">-- Choose Invoice --</option>
-                  {invoices.map((inv: any) => (
-                    <option key={inv.id} value={inv.id}>
-                      {inv.invoice_number} — {getPatientName(inv.patient_id)} — ${parseFloat(inv.total_amount).toFixed(2)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="input-label">Insurance Provider <span className="text-red-500">*</span></label>
-                <select className="input-field" value={claimForm.provider_id}
-                  onChange={(e: any) => setClaimForm((prev: any) => ({ ...prev, provider_id: e.target.value }))}>
-                  <option value="">-- Choose Provider ({providers.length} registered) --</option>
-                  {providers.map((prov: any) => (
-                    <option key={prov.id} value={prov.id}>{prov.provider_name}</option>
-                  ))}
-                </select>
-                {providers.length === 0 && (
-                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertCircle size={12}/> No insurance providers registered.</p>
-                )}
-              </div>
-              <div>
-                <label className="input-label">Claim Amount <span className="text-red-500">*</span></label>
-                <input className="input-field" type="number" step="0.01" placeholder="0.00" value={claimForm.claim_amount}
-                  onChange={(e: any) => setClaimForm((prev: any) => ({ ...prev, claim_amount: e.target.value }))} />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowClaimModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleSubmitClaim} className="btn bg-violet-600 text-white hover:bg-violet-700">
-                <FileText size={16} /> Submit Claim
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ REGISTER PROVIDER MODAL ═══ */}
-      {showProviderModal && (
-        <div className="modal-overlay" onClick={() => setShowProviderModal(false)}>
-          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="font-semibold flex items-center gap-2"><Building2 size={18} className="text-violet-600" /> Register Insurance Provider</h3>
-              <button onClick={() => setShowProviderModal(false)} className="btn-ghost p-1 rounded"><X size={18} /></button>
-            </div>
-            <div className="modal-body space-y-4">
-              <div>
-                <label className="input-label">Provider Name <span className="text-red-500">*</span></label>
-                <input className="input-field" type="text" placeholder="e.g. Blue Cross Blue Shield" value={providerForm.provider_name}
-                  onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, provider_name: e.target.value }))} />
-              </div>
-              <div>
-                <label className="input-label">Provider Code</label>
-                <input className="input-field" type="text" placeholder="Internal/Reg Code" value={providerForm.provider_code}
-                  onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, provider_code: e.target.value }))} />
-              </div>
-              <div>
-                <label className="input-label">Contact Details</label>
-                <input className="input-field" type="text" placeholder="Email or Phone" value={providerForm.contact_details}
-                  onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, contact_details: e.target.value }))} />
-              </div>
-              <div>
-                <label className="input-label">Billing Address</label>
-                <textarea className="input-field min-h-[80px]" placeholder="Address for claim submissions" value={providerForm.billing_address}
-                  onChange={(e: any) => setProviderForm((prev: any) => ({ ...prev, billing_address: e.target.value }))} />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowProviderModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleRegisterProvider} className="btn bg-violet-600 text-white hover:bg-violet-700" disabled={!providerForm.provider_name}>
-                <CheckCircle2 size={16} /> Register Provider
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ INVOICE DETAIL MODAL ═══ */}
-      {showInvoiceDetail && (
-        <div className="modal-overlay" onClick={() => setShowInvoiceDetail(null)}>
-          <div className="modal-content !max-w-2xl" onClick={(e: any) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Receipt size={18} className="text-[var(--accent-primary)]" />
-                Invoice: {showInvoiceDetail.invoice_number}
-              </h3>
-              <button onClick={() => setShowInvoiceDetail(null)} className="btn-ghost p-1 rounded"><X size={18} /></button>
-            </div>
-            <div className="modal-body space-y-5">
-              {/* Patient Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                  <p className="text-[10px] uppercase font-semibold text-slate-400 mb-1">Patient</p>
-                  <p className="text-sm font-bold text-[var(--text-primary)]">{getPatientName(showInvoiceDetail.patient_id)}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">MRN: {getPatientMRN(showInvoiceDetail.patient_id)}</p>
-                </div>
-                <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                  <p className="text-[10px] uppercase font-semibold text-slate-400 mb-1">Invoice Details</p>
-                  <p className="text-sm font-bold text-[var(--text-primary)]">{showInvoiceDetail.invoice_number}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">Generated: {new Date(showInvoiceDetail.generated_at).toLocaleString()}</p>
-                </div>
-              </div>
-
-              {/* Billing Entries */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2 flex items-center gap-2"><Activity size={14} className="text-blue-500"/>Services Billed</h4>
-                {(() => {
-                  const invEntries = entries.filter((e: any) => e.encounter_id === showInvoiceDetail.encounter_id && e.patient_id === showInvoiceDetail.patient_id);
-                  return invEntries.length > 0 ? (
-                    <table className="data-table">
-                      <thead><tr><th>Service</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Status</th></tr></thead>
-                      <tbody>
-                        {invEntries.map((entry: any) => {
-                          const svc = billingServices.find((s: any) => s.id === entry.service_id);
-                          return (
-                            <tr key={entry.id}>
-                              <td className="font-medium">{svc?.service_name || entry.service_id?.substring(0, 8)}</td>
-                              <td>{entry.quantity}</td>
-                              <td>${parseFloat(entry.unit_price).toFixed(2)}</td>
-                              <td className="font-semibold">${parseFloat(entry.total_price).toFixed(2)}</td>
-                              <td><span className={`badge ${entry.status === 'charged' ? 'badge-success' : 'badge-neutral'}`}>{entry.status}</span></td>
-                            </tr>
-                          );
-                        })}
+                <div>
+                  <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2"><Shield size={16}/>{t("billing.insurancePreAuthorizations")}</h3>
+                  <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                          <th className="p-4 font-bold">PA #</th><th className="p-4 font-bold">{t("billing.requested")}</th>
+                          <th className="p-4 font-bold">{t("billing.approved")}</th><th className="p-4 font-bold">{t("billing.status")}</th>
+                          <th className="p-4 font-bold">{t("billing.date")}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {preAuths.length === 0 ? (
+                          <tr><td colSpan={5} className="p-8 text-center text-slate-400 font-medium">{t("billing.noPreAuthorizations")}</td></tr>
+                        ) : preAuths.map((pa: any) => (
+                          <tr key={pa.id} className="hover:bg-slate-50/50">
+                            <td className="p-4 font-mono text-xs font-bold">{pa.pre_auth_number || '—'}</td>
+                            <td className="p-4 text-sm font-bold text-slate-700">₹{parseFloat(pa.requested_amount || 0).toLocaleString()}</td>
+                            <td className="p-4 text-sm font-bold text-emerald-700">{pa.approved_amount ? `₹${parseFloat(pa.approved_amount).toLocaleString()}` : '—'}</td>
+                            <td className="p-4"><span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${
+                              pa.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                              pa.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>{pa.status}</span></td>
+                            <td className="p-4 text-xs text-slate-500">{pa.requested_at ? new Date(pa.requested_at).toLocaleDateString() : '—'}</td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
-                  ) : (
-                    <p className="text-xs text-slate-500 p-3 bg-slate-50 rounded-lg">No billing entries found for this encounter.</p>
-                  );
-                })()}
-              </div>
-
-              {/* Total Summary */}
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-600">Total Payable</span>
-                  <span className="text-2xl font-bold text-[var(--accent-primary)]">${parseFloat(showInvoiceDetail.total_amount).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-xs text-slate-500">Status</span>
-                  <span className={`badge ${showInvoiceDetail.status === 'paid' ? 'badge-success' : showInvoiceDetail.status === 'issued' ? 'badge-warning' : 'badge-neutral'}`}>
-                    {showInvoiceDetail.status}
-                  </span>
-                </div>
-              </div>
-
-              {/* Payments made against this invoice */}
-              {(() => {
-                const invPayments = payments.filter((p: any) => p.invoice_id === showInvoiceDetail.id);
-                return invPayments.length > 0 ? (
-                  <div>
-                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2"><CreditCard size={14} className="text-emerald-500"/>Payments Received</h4>
-                    <div className="space-y-2">
-                      {invPayments.map((p: any) => (
-                        <div key={p.id} className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                          <div>
-                            <p className="text-sm font-semibold text-emerald-700">${parseFloat(p.amount).toFixed(2)}</p>
-                            <p className="text-xs text-emerald-600 capitalize">{p.payment_method} • {new Date(p.payment_time).toLocaleString()}</p>
-                          </div>
-                          <span className={`badge ${p.payment_status === 'completed' ? 'badge-success' : 'badge-warning'}`}>{p.payment_status}</span>
-                        </div>
-                      ))}
-                    </div>
                   </div>
-                ) : null;
-              })()}
-            </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowInvoiceDetail(null)} className="btn-secondary">Close</button>
-              {showInvoiceDetail.status !== 'paid' && (
-                <button onClick={() => {
-                  setPaymentForm({ invoice_id: showInvoiceDetail.id, payment_method: "cash", amount: parseFloat(showInvoiceDetail.total_amount).toFixed(2) });
-                  setShowInvoiceDetail(null);
-                  setShowPaymentModal(true);
-                }} className="btn bg-[var(--success)] text-white hover:bg-green-700">
-                  <DollarSign size={16} /> Record Payment
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      {/* ═══ ADD PACKAGE MODAL ═══ */}
-      {showPackageModal && (
-        <div className="modal-overlay" onClick={() => setShowPackageModal(false)}>
-          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="font-semibold flex items-center gap-2"><ShieldCheck size={18} className="text-blue-600" /> Define Insurance Package</h3>
-              <button onClick={() => setShowPackageModal(false)} className="btn-ghost p-1 rounded"><X size={18} /></button>
-            </div>
-            <div className="modal-body space-y-4">
-              <div>
-                <label className="input-label">Select Provider <span className="text-red-500">*</span></label>
-                <select className="input-field" value={packageForm.provider_id}
-                  onChange={(e: any) => setPackageForm(p => ({ ...p, provider_id: e.target.value }))}>
-                  <option value="">-- Choose Provider --</option>
-                  {providers.map(p => <option key={p.id} value={p.id}>{p.provider_name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="input-label">Package Name <span className="text-red-500">*</span></label>
-                <input className="input-field" type="text" placeholder="e.g. Corporate Gold Plan" value={packageForm.package_name}
-                  onChange={(e: any) => setPackageForm(p => ({ ...p, package_name: e.target.value }))} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="input-label">Default Co-pay (%)</label>
-                  <input className="input-field" type="number" value={packageForm.default_co_pay_percent}
-                    onChange={(e: any) => setPackageForm(p => ({ ...p, default_co_pay_percent: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="input-label">Default Deductible ($)</label>
-                  <input className="input-field" type="number" value={packageForm.default_deductible}
-                    onChange={(e: any) => setPackageForm(p => ({ ...p, default_deductible: e.target.value }))} />
                 </div>
               </div>
-            </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowPackageModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleRegisterPackage} className="btn-primary" disabled={!packageForm.provider_id || !packageForm.package_name}>
-                Confirm Package
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            )}
 
-      {/* ═══ NEW PRE-AUTH MODAL ═══ */}
-      {showPreAuthModal && (
-        <div className="modal-overlay" onClick={() => setShowPreAuthModal(false)}>
-          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="font-semibold flex items-center gap-2"><Clock size={18} className="text-amber-600" /> Pre-authorization Request</h3>
-              <button onClick={() => setShowPreAuthModal(false)} className="btn-ghost p-1 rounded"><X size={18} /></button>
-            </div>
-            <div className="modal-body space-y-4">
-              <div>
-                <label className="input-label">Patient <span className="text-red-500">*</span></label>
-                <select className="input-field" value={preAuthForm.patient_id}
-                  onChange={(e: any) => setPreAuthForm(p => ({ ...p, patient_id: e.target.value }))}>
-                  <option value="">-- Select Patient --</option>
-                  {patients.map(p => <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>)}
-                </select>
+            {/* CROSS-MODULE EVENTS */}
+            {activeTab === "EVENTS" && (
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-100">
+                  <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <ArrowRightLeft size={16}/>{t("billing.crossModuleIntegrationEvents")}</h3>
+                  <p className="text-xs text-slate-500 mt-1">Audit trail: ER → IPD, Order → Bill, Discharge → Settlement</p>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {events.length === 0 ? (
+                    <div className="p-12 text-center text-slate-400">
+                      <ArrowRightLeft size={32} className="mx-auto mb-2 opacity-50"/>
+                      <p className="font-medium">No cross-module events yet. Events are logged when:</p>
+                      <ul className="text-xs mt-2 space-y-1">
+                        <li>• ER patient is transferred to IPD</li>
+                        <li>• Clinical orders generate billing charges</li>
+                        <li>• Discharge settlement completes</li>
+                      </ul>
+                    </div>
+                  ) : events.map((ev: any) => (
+                    <div key={ev.id} className="p-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                        {getEventIcon(ev.event_type)}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-bold text-slate-800">{ev.event_type?.replace(/_/g, ' ')?.toUpperCase()}</div>
+                        <div className="text-xs text-slate-500">{ev.source_module} → {ev.target_module}</div>
+                      </div>
+                      <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${
+                        ev.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                        ev.status === 'failed' ? 'bg-red-100 text-red-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>{ev.status}</span>
+                      <div className="text-xs text-slate-400">{new Date(ev.triggered_at).toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div>
-                <label className="input-label">Payer/Provider <span className="text-red-500">*</span></label>
-                <select className="input-field" value={preAuthForm.provider_id}
-                  onChange={(e: any) => setPreAuthForm(p => ({ ...p, provider_id: e.target.value }))}>
-                  <option value="">-- Select Provider --</option>
-                  {providers.map(p => <option key={p.id} value={p.id}>{p.provider_name}</option>)}
-                </select>
+            )}
+          </div>
+        )}
+
+        {/* Module Connectivity Diagram */}
+        <div className="mt-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider mb-4">{t("billing.moduleConnectivityMap")}</h3>
+          <div className="grid grid-cols-5 gap-4">
+            {[
+              { name: "ER", color: "red", icon: <Zap size={20}/>, connections: ["Billing", "IPD"] },
+              { name: "OPD", color: "blue", icon: <Activity size={20}/>, connections: ["Billing", "Lab", "Pharmacy"] },
+              { name: "IPD", color: "indigo", icon: <Building2 size={20}/>, connections: ["Billing", "Lab", "Pharmacy", "ER"] },
+              { name: "Lab/Rad", color: "purple", icon: <BarChart3 size={20}/>, connections: ["Billing", "OPD", "IPD"] },
+              { name: "Pharmacy", color: "emerald", icon: <Receipt size={20}/>, connections: ["Billing", "OPD", "IPD"] },
+            ].map(m => (
+              <div key={m.name} className={`p-4 rounded-xl border-2 border-${m.color}-200 bg-${m.color}-50 text-center`}>
+                <div className={`text-${m.color}-600 mx-auto w-fit mb-2`}>{m.icon}</div>
+                <div className={`font-black text-${m.color}-800 text-sm mb-1`}>{m.name}</div>
+                <div className="flex flex-wrap justify-center gap-1">
+                  {m.connections.map(c => (
+                    <span key={c} className={`text-[8px] font-bold bg-white text-${m.color}-600 px-1.5 py-0.5 rounded`}>→ {c}</span>
+                  ))}
+                </div>
               </div>
-              <div>
-                <label className="input-label">Service <span className="text-red-500">*</span></label>
-                <select className="input-field" value={preAuthForm.service_id}
-                  onChange={(e: any) => setPreAuthForm(p => ({ ...p, service_id: e.target.value }))}>
-                  <option value="">-- Select Service --</option>
-                  {billingServices.map(s => <option key={s.id} value={s.id}>{s.service_name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="input-label">Estimated Amount ($) <span className="text-red-500">*</span></label>
-                <input className="input-field" type="number" value={preAuthForm.request_amount}
-                  onChange={(e: any) => setPreAuthForm(p => ({ ...p, request_amount: e.target.value }))} />
-              </div>
-              <div>
-                <label className="input-label">Clinical Justification</label>
-                <textarea className="input-field" value={preAuthForm.clinical_notes}
-                  onChange={(e: any) => setPreAuthForm(p => ({ ...p, clinical_notes: e.target.value }))} />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowPreAuthModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleCreatePreAuth} className="btn bg-amber-600 text-white hover:bg-amber-700">
-                Submit Request
-              </button>
-            </div>
+            ))}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

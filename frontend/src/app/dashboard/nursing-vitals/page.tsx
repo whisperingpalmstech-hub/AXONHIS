@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useEffect, useState, useCallback } from "react";
 import { TopNav } from "@/components/ui/TopNav";
@@ -13,6 +15,7 @@ import { ipdApi } from "@/lib/ipd-api";
 type VTab = "VITALS" | "ASSESSMENT" | "RISKS" | "OBSERVATIONS";
 
 export default function NursingVitalsDashboard() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<VTab>("VITALS");
   const [admissionNo, setAdmissionNo] = useState("");
   const [worklist, setWorklist] = useState<any[]>([]);

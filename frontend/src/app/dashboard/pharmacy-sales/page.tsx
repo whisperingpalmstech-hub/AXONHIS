@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect } from "react";
 import { Search, ShoppingCart, UserPlus, Upload, FileText, CheckCircle2, AlertTriangle, Pill, Crosshair } from "lucide-react";
 
@@ -10,6 +12,7 @@ function getHeaders() {
 }
 
 export default function PharmacySalesPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("new-sale");
   
   // Sale State
@@ -183,7 +186,7 @@ export default function PharmacySalesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-          <ShoppingCart className="w-6 h-6 text-indigo-600" /> OP Pharmacy Walk-In Sales Engine
+          <ShoppingCart className="w-6 h-6 text-indigo-600" /> OP Pharmacy {t("pharmacySales.title")} Engine
         </h1>
         <p className="text-slate-500 text-sm mt-1">Process outpatient sales, scan prescriptions, and validate stock automatically.</p>
       </div>

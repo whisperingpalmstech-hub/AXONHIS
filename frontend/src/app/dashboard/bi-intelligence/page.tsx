@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 
 import React, { useEffect, useState } from "react";
 import { 
@@ -19,6 +21,7 @@ import {
 import { biApi } from "../../../lib/bi-api";
 
 export default function HospitalIntelligencePage() {
+  const { t } = useTranslation();
     const [realTimeStats, setRealTimeStats] = useState<any>(null);
     const [finances, setFinances] = useState<any[]>([]);
     const [productivity, setProductivity] = useState<any[]>([]);
@@ -83,7 +86,7 @@ export default function HospitalIntelligencePage() {
                 <div>
                     <h1 className="text-3xl font-bold flex items-center gap-3">
                         <BrainCircuit className="text-[var(--accent-primary)]" size={32} />
-                        Hospital Intelligence & Analytics Engine
+                        {t("biIntelligence.title")} & Analytics Engine
                     </h1>
                     <p className="text-[var(--text-secondary)] mt-2 font-medium">
                         Real-Time Operational Cockpit & Predictive Forecasting

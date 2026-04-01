@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Receipt, DollarSign, FileText, ArrowLeft, Activity, ShieldCheck, AlertCircle, TrendingUp, CreditCard } from "lucide-react";
@@ -16,6 +18,7 @@ function authHeaders() {
 }
 
 export default function PatientBillingPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const id = params.id as string;
   const [patient, setPatient] = useState<any>(null);

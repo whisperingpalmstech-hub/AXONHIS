@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "@/i18n";
 import {
   Calendar, Clock, User, Users, AlertTriangle, Check, X,
   Activity, BarChart3, Zap, Settings, Plus, ChevronDown,
@@ -27,14 +28,7 @@ interface PatientRecord { id: string; first_name: string; last_name: string; uhi
    ENTERPRISE APPOINTMENT SCHEDULING
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const TABS = [
-  { id: "calendar", label: "Doctor Calendar", icon: <Calendar size={16} /> },
-  { id: "bookings", label: "Bookings", icon: <Clock size={16} /> },
-  { id: "modalities", label: "Modality Scheduling", icon: <Scan size={16} /> },
-  { id: "analytics", label: "Analytics", icon: <BarChart3 size={16} /> },
-  { id: "config", label: "Configuration", icon: <Settings size={16} /> },
-] as const;
-type TabId = typeof TABS[number]["id"];
+
 
 const SLOT_COLORS: Record<string, string> = {
   available: "bg-emerald-100 text-emerald-800 border-emerald-300",
@@ -56,6 +50,16 @@ const MODALITY_ICONS: Record<string, string> = {
 };
 
 export default function EnterpriseSchedulingPage() {
+  const { t } = useTranslation();
+  const TABS = [
+    { id: "calendar", label: t("scheduling.doctorCalendar"), icon: <Calendar size={16} /> },
+    { id: "bookings", label: t("scheduling.bookings"), icon: <Clock size={16} /> },
+    { id: "modalities", label: t("scheduling.modalityScheduling"), icon: <Scan size={16} /> },
+    { id: "analytics", label: t("scheduling.analytics"), icon: <BarChart3 size={16} /> },
+    { id: "config", label: t("scheduling.configuration"), icon: <Settings size={16} /> },
+  ] as const;
+  type TabId = typeof TABS[number]["id"];
+
   const [activeTab, setActiveTab] = useState<TabId>("calendar");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -300,10 +304,10 @@ export default function EnterpriseSchedulingPage() {
           <div className="bg-gradient-to-br from-indigo-500 to-violet-600 p-2.5 rounded-xl text-white shadow-lg">
             <Calendar size={24} />
           </div>
-          Enterprise Appointment Scheduling
+          {t("scheduling.title")}
         </h1>
         <p className="text-[var(--text-secondary)] mt-2 text-sm">
-          Doctor calendars · Slot booking · Overbooking · Cyclic schedules · Modality scheduling · Analytics
+          {t("scheduling.subtitle")}
         </p>
       </div>
 
@@ -335,13 +339,13 @@ export default function EnterpriseSchedulingPage() {
           {/* Sidebar: Calendar list */}
           <div className="w-72 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-[var(--text-secondary)]">Doctor Calendars</h3>
+              <h3 className="font-bold text-sm text-[var(--text-secondary)]">{t("scheduling.doctorCalendarsTitle")}</h3>
               <button onClick={() => setShowNewCalModal(true)} className="text-[var(--accent-primary)] hover:bg-blue-50 p-1.5 rounded-lg">
                 <Plus size={16} />
               </button>
             </div>
             {calendars.length === 0 ? (
-              <p className="text-xs text-slate-400 p-4 text-center">No calendars yet. Create one to start.</p>
+              <p className="text-xs text-slate-400 p-4 text-center">{t("scheduling.noCalendars")}</p>
             ) : (
               calendars.map(cal => (
                 <button key={cal.id} onClick={() => { setSelectedCalendar(cal); schedulingApi.listCyclicSchedules(cal.id).then(setCyclicSchedules).catch(() => {}); }}
@@ -440,7 +444,7 @@ export default function EnterpriseSchedulingPage() {
             ) : (
               <div className="text-center py-20 text-slate-400">
                 <Stethoscope size={48} className="mx-auto mb-3 opacity-50" />
-                <p className="font-medium">Select a doctor calendar to view slots</p>
+                <p className="font-medium">{t("scheduling.selectDoctor")}</p>
               </div>
             )}
           </div>

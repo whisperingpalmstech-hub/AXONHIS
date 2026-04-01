@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useEffect, useState, useMemo } from "react";
 import {
   FileText, CheckCircle2, XCircle, RefreshCw, Send,
@@ -19,6 +21,7 @@ const SIGNER_INFO = {
 type TabType = "PENDING_RELEASE" | "SIGNATURE_QUEUE" | "RELEASED" | "ARCHIVE";
 
 export default function SmartReportingPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>("SIGNATURE_QUEUE");
   const [reports, setReports] = useState<LabReportOut[]>([]);
   const [loading, setLoading] = useState(false);
@@ -379,7 +382,7 @@ export default function SmartReportingPage() {
                          </div>
                        ) : (
                          <div className="text-[10px] text-rose-400 font-bold uppercase border-2 border-dashed border-rose-200 p-4 text-center">
-                           Awaiting Digital Signature Authorization
+                           Awaiting {t("reportingRelease.subtitle")}ature Authorization
                          </div>
                        )}
                      </div>

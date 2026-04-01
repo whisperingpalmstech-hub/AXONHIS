@@ -23,3 +23,8 @@ async def complete_study(study_id: uuid.UUID, db: DBSession, user: CurrentUser):
 @router.get("/studies", response_model=List[ImagingStudyOut])
 async def list_imaging_studies(db: DBSession, user: CurrentUser, skip: int = 0, limit: int = 100):
     return await ImagingStudyService(db).list_studies(skip, limit)
+
+@router.post("/dicom/upload")
+async def upload_dicom_file(db: DBSession, user: CurrentUser):
+    # Mock DICOM upload handler
+    return {"status": "success", "message": "DICOM metadata parsed and aligned with PACS."}

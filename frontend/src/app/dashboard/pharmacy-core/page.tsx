@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
@@ -320,12 +322,13 @@ const TABS = [
 ];
 
 export default function PharmacyCoreInfraPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("master");
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Pharmacy Core Infrastructure</h1>
+        <h1 className="text-2xl font-bold text-slate-800">{t("pharmacyCore.title")} Infrastructure</h1>
         <p className="text-slate-500 text-sm mt-1">Drug Master, Interactions, Dosage Rules, Schedules & Role Management</p>
       </div>
 

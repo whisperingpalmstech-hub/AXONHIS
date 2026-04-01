@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, Plus, User, Calendar, Phone } from "lucide-react";
+import { TopNav } from "@/components/ui/TopNav";
+import { useTranslation } from "@/i18n";
 
 interface Patient {
   id: string;
@@ -18,6 +20,7 @@ export default function PatientsPage() {
   const [search, setSearch] = useState("");
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -48,17 +51,21 @@ export default function PatientsPage() {
   }, [search]);
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Patients</h1>
-          <p className="text-[var(--text-secondary)]">Manage patient records and identities.</p>
+    <div>
+      <TopNav title={t("patients.title")} />
+      <div className="p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-700">
+              {t("patients.title")}
+            </h1>
+            <p className="text-[var(--text-secondary)] mt-1">{t("patients.manageRecords")}</p>
+          </div>
+          <Link href="/dashboard/patients/registration" className="btn-primary flex items-center gap-2 shadow-lg shadow-blue-500/20">
+            <Plus size={20} />
+            <span>{t("patients.registerNew")}</span>
+          </Link>
         </div>
-        <Link href="/dashboard/patients/registration" className="btn-primary flex items-center gap-2">
-          <Plus size={20} />
-          <span>New Patient</span>
-        </Link>
-      </div>
 
       <div className="card">
         <div className="card-body">
@@ -130,6 +137,7 @@ export default function PatientsPage() {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }

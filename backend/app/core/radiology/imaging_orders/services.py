@@ -27,3 +27,12 @@ class ImagingOrderService:
     async def list_orders(self, skip: int = 0, limit: int = 100):
         result = await self.db.execute(select(ImagingOrder).offset(skip).limit(limit))
         return result.scalars().all()
+
+    async def update_order_status(self, order_id: uuid.UUID, new_status: str) -> ImagingOrder:
+        order = await self.get_order_by_id(order_id)
+        if order:
+            order.status = new_status
+            await self.db.flush()
+            await self.db.commit()
+            await self.db.refresh(order)
+        return order

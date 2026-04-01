@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@/i18n";
+
 import React, { useState, useEffect, useCallback } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
@@ -72,6 +74,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function IPIssuesPage() {
+  const { t } = useTranslation();
   const [issues, setIssues] = useState<IPPendingIssueOut[]>([]);
   const [selectedIssue, setSelectedIssue] = useState<IPPendingIssueOut | null>(null);
   const [auditLogs, setAuditLogs] = useState<IPOrderLogOut[]>([]);
@@ -236,9 +239,9 @@ export default function IPIssuesPage() {
             <svg className="w-7 h-7 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
             </svg>
-            IP Pharmacy Pending Issues
+            {t("ipPharmacyIssues.title")}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Review orders from IPD/Nursing, dispense medications, and sync with inpatient billing.</p>
+          <p className="text-slate-500 text-sm mt-1">{t("ipPharmacyIssues.subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <button onClick={seedMock} className="px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-200 transition">Seed IP Orders</button>

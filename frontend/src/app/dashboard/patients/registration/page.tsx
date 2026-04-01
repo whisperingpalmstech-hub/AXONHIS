@@ -41,7 +41,7 @@ export default function EnterpriseRegistrationPage() {
     insurance_provider: "", policy_number: "",
     emergency_contact_name: "", emergency_contact_phone: "",
     consent_type: "treatment_consent",
-    address_line: "", pincode: "", area: "", city: "", state: "", country: "India",
+    address_line: "", pincode: "", area: "", city: "", state: "", country: t("patients.countryDefault"),
     reason_for_visit: "",
   });
 
@@ -330,11 +330,11 @@ export default function EnterpriseRegistrationPage() {
   // Registration mode selector buttons
   // ═══════════════════════════════════════════════════════════════════════════
   const modes = [
-    { id: "manual" as const, label: "Manual", icon: <UserPlus size={16} />, desc: "Step-by-step form" },
-    { id: "ai" as const, label: "AI Guided", icon: <Brain size={16} />, desc: "AI asks questions" },
-    { id: "voice" as const, label: "Voice", icon: <Mic size={16} />, desc: "Voice commands" },
-    { id: "id_scan" as const, label: "ID Scan", icon: <ScanLine size={16} />, desc: "OCR document scan" },
-    { id: "face" as const, label: "Face Check-in", icon: <Fingerprint size={16} />, desc: "Biometric" },
+    { id: "manual" as const, label: t("patients.modeManual"), icon: <UserPlus size={16} />, desc: t("patients.modeManualDesc") },
+    { id: "ai" as const, label: t("patients.modeAI"), icon: <Brain size={16} />, desc: t("patients.modeAIDesc") },
+    { id: "voice" as const, label: t("patients.modeVoice"), icon: <Mic size={16} />, desc: t("patients.modeVoiceDesc") },
+    { id: "id_scan" as const, label: t("patients.modeIDScan"), icon: <ScanLine size={16} />, desc: t("patients.modeIDScanDesc") },
+    { id: "face" as const, label: t("patients.modeFace"), icon: <Fingerprint size={16} />, desc: t("patients.modeFaceDesc") },
   ];
 
   const steps = [
@@ -405,10 +405,10 @@ export default function EnterpriseRegistrationPage() {
             {healthCard && (
               <div className="bg-white rounded-xl p-4 border border-green-200">
                 <div className="flex items-center gap-2 mb-2 text-sm font-bold text-green-800">
-                  <QrCode size={16} /> Health Card Ready
+                  <QrCode size={16} /> {t("patients.healthCardReady")}
                 </div>
-                <p className="text-xs text-green-600 mb-1">UHID: <strong>{healthCard.uhid}</strong></p>
-                <p className="text-xs text-green-600">Card: <strong>{healthCard.card_number}</strong></p>
+                <p className="text-xs text-green-600 mb-1">{t("patients.uhid")}: <strong>{healthCard.uhid}</strong></p>
+                <p className="text-xs text-green-600">{t("patients.cardNumber")}: <strong>{healthCard.card_number}</strong></p>
                 {healthCard.qr_code_data && (
                   <img src={`data:image/png;base64,${healthCard.qr_code_data}`} alt="QR" className="w-24 h-24 mt-2 mx-auto" />
                 )}
@@ -709,22 +709,22 @@ export default function EnterpriseRegistrationPage() {
                       <h2 className="text-lg font-semibold">{t("patients.demographics")}</h2>
                     </div>
                     <div className="card-body grid grid-cols-2 gap-4">
-                      <div><label className="input-label">First Name *</label><input name="first_name" className="input-field" required value={formData.first_name} onChange={handleChange} /></div>
-                      <div><label className="input-label">Last Name *</label><input name="last_name" className="input-field" required value={formData.last_name} onChange={handleChange} /></div>
-                      <div><label className="input-label">Date of Birth *</label><input type="date" name="date_of_birth" className="input-field" required value={formData.date_of_birth} onChange={handleChange} /></div>
+                      <div><label className="input-label">{t("patients.firstName")} *</label><input name="first_name" className="input-field" required value={formData.first_name} onChange={handleChange} /></div>
+                      <div><label className="input-label">{t("patients.lastName")} *</label><input name="last_name" className="input-field" required value={formData.last_name} onChange={handleChange} /></div>
+                      <div><label className="input-label">{t("patients.dateOfBirth")} *</label><input type="date" name="date_of_birth" className="input-field" required value={formData.date_of_birth} onChange={handleChange} /></div>
                       <div>
-                        <label className="input-label">Gender *</label>
+                        <label className="input-label">{t("patients.gender")} *</label>
                         <select name="gender" className="input-field" value={formData.gender} onChange={handleChange} required>
-                          <option value="">Select gender</option>
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                          <option value="Other">Other</option>
+                          <option value="">{t("patients.selectGender")}</option>
+                          <option value="Male">{t("patients.male")}</option>
+                          <option value="Female">{t("patients.female")}</option>
+                          <option value="Other">{t("patients.other")}</option>
                         </select>
                       </div>
-                      <div><label className="input-label flex items-center gap-1"><Phone size={13} /> Phone *</label><input type="tel" name="primary_phone" className="input-field" value={formData.primary_phone} onChange={handleChange} placeholder="+91 98765 43210" /></div>
-                      <div><label className="input-label flex items-center gap-1"><Mail size={13} /> Email</label><input type="email" name="email" className="input-field" value={formData.email} onChange={handleChange} placeholder="patient@example.com" /></div>
-                      <div><label className="input-label">Emergency Contact</label><input name="emergency_contact_name" className="input-field" value={formData.emergency_contact_name} onChange={handleChange} /></div>
-                      <div><label className="input-label">Emergency Phone</label><input type="tel" name="emergency_contact_phone" className="input-field" value={formData.emergency_contact_phone} onChange={handleChange} /></div>
+                      <div><label className="input-label flex items-center gap-1"><Phone size={13} /> {t("patients.phone")} *</label><input type="tel" name="primary_phone" className="input-field" value={formData.primary_phone} onChange={handleChange} placeholder="+91 98765 43210" /></div>
+                      <div><label className="input-label flex items-center gap-1"><Mail size={13} /> {t("patients.email")}</label><input type="email" name="email" className="input-field" value={formData.email} onChange={handleChange} placeholder="patient@example.com" /></div>
+                      <div><label className="input-label">{t("patients.emergencyContact")}</label><input name="emergency_contact_name" className="input-field" value={formData.emergency_contact_name} onChange={handleChange} /></div>
+                      <div><label className="input-label">{t("patients.emergencyPhone")}</label><input type="tel" name="emergency_contact_phone" className="input-field" value={formData.emergency_contact_phone} onChange={handleChange} /></div>
                     </div>
                     <div className="card-body border-t border-[var(--border)] flex justify-end">
                       <button type="button" onClick={() => setActiveStep(2)} className="btn-primary flex items-center gap-2">{t("common.next")} <ArrowRight size={16} /></button>
@@ -742,7 +742,7 @@ export default function EnterpriseRegistrationPage() {
                       </div>
                       <div className="card-body grid grid-cols-2 gap-4">
                         <div>
-                          <label className="input-label">Blood Group</label>
+                          <label className="input-label">{t("patients.bloodGroup")}</label>
                           <select name="blood_group" className="input-field" value={formData.blood_group} onChange={handleChange}>
                             <option value="">Unknown</option>
                             {["A+","A-","B+","B-","AB+","AB-","O+","O-"].map(b => <option key={b} value={b}>{b}</option>)}
@@ -750,9 +750,9 @@ export default function EnterpriseRegistrationPage() {
                         </div>
                         <div><label className="input-label">Weight (kg)</label><input type="number" step="0.1" name="weight_kg" className="input-field" value={formData.weight_kg} onChange={handleChange} /></div>
                         <div><label className="input-label">Height (cm)</label><input type="number" name="height_cm" className="input-field" value={formData.height_cm} onChange={handleChange} /></div>
-                        <div><label className="input-label">Allergies</label><input name="allergies" className="input-field" value={formData.allergies} onChange={handleChange} placeholder="Penicillin, Sulfa..." /></div>
-                        <div className="col-span-2"><label className="input-label">Chief Complaint</label><textarea name="chief_complaint" className="input-field min-h-[70px] resize-none" value={formData.chief_complaint} onChange={handleChange} /></div>
-                        <div className="col-span-2"><label className="input-label">Reason for Visit</label><input name="reason_for_visit" className="input-field" value={formData.reason_for_visit} onChange={handleChange} placeholder="Routine checkup, Follow-up..." /></div>
+                        <div><label className="input-label">{t("patients.allergies")}</label><input name="allergies" className="input-field" value={formData.allergies} onChange={handleChange} placeholder="Penicillin, Sulfa..." /></div>
+                        <div className="col-span-2"><label className="input-label">{t("patients.chiefComplaint")}</label><textarea name="chief_complaint" className="input-field min-h-[70px] resize-none" value={formData.chief_complaint} onChange={handleChange} /></div>
+                        <div className="col-span-2"><label className="input-label">{t("patients.reasonForVisit")}</label><input name="reason_for_visit" className="input-field" value={formData.reason_for_visit} onChange={handleChange} placeholder="Routine checkup, Follow-up..." /></div>
                       </div>
                     </div>
                     {/* Address with auto-fill */}
@@ -763,14 +763,14 @@ export default function EnterpriseRegistrationPage() {
                         {addressLoading && <Loader2 size={14} className="animate-spin text-blue-500" />}
                       </div>
                       <div className="card-body grid grid-cols-2 gap-4">
-                        <div className="col-span-2"><label className="input-label">Address Line</label><input name="address_line" className="input-field" value={formData.address_line} onChange={handleChange} /></div>
+                        <div className="col-span-2"><label className="input-label">{t("patients.address")}</label><input name="address_line" className="input-field" value={formData.address_line} onChange={handleChange} /></div>
                         <div>
                           <label className="input-label flex items-center gap-1"><Zap size={12} className="text-amber-500" /> Pincode (auto-fill)</label>
                           <input name="pincode" className="input-field" value={formData.pincode} onChange={handleChange} placeholder="Enter 6-digit pincode" maxLength={10} />
                         </div>
-                        <div><label className="input-label">Area</label><input name="area" className="input-field bg-slate-50" value={formData.area} onChange={handleChange} /></div>
-                        <div><label className="input-label">City</label><input name="city" className="input-field bg-slate-50" value={formData.city} onChange={handleChange} /></div>
-                        <div><label className="input-label">State</label><input name="state" className="input-field bg-slate-50" value={formData.state} onChange={handleChange} /></div>
+                        <div><label className="input-label">{t("patients.area")}</label><input name="area" className="input-field bg-slate-50" value={formData.area} onChange={handleChange} /></div>
+                        <div><label className="input-label">{t("patients.city")}</label><input name="city" className="input-field bg-slate-50" value={formData.city} onChange={handleChange} /></div>
+                        <div><label className="input-label">{t("patients.state")}</label><input name="state" className="input-field bg-slate-50" value={formData.state} onChange={handleChange} /></div>
                       </div>
                     </div>
                     <div className="flex justify-between">
@@ -787,19 +787,19 @@ export default function EnterpriseRegistrationPage() {
                       <div className="card-header border-b border-[var(--border)] flex items-center gap-2"><Shield size={18} className="text-[var(--accent-primary)]" /><h2 className="text-lg font-semibold">{t("patients.identityVerification")}</h2></div>
                       <div className="card-body grid grid-cols-2 gap-4">
                         <div>
-                          <label className="input-label">ID Type</label>
+                          <label className="input-label">{t("patients.idType")}</label>
                           <select name="identifier_type" className="input-field" value={formData.identifier_type} onChange={handleChange}>
                             <option value="national_id">Aadhaar</option><option value="passport">Passport</option><option value="driving_license">Driving License</option>
                           </select>
                         </div>
-                        <div><label className="input-label">Document Number</label><input name="identifier_value" className="input-field" value={formData.identifier_value} onChange={handleChange} /></div>
+                        <div><label className="input-label">{t("patients.idNumber")}</label><input name="identifier_value" className="input-field" value={formData.identifier_value} onChange={handleChange} /></div>
                       </div>
                     </div>
                     <div className="card">
                       <div className="card-header border-b border-[var(--border)]"><h2 className="text-lg font-semibold">{t("patients.insurance")}</h2></div>
                       <div className="card-body grid grid-cols-2 gap-4">
                         <div><label className="input-label">Provider</label><input name="insurance_provider" className="input-field" value={formData.insurance_provider} onChange={handleChange} /></div>
-                        <div><label className="input-label">Policy Number</label><input name="policy_number" className="input-field" value={formData.policy_number} onChange={handleChange} /></div>
+                        <div><label className="input-label">{t("patients.policyNumber")}</label><input name="policy_number" className="input-field" value={formData.policy_number} onChange={handleChange} /></div>
                       </div>
                     </div>
                     <div className="flex justify-between">

@@ -386,11 +386,11 @@ export function Sidebar() {
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-700/50 border border-slate-600/30">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-              {userRole.replace("_", " ")}
+              {t(`roles.${userRole}`) || userRole.replace("_", " ")}
             </span>
           </div>
           <div className="flex justify-between items-center px-1">
-            <span className="text-[10px] text-slate-500 font-medium">LANGUAGE</span>
+            <span className="text-[10px] text-slate-500 font-medium">{t("nav.languageLabel") || "LANGUAGE"}</span>
             <LanguageSelector />
           </div>
         </div>

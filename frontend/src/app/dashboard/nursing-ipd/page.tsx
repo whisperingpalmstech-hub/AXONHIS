@@ -106,7 +106,7 @@ export default function NursingIPDDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-slate-100">
-      <TopNav title="Nursing IPD" />
+      <TopNav title="nursingIpd.title" />
       <div className="max-w-[1520px] mx-auto px-8 py-8">
 
         {/* Header */}
@@ -132,7 +132,7 @@ export default function NursingIPDDashboard() {
           </div>
           <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm">
             <div className="text-amber-600 font-bold text-xs uppercase mb-1 flex items-center gap-2">
-              <Clock size={14}/> Pending Acceptance
+              <Clock size={14}/> {t('nursingIpd.pendingAcceptance') || 'Pending Acceptance'}
             </div>
             <div className="text-3xl font-black text-amber-600">{pendingCount}</div>
           </div>
@@ -144,7 +144,7 @@ export default function NursingIPDDashboard() {
           </div>
           <div className="bg-white p-5 rounded-2xl border border-red-200 shadow-sm">
             <div className="text-red-600 font-bold text-xs uppercase mb-1 flex items-center gap-2">
-              <AlertTriangle size={14}/> Critical
+              <AlertTriangle size={14}/> {t('nursingIpd.critical') || 'Critical'}
             </div>
             <div className="text-3xl font-black text-red-600">
               {coversheets.filter(c => c.priority_status === "Critical").length}
@@ -172,7 +172,7 @@ export default function NursingIPDDashboard() {
         </div>
 
         {loading ? (
-          <div className="h-64 flex items-center justify-center text-slate-400 font-medium">Loading nursing worklist...</div>
+          <div className="h-64 flex items-center justify-center text-slate-400 font-medium">{t('common.loading') || 'Loading...'}</div>
         ) : (
           <div className="space-y-6">
 
@@ -193,7 +193,7 @@ export default function NursingIPDDashboard() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {worklist.length === 0 ? (
-                      <tr><td colSpan={7} className="p-8 text-center text-slate-400 font-medium">No patients awaiting nursing acceptance</td></tr>
+                      <tr><td colSpan={7} className="p-8 text-center text-slate-400 font-medium">{t('nursingIpd.noPatientsAwaiting') || 'No patients awaiting nursing acceptance'}</td></tr>
                     ) : (
                       worklist.map(w => (
                         <tr key={w.id} className="hover:bg-slate-50/50 transition-colors">
@@ -210,11 +210,11 @@ export default function NursingIPDDashboard() {
                           <td className="p-4">
                             {w.status === "Pending Acceptance" ? (
                               <span className="bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold px-2.5 py-1 rounded-lg inline-flex items-center gap-1">
-                                <Clock size={12}/> Pending
+                                <Clock size={12}/> {t('nursingIpd.pending') || 'Pending'}
                               </span>
                             ) : (
                               <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-1 rounded-lg inline-flex items-center gap-1">
-                                <CheckCircle2 size={12}/> Accepted
+                                <CheckCircle2 size={12}/> {t('nursingIpd.accepted') || 'Accepted'}
                               </span>
                             )}
                           </td>
@@ -222,17 +222,17 @@ export default function NursingIPDDashboard() {
                             {w.status === "Pending Acceptance" ? (
                               <button onClick={() => setShowAcceptModal(w)}
                                 className="text-xs font-bold bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-sm shadow-purple-200 inline-flex items-center gap-1.5">
-                                <CheckCircle2 size={14}/> Accept Patient
+                                <CheckCircle2 size={14}/> {t('nursingIpd.acceptPatient') || 'Accept Patient'}
                               </button>
                             ) : (
                               <div className="flex justify-end gap-2">
                                 <button onClick={() => setShowNotesModal(w.admission_number)}
                                   className="text-xs font-bold bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors">
-                                  + Note
+                                  + {t('nursingIpd.note') || 'Note'}
                                 </button>
                                 <button onClick={() => setShowAssignModal(w.admission_number)}
                                   className="text-xs font-bold bg-teal-50 text-teal-700 px-3 py-1.5 rounded-lg hover:bg-teal-100 transition-colors">
-                                  Assign
+                                  {t('nursingIpd.assign') || 'Assign'}
                                 </button>
                               </div>
                             )}
@@ -250,7 +250,7 @@ export default function NursingIPDDashboard() {
               <div className="space-y-4">
                 {coversheets.length === 0 ? (
                   <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-400 font-medium">
-                    No patients accepted yet. Accept patients from the Worklist tab.
+                    {t('nursingIpd.noCoversheets') || 'No patients accepted yet.'}
                   </div>
                 ) : (
                   coversheets.map(cs => {
@@ -275,11 +275,11 @@ export default function NursingIPDDashboard() {
                           <div className="flex gap-2">
                             <button onClick={() => setShowNotesModal(cs.admission_number)}
                               className="text-xs font-bold bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg hover:bg-indigo-100 transition-colors">
-                              + Nursing Note
+                              + {t('nursingIpd.addNote') || 'Nursing Note'}
                             </button>
                             <button onClick={() => setShowAssignModal(cs.admission_number)}
                               className="text-xs font-bold bg-teal-50 text-teal-700 px-3 py-2 rounded-lg hover:bg-teal-100 transition-colors">
-                              Assign Care
+                              {t('nursingIpd.assignCare') || 'Assign Care'}
                             </button>
                           </div>
                         </div>
@@ -294,8 +294,8 @@ export default function NursingIPDDashboard() {
             {activeTab === "NOTES" && (
               <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center">
                 <Heart size={48} className="text-purple-200 mx-auto mb-4"/>
-                <h3 className="text-lg font-bold text-slate-700 mb-1">Nursing Notes Timeline</h3>
-                <p className="text-sm text-slate-400">Add clinical notes to accepted patients from the Worklist or Coversheets tab.</p>
+                <h3 className="text-lg font-bold text-slate-700 mb-1">{t('nursingIpd.notesTimeline') || 'Nursing Notes Timeline'}</h3>
+                <p className="text-sm text-slate-400">{t('nursingIpd.notesTimelineDesc') || 'Add clinical notes to accepted patients.'}</p>
               </div>
             )}
 
@@ -309,20 +309,20 @@ export default function NursingIPDDashboard() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
-                <Shield size={20} className="text-purple-600"/> Accept Patient to Ward
+                <Shield size={20} className="text-purple-600"/> {t('nursingIpd.acceptPatient') || 'Accept Patient to Ward'}
               </h3>
               <button onClick={() => setShowAcceptModal(null)} className="text-slate-400 hover:text-slate-600"><X size={18}/></button>
             </div>
 
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-slate-400">Admission No:</span><span className="font-mono font-bold">{showAcceptModal.admission_number}</span></div>
-              <div className="flex justify-between"><span className="text-slate-400">Patient UHID:</span><span className="font-mono font-bold">{showAcceptModal.patient_uhid}</span></div>
-              <div className="flex justify-between"><span className="text-slate-400">Bed:</span><span className="font-bold">{showAcceptModal.bed_number || "—"}</span></div>
-              <div className="flex justify-between"><span className="text-slate-400">Doctor:</span><span className="font-bold">{showAcceptModal.admitting_doctor || "—"}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">{t('nursingIpd.colAdmNo')}:</span><span className="font-mono font-bold">{showAcceptModal.admission_number}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">{t('nursingIpd.colUHID')}:</span><span className="font-mono font-bold">{showAcceptModal.patient_uhid}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">{t('nursingIpd.bed') || 'Bed'}:</span><span className="font-bold">{showAcceptModal.bed_number || "—"}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">{t('doctor.doctor') || 'Doctor'}:</span><span className="font-bold">{showAcceptModal.admitting_doctor || "—"}</span></div>
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">Patient Priority Status</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-2">{t('nursingIpd.patientPriority') || 'Patient Priority Status'}</label>
               <div className="grid grid-cols-4 gap-2">
                 {(["Normal", "Review", "VIP", "Critical"] as const).map(p => {
                   const cfg = PRIORITY_CONFIG[p];
@@ -342,10 +342,10 @@ export default function NursingIPDDashboard() {
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowAcceptModal(null)} className="px-4 py-2 text-slate-600 text-sm font-bold hover:bg-slate-50 rounded-lg transition-colors">Cancel</button>
+              <button onClick={() => setShowAcceptModal(null)} className="px-4 py-2 text-slate-600 text-sm font-bold hover:bg-slate-50 rounded-lg transition-colors">{t('common.cancel') || 'Cancel'}</button>
               <button onClick={handleAcceptPatient}
                 className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-bold transition-colors shadow-sm shadow-purple-200">
-                Confirm Acceptance
+                {t('nursingIpd.confirmAcceptance') || 'Confirm Acceptance'}
               </button>
             </div>
           </div>
@@ -358,7 +358,7 @@ export default function NursingIPDDashboard() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
-                <FileText size={20} className="text-indigo-600"/> Add Nursing Note
+                <FileText size={20} className="text-indigo-600"/> {t('nursingIpd.addNote') || 'Add Nursing Note'}
               </h3>
               <button onClick={() => setShowNotesModal(null)} className="text-slate-400 hover:text-slate-600"><X size={18}/></button>
             </div>
@@ -388,10 +388,10 @@ export default function NursingIPDDashboard() {
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowNotesModal(null)} className="px-4 py-2 text-slate-600 text-sm font-bold hover:bg-slate-50 rounded-lg transition-colors">Cancel</button>
+              <button onClick={() => setShowNotesModal(null)} className="px-4 py-2 text-slate-600 text-sm font-bold hover:bg-slate-50 rounded-lg transition-colors">{t('common.cancel') || 'Cancel'}</button>
               <button onClick={handleAddNote} disabled={!noteText.trim()}
                 className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-xl text-sm font-bold transition-colors">
-                Save Note
+                {t('nursingIpd.saveNote') || 'Save Note'}
               </button>
             </div>
           </div>

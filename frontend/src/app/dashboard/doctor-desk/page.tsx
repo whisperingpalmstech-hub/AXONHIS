@@ -8,6 +8,7 @@ import {
   Mic, BrainCircuit, Syringe, Pill, FileText, Download, Target, Plus, CheckCircle,
   AlertTriangle
 } from "lucide-react";import { useTranslation } from "@/i18n";
+import { TopNav } from "@/components/ui/TopNav";
 
 export default function DoctorDeskPage() {
   const { t } = useTranslation();
@@ -184,6 +185,7 @@ export default function DoctorDeskPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 h-screen overflow-hidden flex flex-col">
+      <TopNav title="nav.doctorDesk" />
       <div className="flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-3xl font-black flex items-center gap-3 text-indigo-900">
@@ -400,7 +402,7 @@ export default function DoctorDeskPage() {
                   {/* TIMELINE PANEL (RIGHT SLIDEOUT) */}
                   {timelineMode && (
                       <div className="w-1/3 bg-slate-50 border-l border-slate-200 overflow-y-auto flex flex-col p-4 animate-in slide-in-from-right absolute right-0 top-0 bottom-0 shadow-[-10px_0_20px_rgba(0,0,0,0.05)]">
-                          <h3 className="font-bold text-lg text-slate-800 mb-6 flex items-center gap-2 border-b pb-2"><Activity size={20} className="text-indigo-600"/> Enterprise EMR Timeline</h3>
+                          <h3 className="font-bold text-lg text-slate-800 mb-6 flex items-center gap-2 border-b pb-2"><Activity size={20} className="text-indigo-600"/> {t("docDesk.emrTimeline") || "EMR Timeline"}</h3>
                           <div className="relative border-l-2 border-slate-300 ml-3 space-y-8 pb-8">
                              {timelineNodes.map((n, i)=>(
                                <div key={i} className="relative pl-6">

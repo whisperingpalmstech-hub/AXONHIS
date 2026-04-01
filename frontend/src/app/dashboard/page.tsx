@@ -291,7 +291,7 @@ export default function DashboardPage() {
       iconColor: "text-indigo-600",
       icon: Receipt,
       href: "/dashboard/billing",
-      sub: `${stats.pendingPayments} pending payment`,
+      sub: `${stats.pendingPayments} ${t("dashboard.pendingPayment")}`,
       subColor: "text-indigo-500",
       roles: ["admin", "front_desk", "director"],
     },
@@ -480,8 +480,8 @@ export default function DashboardPage() {
                   roles: ["admin", "doctor", "lab_technician", "nurse", "director"],
                 },
                 {
-                  label: "Pharmacy",
-                  desc: "Inventory, prescriptions & dispensing",
+                  label: t("nav.pharmacy"),
+                  desc: t("dashboard.pharmacyDesc"),
                   href: "/dashboard/pharmacy",
                   icon: Pill,
                   color: "text-rose-600",
@@ -489,8 +489,8 @@ export default function DashboardPage() {
                   roles: ["admin", "pharmacist", "doctor", "nurse", "director"],
                 },
                 {
-                  label: "Billing",
-                  desc: "Invoices, payments & insurance claims",
+                  label: t("nav.billing"),
+                  desc: t("dashboard.billingDesc"),
                   href: "/dashboard/billing",
                   icon: Receipt,
                   color: "text-indigo-600",
@@ -536,7 +536,7 @@ export default function DashboardPage() {
             <div className="card-header !bg-amber-50/50">
               <h3 className="font-semibold flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-amber-600" />
-                Critical Alerts
+                {t("dashboard.criticalAlerts")}
               </h3>
             </div>
             <div className="card-body">
@@ -551,10 +551,10 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-amber-800">
-                        {stats.lowStockAlerts} Low Stock
+                        {stats.lowStockAlerts} {t("dashboard.lowStock")}
                       </p>
                       <p className="text-xs text-amber-600">
-                        Items below reorder threshold
+                        {t("dashboard.belowReorder")}
                       </p>
                     </div>
                   </Link>
@@ -569,10 +569,10 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-orange-800">
-                        {stats.nearExpiryBatches} Near Expiry
+                        {stats.nearExpiryBatches} {t("dashboard.nearExpiry")}
                       </p>
                       <p className="text-xs text-orange-600">
-                        Drug batches expiring soon
+                        {t("dashboard.batchesExpiring")}
                       </p>
                     </div>
                   </Link>
@@ -587,10 +587,10 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-rose-800">
-                        {stats.criticalLabResults} Critical Results
+                        {stats.criticalLabResults} {t("dashboard.criticalResults")}
                       </p>
                       <p className="text-xs text-rose-600">
-                        Lab results needing attention
+                        {t("dashboard.labNeedingAttention")}
                       </p>
                     </div>
                   </Link>

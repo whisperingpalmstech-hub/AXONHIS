@@ -151,7 +151,9 @@ export function TopNav({ title }: TopNavProps) {
     <header className="topnav-enterprise" id="topnav">
       {/* Left: Page Title + Breadcrumb */}
       <div className="flex items-center gap-3 min-w-0">
-        <h1 className="text-lg font-semibold text-slate-800 truncate">{title}</h1>
+        <h1 className="text-lg font-semibold text-slate-800 truncate">
+          {t(title) !== title ? t(title) : title}
+        </h1>
       </div>
 
       {/* Center: Global Patient Search */}
@@ -273,7 +275,7 @@ export function TopNav({ title }: TopNavProps) {
             </div>
             <div className="hidden md:block text-left">
               <p className="text-sm font-semibold text-slate-700 leading-tight">{userName}</p>
-              <p className="text-[10px] text-slate-400 capitalize leading-tight">{userRole.replace("_", " ")}</p>
+              <p className="text-[10px] text-slate-400 capitalize leading-tight">{t(`users.role${userRole.charAt(0).toUpperCase()}${userRole.slice(1)}`) || userRole.replace("_", " ")}</p>
             </div>
             <svg className="w-4 h-4 text-slate-400 hidden md:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />

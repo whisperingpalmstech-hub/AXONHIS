@@ -1,0 +1,29 @@
+============================================================
+🚀 AXONHIS ENTERPRISE E2E AUTOMATED TEST SUITE
+============================================================
+
+[0] Authenticating as Hospital Admin...
+✅ Admin Authentication Successful!
+
+[1] Registering New Patient in Main HIS...
+✅ Patient Registered Successfully! ID: c730c29f-dd47-4d63-b83d-bc14581316e5
+
+[2] Patient Portal: Searching for records by Email...
+✅ Portal Search Successful! Found matching core record.
+
+[3] Patient Portal: Creating Portal Login Credentials...
+✅ Portal Account Linked & Created Successfully!
+
+[4] Patient Portal: Executing Secure Login...
+✅ Patient Login Successful! JWT Token acquired.
+
+[5] Patient Portal: Fetching Encounters & Profile...
+✅ Profile Fetched Data Name: James
+❌ Failed to fetch encounters (Status 404): {"detail":"Not Found"}
+
+[6] Cross-Module Integration: Booking OPD Appointment via Portal
+❌ Appointment Booking Failed (Status 500): {"detail":"Failed to book appointment: (sqlalchemy.dialects.postgresql.asyncpg.IntegrityError) <class 'asyncpg.exceptions.ForeignKeyViolationError'>: insert or update on table \"portal_appointments\" violates foreign key constraint \"portal_appointments_doctor_id_fkey\"\nDETAIL:  Key (doctor_id)=(23f9ea88-cc27-4e8b-b9de-70d4f92f873f) is not present in table \"users\".\n[SQL: INSERT INTO portal_appointments (id, patient_id, doctor_id, department, appointment_time, appointment_type, status, created_at) VALUES ($1::UUID, $2::UUID, $3::UUID, $4::VARCHAR, $5::TIMESTAMP WITH TIME ZONE, $6::VARCHAR, $7::VARCHAR, $8::TIMESTAMP WITH TIME ZONE)]\n[parameters: (UUID('a44385b4-b41f-4862-a683-db9ed994270b'), UUID('c730c29f-dd47-4d63-b83d-bc14581316e5'), UUID('23f9ea88-cc27-4e8b-b9de-70d4f92f873f'), 'General Practice', datetime.datetime(2026, 4, 3, 10, 23, 43, 877231), <AppointmentType.IN_PERSON: 'in_person'>, <AppointmentStatus.SCHEDULED: 'scheduled'>, datetime.datetime(2026, 4, 2, 9, 23, 43, 878732, tzinfo=datetime.timezone.utc))]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"}
+
+============================================================
+🎯 END TO END AUTOMATED TEST SUITE COMPLETED
+============================================================

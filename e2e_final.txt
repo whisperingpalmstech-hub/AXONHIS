@@ -1,0 +1,30 @@
+============================================================
+🚀 AXONHIS ENTERPRISE E2E AUTOMATED TEST SUITE
+============================================================
+
+[0] Authenticating as Hospital Admin...
+✅ Admin Authentication Successful!
+✅ Found Doc/Admin ID for booking: a79c6cd7-dc15-47c7-a2b6-f3cb61a4df14
+
+[1] Registering New Patient in Main HIS...
+✅ Patient Registered Successfully! ID: 8044fe2e-e90f-4b9a-a182-5afef4888084
+
+[2] Patient Portal: Searching for records by Email...
+✅ Portal Search Successful! Found matching core record.
+
+[3] Patient Portal: Creating Portal Login Credentials...
+✅ Portal Account Linked & Created Successfully!
+
+[4] Patient Portal: Executing Secure Login...
+✅ Patient Login Successful! JWT Token acquired.
+
+[5] Patient Portal: Fetching Encounters & Profile...
+✅ Profile Fetched Data Name: James
+✅ Encounter History successfully retrieved: 0 records found.
+
+[6] Cross-Module Integration: Booking OPD Appointment via Portal
+✅ Appointment successfully injected into Master Scheduling Engine!
+
+============================================================
+🎯 END TO END AUTOMATED TEST SUITE COMPLETED
+============================================================

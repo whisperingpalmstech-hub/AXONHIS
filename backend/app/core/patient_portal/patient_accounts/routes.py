@@ -27,7 +27,7 @@ async def search_patient(query: str, db: DBSession) -> dict:
     from app.core.patients.patients.models import Patient
     # Search in main patients table
     from sqlalchemy import or_
-    stmt = select(Patient).where(or_(Patient.email == query, Patient.phone_number == query))
+    stmt = select(Patient).where(or_(Patient.email == query, Patient.primary_phone == query))
     result = await db.execute(stmt)
     patient = result.scalar_one_or_none()
     

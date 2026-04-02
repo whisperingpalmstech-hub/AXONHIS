@@ -69,6 +69,14 @@ from app.core.rcm_billing.routes import router as rcm_billing_router
 # Multi-Tenancy & Masters Engine
 from app.core.administration.tenants.routes import router as multitenancy_router
 
+# Force load all models for SQLAlchemy registry
+from app.core.patients.patients.models import Patient
+from app.core.patient_portal.patient_accounts.models import PatientAccount
+from app.core.scheduling.models import SlotBooking
+from app.core.lab.models import LabOrder, LabResult
+from app.core.pharmacy.prescriptions.models import Prescription
+from app.core.auth.models import User
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Startup / shutdown lifecycle."""
@@ -88,9 +96,18 @@ def create_app() -> FastAPI:
     )
 
     # ── CORS ──────────────────────────────────────────────────────────────
+    allowed_origins = settings.backend_cors_origins
+    if isinstance(allowed_origins, str):
+        allowed_origins = [i.strip() for i in allowed_origins.split(",") if i.strip()]
+    
+    # Add local developer origins for safety
+    for dev_origin in ["http://localhost:3000", "http://localhost:9501", "http://localhost:9502", "http://127.0.0.1:9502"]:
+        if dev_origin not in allowed_origins:
+            allowed_origins.append(dev_origin)
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.backend_cors_origins,
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -125,7 +142,9 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
-        # We need an ad-hoc session since this is an exception
+        print(f"DEBUG GLOBAL EXCEPTION: {exc}")
+        import traceback
+        traceback.print_exc()
         try:
             async for db in get_db():
                 monitoring = MonitoringService(db)
@@ -313,6 +332,12 @@ def create_app() -> FastAPI:
     # Virtual Avatar Interaction Layer
     from app.core.avatar.routes import router as avatar_router
     app.include_router(avatar_router, prefix="/api/v1")
+
+    from app.core.linen.router import router as linen_router
+    app.include_router(linen_router, prefix="/api/v1/linen", tags=["Linen & Laundry"])
+
+    from app.core.cssd.router import router as cssd_router
+    app.include_router(cssd_router, prefix="/api/v1/cssd", tags=["CSSD"])
 
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])

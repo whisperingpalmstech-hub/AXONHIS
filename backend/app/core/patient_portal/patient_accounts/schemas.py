@@ -23,6 +23,8 @@ class PatientAccountOut(PatientAccountBase):
     id: uuid.UUID
     patient_id: uuid.UUID
     account_status: str
+    first_name: str | None = None
+    last_name: str | None = None
     created_at: datetime
 
     class Config:

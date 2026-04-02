@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     # App
     app_env: Literal["development", "staging", "production"] = "development"
-    backend_cors_origins: str | list[str] = ["http://localhost:3000", "http://localhost:9501"]
+    backend_cors_origins: str | list[str] = ["http://localhost:3000", "http://localhost:9501", "http://localhost:9502"]
 
     @field_validator("backend_cors_origins", mode="before")
     @classmethod

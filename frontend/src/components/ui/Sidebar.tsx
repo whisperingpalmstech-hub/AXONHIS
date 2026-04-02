@@ -121,6 +121,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Icon.opd,
     roles: ["doctor", "nurse", "front_desk", "admin", "director"],
     children: [
+      { label: "OPD Command Center", href: "/dashboard/opd", badge: "NEW" },
       { label: "OPD Visits", href: "/dashboard/opd-visits", badge: "AI" },
       { label: "Smart Queue", href: "/dashboard/smart-queue" },
       { label: "Nursing Triage", href: "/dashboard/nursing-triage", roles: ["nurse", "doctor", "admin"] },

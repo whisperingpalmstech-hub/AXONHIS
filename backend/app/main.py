@@ -246,6 +246,10 @@ def create_app() -> FastAPI:
     app.include_router(rcm_billing_router, prefix="/api/v1")
     app.include_router(multitenancy_router, prefix="/api/v1/administration")
 
+    # Complete OPD Module — Unified Orchestrator
+    from app.core.opd.routes import router as opd_complete_router
+    app.include_router(opd_complete_router, prefix="/api/v1")
+
     # Sprint 1: Billing Masters & Configuration Engine (FRD Gaps 5-15)
     from app.core.billing_masters.routes import router as billing_masters_router
     app.include_router(billing_masters_router, prefix="/api/v1")

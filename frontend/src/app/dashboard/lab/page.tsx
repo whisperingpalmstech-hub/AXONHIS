@@ -60,14 +60,15 @@ export default function LabPage() {
   const [sampleStatusFilter, setSampleStatusFilter] = useState("");
   const [showAddTest, setShowAddTest] = useState(false);
   const [showResultModal, setShowResultModal] = useState<any>(null);
-  const [resultForm, setResultForm] = useState({
-    test_id: "", value: "", numeric_value: "", notes: "", unit: "", reference_range: ""
-  });
+  const [multiResultForm, setMultiResultForm] = useState<any[]>([
+    { id: Date.now(), test_id: "", value: "", numeric_value: "", notes: "", unit: "", reference_range: "" }
+  ]);
 
   const [newTest, setNewTest] = useState({
     code: "", name: "", category: "hematology", sample_type: "blood",
     unit: "", normal_range_low: "", normal_range_high: "",
     reference_range: "", critical_low: "", critical_high: "", price: "0",
+    is_calculated: false, calculation_formula: ""
   });
 
   const loadData = useCallback(async () => {
@@ -97,6 +98,9 @@ export default function LabPage() {
         if (body[k]) body[k] = parseFloat(body[k]); else delete body[k];
       });
       body.price = parseFloat(body.price) || 0;
+      if (!body.is_calculated) {
+          body.calculation_formula = null;
+      }
       const res = await fetch(`${API}/api/v1/lab/tests`, {
         method: "POST", headers: authHeaders(), body: JSON.stringify(body),
       });
@@ -104,7 +108,8 @@ export default function LabPage() {
         setShowAddTest(false);
         setNewTest({ code: "", name: "", category: "hematology", sample_type: "blood",
           unit: "", normal_range_low: "", normal_range_high: "",
-          reference_range: "", critical_low: "", critical_high: "", price: "0" });
+          reference_range: "", critical_low: "", critical_high: "", price: "0",
+          is_calculated: false, calculation_formula: "" });
         loadData();
       } else {
         const err = await res.json();
@@ -125,42 +130,48 @@ export default function LabPage() {
   };
 
   const handleSubmitResult = async () => {
-    if (!showResultModal || !resultForm.test_id || !resultForm.value) {
-      alert("Please select a test and enter a value");
+    // Validate we have at least one completely filled test
+    const validResults = multiResultForm.filter((r: any) => r.test_id && r.value !== "");
+    if (validResults.length === 0) {
+      alert("Please select at least one test and enter a value.");
       return;
     }
     setLoading(true);
     try {
-      // Fetch lab order to get patient_id and actual order_id
       const labOrderRes = await fetch(`${API}/api/v1/lab/orders/${showResultModal.lab_order_id}`, { headers: authHeaders() });
       if (!labOrderRes.ok) throw new Error("Could not fetch Lab Order details");
       const labOrder = await labOrderRes.json();
 
-      const body = {
-        sample_id: showResultModal.id,
-        test_id: resultForm.test_id,
-        order_id: labOrder.order_id,
-        patient_id: labOrder.patient_id,
-        value: resultForm.value,
-        numeric_value: parseFloat(resultForm.numeric_value) || null,
-        unit: resultForm.unit || undefined,
-        reference_range: resultForm.reference_range || undefined,
-        notes: resultForm.notes || undefined,
-      };
-
-      const res = await fetch(`${API}/api/v1/lab/results`, {
-        method: "POST", headers: authHeaders(), body: JSON.stringify(body)
+      // Submit each valid result concurrently
+      const promises = validResults.map((rf: any) => {
+          const body = {
+            sample_id: showResultModal.id,
+            test_id: rf.test_id,
+            order_id: labOrder.order_id,
+            patient_id: labOrder.patient_id,
+            value: rf.value,
+            numeric_value: parseFloat(rf.numeric_value) || null,
+            unit: rf.unit || undefined,
+            reference_range: rf.reference_range || undefined,
+            notes: rf.notes || undefined,
+          };
+          return fetch(`${API}/api/v1/lab/results`, {
+            method: "POST", headers: authHeaders(), body: JSON.stringify(body)
+          }).then(async r => {
+              if(!r.ok) {
+                  const e = await r.json();
+                  throw new Error(e.detail || "Batch result entry failed");
+              }
+              return r;
+          });
       });
-      if (res.ok) {
-        setShowResultModal(null);
-        setResultForm({ test_id: "", value: "", numeric_value: "", notes: "", unit: "", reference_range: "" });
-        loadData();
-      } else {
-        const err = await res.json();
-        alert(err.detail ? JSON.stringify(err.detail) : "Failed to enter result");
-      }
+
+      await Promise.all(promises);
+      setShowResultModal(null);
+      setMultiResultForm([{ id: Date.now(), test_id: "", value: "", numeric_value: "", notes: "", unit: "", reference_range: "" }]);
+      loadData();
     } catch (e: any) {
-      alert(e.message || "An error occurred");
+      alert(e.message || "An error occurred during consolidated entry");
     } finally {
       setLoading(false);
     }
@@ -681,6 +692,24 @@ export default function LabPage() {
                     onChange={(e: any) => setNewTest((p: any) => ({ ...p, price: e.target.value }))} />
                 </div>
               </div>
+              
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-4 space-y-3">
+                 <div className="flex items-center gap-2">
+                    <input type="checkbox" id="is_calc" checked={newTest.is_calculated} 
+                       onChange={e => setNewTest(p => ({...p, is_calculated: e.target.checked}))} 
+                       className="w-4 h-4 text-[var(--accent-primary)] border-gray-300 rounded focus:ring-[var(--accent-primary)]" 
+                    />
+                    <label htmlFor="is_calc" className="text-sm font-semibold text-slate-700">Calculated Test Parameter (Formula Engine)</label>
+                 </div>
+                 {newTest.is_calculated && (
+                    <div>
+                        <label className="input-label text-xs">Dynamic Calculation Formula (Use test codes as variables)</label>
+                        <input className="input-field font-mono text-sm" placeholder="e.g. TC - HDL - (TG / 5)" value={newTest.calculation_formula}
+                          onChange={(e: any) => setNewTest((p: any) => ({ ...p, calculation_formula: e.target.value }))} />
+                        <p className="text-[10px] text-slate-500 mt-1">Example: For LDL calculation, enter <code className="bg-slate-200 px-1 rounded">TC - HDL - (TG / 5)</code> where variables are valid <b>Test Codes</b>.</p>
+                    </div>
+                 )}
+              </div>
             </div>
             <div className="modal-footer">
               <button onClick={() => setShowAddTest(false)} className="btn-secondary">{t("lab.cancel")}</button>
@@ -691,85 +720,139 @@ export default function LabPage() {
         </div>
       )}
 
-      {/* ═══ ENTER RESULT MODAL ═══ */}
+      {/* ═══ CONSOLIDATED RESULT MODAL ═══ */}
       {showResultModal && (
         <div className="modal-overlay" onClick={() => setShowResultModal(null)}>
-          <div className="modal-content" onClick={(e: any) => e.stopPropagation()}>
+          <div className="modal-content max-w-4xl" onClick={(e: any) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="font-semibold flex items-center gap-2">
-                <FileText size={18} className="text-[var(--accent-primary)]" />{t("lab.enterLabResult")}</h3>
+                <FileText size={18} className="text-[var(--accent-primary)]" /> Consolidated Result Entry
+              </h3>
               <button onClick={() => setShowResultModal(null)} className="btn-ghost p-1 rounded">
                 <X size={18} />
               </button>
             </div>
-            <div className="modal-body space-y-4">
-              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center mb-4 text-sm">
+            <div className="modal-body space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center mb-2 text-sm sticky top-0 z-10">
                 <div>
-                  <span className="text-slate-500 block text-xs">{t("lab.sampleBarcode")}</span>
-                  <span className="font-semibold text-slate-800">{showResultModal.sample_barcode}</span>
+                  <span className="text-slate-500 block text-xs">Sample Barcode</span>
+                  <span className="font-semibold text-slate-800 tracking-wide">{showResultModal.sample_barcode}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-slate-500 block text-xs">{t("lab.type")}</span>
+                  <span className="text-slate-500 block text-xs">Biomaterial / Group</span>
                   <span className="font-medium capitalize text-slate-800">{showResultModal.sample_type}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="input-label">{t("lab.selectTest")}<span className="text-red-500">*</span></label>
-                  <select className="input-field" value={resultForm.test_id} onChange={(e: any) => {
-                    const test = tests.find((t: any) => t.id === e.target.value);
-                    setResultForm((p: any) => ({ 
-                      ...p, 
-                      test_id: e.target.value,
-                      unit: test?.unit || "",
-                      reference_range: test?.reference_range || ""
-                    }));
-                  }}>
-                    <option value="">-- Choose Test --</option>
-                    {tests.filter((t: any) => t.sample_type === showResultModal.sample_type).map((t: any) => (
-                      <option key={t.id} value={t.id}>{t.name} ({t.code})</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="input-label">{t("lab.resultValueText")}<span className="text-red-500">*</span></label>
-                    <input className="input-field" placeholder="e.g. 14.5 or Positive" value={resultForm.value}
-                      onChange={(e: any) => setResultForm((p: any) => ({ ...p, value: e.target.value }))} />
+              {/* Dynamic Rows */}
+              <div className="space-y-4 pt-2">
+                  <div className="hidden md:grid grid-cols-12 gap-3 px-3 text-[10px] uppercase font-bold text-slate-400">
+                      <div className="col-span-3">Test Parameter <span className="text-red-500">*</span></div>
+                      <div className="col-span-2">Qualitative Value <span className="text-red-500">*</span></div>
+                      <div className="col-span-2">Numeric / Unit</div>
+                      <div className="col-span-2">Reference Bounds</div>
+                      <div className="col-span-2">Clinical Notes</div>
+                      <div className="col-span-1"></div>
                   </div>
-                  <div>
-                    <label className="input-label">{t("lab.numericValueOptional")}</label>
-                    <input className="input-field" type="number" step="any" placeholder="For triggers" value={resultForm.numeric_value}
-                      onChange={(e: any) => setResultForm((p: any) => ({ ...p, numeric_value: e.target.value }))} />
-                  </div>
-                </div>
+                  
+                  {multiResultForm.map((row: any, rIdx: number) => (
+                      <div key={row.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-white p-3 md:p-0 rounded-lg md:rounded-none border border-slate-100 md:border-0 shadow-sm md:shadow-none relative">
+                          <div className="col-span-1 md:col-span-3">
+                              <label className="md:hidden text-[10px] font-bold text-slate-400 block mb-1">Test Parameter</label>
+                              <select className="input-field !text-sm !py-1.5" value={row.test_id} onChange={(e: any) => {
+                                const test = tests.find((t: any) => t.id === e.target.value);
+                                const updated = [...multiResultForm];
+                                updated[rIdx] = { 
+                                  ...updated[rIdx], 
+                                  test_id: e.target.value,
+                                  unit: test?.unit || "",
+                                  reference_range: test?.reference_range || ""
+                                };
+                                setMultiResultForm(updated);
+                              }}>
+                                <option value="">-- Choose Test --</option>
+                                {tests.filter((t: any) => t.sample_type === showResultModal.sample_type).map((t: any) => (
+                                  <option key={t.id} value={t.id}>{t.name} ({t.code})</option>
+                                ))}
+                              </select>
+                          </div>
+                          
+                          <div className="col-span-1 md:col-span-2">
+                              <label className="md:hidden text-[10px] font-bold text-slate-400 block mb-1">Qualitative Value</label>
+                              <input className="input-field !text-sm !py-1.5" placeholder="e.g. Positive" value={row.value}
+                                onChange={(e: any) => {
+                                    const u = [...multiResultForm];
+                                    u[rIdx].value = e.target.value;
+                                    setMultiResultForm(u);
+                                }} />
+                          </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="input-label">{t("lab.unit")}</label>
-                    <input className="input-field" placeholder="e.g. g/dL" value={resultForm.unit}
-                      onChange={(e: any) => setResultForm((p: any) => ({ ...p, unit: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="input-label">{t("lab.referenceRange")}</label>
-                    <input className="input-field" placeholder="e.g. 12-16" value={resultForm.reference_range}
-                      onChange={(e: any) => setResultForm((p: any) => ({ ...p, reference_range: e.target.value }))} />
-                  </div>
-                </div>
+                          <div className="col-span-1 md:col-span-2 flex gap-1">
+                              <div className="flex-1">
+                                  <label className="md:hidden text-[10px] font-bold text-slate-400 block mb-1">Numeric</label>
+                                  <input className="input-field !text-sm !py-1.5" type="number" step="any" placeholder="14.5" value={row.numeric_value}
+                                    onChange={(e: any) => {
+                                        const u = [...multiResultForm];
+                                        u[rIdx].numeric_value = e.target.value;
+                                        setMultiResultForm(u);
+                                    }} />
+                              </div>
+                              <div className="w-16">
+                                  <label className="md:hidden text-[10px] font-bold text-slate-400 block mb-1">Unit</label>
+                                  <input className="input-field !text-sm !py-1.5 !px-1.5 bg-slate-50" placeholder="g/dL" value={row.unit}
+                                    onChange={(e: any) => {
+                                        const u = [...multiResultForm];
+                                        u[rIdx].unit = e.target.value;
+                                        setMultiResultForm(u);
+                                    }} />
+                              </div>
+                          </div>
 
-                <div>
-                  <label className="input-label">{t("lab.notesRemarks")}</label>
-                  <textarea className="input-field min-h-[80px]" placeholder="Add any clinical remarks..." value={resultForm.notes}
-                    onChange={(e: any) => setResultForm((p: any) => ({ ...p, notes: e.target.value }))}></textarea>
-                </div>
+                          <div className="col-span-1 md:col-span-2">
+                              <label className="md:hidden text-[10px] font-bold text-slate-400 block mb-1">Reference</label>
+                              <input className="input-field !text-sm !py-1.5 bg-slate-50" placeholder="12.0 - 15.0" value={row.reference_range}
+                                onChange={(e: any) => {
+                                    const u = [...multiResultForm];
+                                    u[rIdx].reference_range = e.target.value;
+                                    setMultiResultForm(u);
+                                }} />
+                          </div>
+
+                          <div className="col-span-1 md:col-span-2">
+                              <label className="md:hidden text-[10px] font-bold text-slate-400 block mb-1">Notes</label>
+                              <input className="input-field !text-sm !py-1.5" placeholder="Remarks..." value={row.notes}
+                                onChange={(e: any) => {
+                                    const u = [...multiResultForm];
+                                    u[rIdx].notes = e.target.value;
+                                    setMultiResultForm(u);
+                                }} />
+                          </div>
+                          
+                          <div className="col-span-1 md:col-span-1 flex items-center justify-end md:justify-center md:h-full mt-2 md:mt-0">
+                              <button onClick={() => {
+                                  if(multiResultForm.length > 1) {
+                                      setMultiResultForm(multiResultForm.filter((_, i) => i !== rIdx));
+                                  }
+                              }} disabled={multiResultForm.length === 1} className="p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded disabled:opacity-30 transition">
+                                  <X size={16} />
+                              </button>
+                          </div>
+                      </div>
+                  ))}
               </div>
+              
+              <button onClick={() => setMultiResultForm([...multiResultForm, { id: Date.now(), test_id: "", value: "", numeric_value: "", notes: "", unit: "", reference_range: "" }])} className="btn-secondary btn-sm mt-2 text-xs flex items-center gap-1">
+                  <Plus size={14} /> Add Additional Test Result
+              </button>
             </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowResultModal(null)} className="btn-secondary">{t("lab.cancel")}</button>
-              <button onClick={handleSubmitResult} className="btn bg-[var(--success)] text-white hover:bg-green-700">
-                <CheckCircle2 size={16} />{t("lab.submitResult")}</button>
+            <div className="modal-footer justify-between bg-slate-50/50">
+               <span className="text-[10px] text-slate-400">Consolidated Batched Commit</span>
+               <div className="flex gap-2">
+                  <button onClick={() => setShowResultModal(null)} className="btn-secondary">Cancel</button>
+                  <button onClick={handleSubmitResult} className="btn bg-[var(--accent-primary)] text-white hover:bg-indigo-700 shadow flex items-center gap-1.5">
+                    <CheckCircle2 size={16} /> Finalize Consolidated Entry
+                  </button>
+               </div>
             </div>
           </div>
         </div>

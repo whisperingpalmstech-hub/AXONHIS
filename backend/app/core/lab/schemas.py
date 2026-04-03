@@ -19,6 +19,8 @@ class LabTestCreate(BaseModel):
     critical_high: float | None = None
     price: float = 0
     turnaround_hours: int | None = 24
+    is_calculated: bool = False
+    calculation_formula: str | None = None
 
 
 class LabTestOut(BaseModel):
@@ -36,6 +38,8 @@ class LabTestOut(BaseModel):
     price: float
     is_active: bool
     turnaround_hours: int | None
+    is_calculated: bool
+    calculation_formula: str | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -80,6 +84,9 @@ class LabSampleOut(BaseModel):
     collected_by: uuid.UUID | None
     collection_time: datetime
     received_at: datetime | None
+    is_outsourced: bool
+    outsourced_to: str | None
+    outsourced_date: datetime | None
     notes: str | None
 
     model_config = ConfigDict(from_attributes=True)

@@ -80,6 +80,8 @@ class LabTest(Base):
     price: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     turnaround_hours: Mapped[int | None] = mapped_column(nullable=True, default=24)
+    is_calculated: Mapped[bool] = mapped_column(default=False, nullable=False)
+    calculation_formula: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
@@ -138,6 +140,11 @@ class LabSample(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
     received_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    is_outsourced: Mapped[bool] = mapped_column(default=False, nullable=False)
+    outsourced_to: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    outsourced_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
 
@@ -145,6 +152,28 @@ class LabSample(Base):
     lab_order: Mapped["LabOrder"] = relationship("LabOrder", back_populates="samples")
     results: Mapped[list["LabResult"]] = relationship("LabResult", back_populates="sample", cascade="all, delete-orphan")
     processing: Mapped[list["LabProcessing"]] = relationship("LabProcessing", back_populates="sample", cascade="all, delete-orphan")
+
+
+# ── Reagent Consumption ──────────────────────────────────────────────────────
+
+class ReagentConsumption(Base):
+    """Tracks reagent inventory deduction for executed tests."""
+    __tablename__ = "lab_reagent_consumption"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    test_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("lab_tests.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    sample_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("lab_samples.id", ondelete="SET NULL"), nullable=True
+    )
+    inventory_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("inventory_items.id", ondelete="RESTRICT"), nullable=False
+    )
+    quantity_used: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False)
+    consumed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+    )
 
 
 # ── Lab Processing (analyzer integration) ────────────────────────────────────

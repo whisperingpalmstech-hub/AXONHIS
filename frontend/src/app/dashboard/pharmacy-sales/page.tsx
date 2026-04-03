@@ -18,7 +18,7 @@ export default function PharmacySalesPage() {
   // Sale State
   const [patientMode, setPatientMode] = useState("walkin"); // 'walkin' or 'registered'
   const [patientSearch, setPatientSearch] = useState("");
-  const [patientDetails, setPatientDetails] = useState({ id: null, name: "", mobile: "", uhid: "" });
+  const [patientDetails, setPatientDetails] = useState({ id: null, name: "", mobile: "", uhid: "", age: "", gender: "Male", address: "", prescriberName: "" });
   
   const [medSearchResults, setMedSearchResults] = useState([]);
   const [medSearch, setMedSearch] = useState("");
@@ -44,7 +44,7 @@ export default function PharmacySalesPage() {
         const data = await res.json();
         if (data.length > 0) {
           const pt = data[0];
-          setPatientDetails({ id: pt.id, name: `${pt.first_name} ${pt.last_name}`, mobile: pt.phone || "", uhid: pt.uhid || "" });
+          setPatientDetails({ id: pt.id, name: `${pt.first_name} ${pt.last_name}`, mobile: pt.phone || "", uhid: pt.uhid || "", age: "", gender: "Male", address: "", prescriberName: "" });
         } else {
           setMsg({ type: "error", text: "No registered patient found." });
         }
@@ -128,6 +128,10 @@ export default function PharmacySalesPage() {
         patient_id: patientMode === "registered" ? patientDetails.id : null,
         walkin_name: patientMode === "walkin" ? patientDetails.name : null,
         walkin_mobile: patientMode === "walkin" ? patientDetails.mobile : null,
+        walkin_age: patientMode === "walkin" ? patientDetails.age : null,
+        walkin_gender: patientMode === "walkin" ? patientDetails.gender : null,
+        walkin_address: patientMode === "walkin" ? patientDetails.address : null,
+        prescriber_name: patientDetails.prescriberName || null,
         discount_amount: discount,
         items: cart.map(i => ({
           drug_id: i.id || i.drug_id, 
@@ -165,7 +169,7 @@ export default function PharmacySalesPage() {
 
         // Clear cart behind the scenes
         setCart([]);
-        setPatientDetails({ id: null, name: "", mobile: "", uhid: "" });
+        setPatientDetails({ id: null, name: "", mobile: "", uhid: "", age: "", gender: "Male", address: "", prescriberName: "" });
         setDiscount(0);
         setRxFile(null);
         setRxParsed(null);
@@ -214,13 +218,38 @@ export default function PharmacySalesPage() {
 
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
-                <label className="text-xs text-slate-500 font-medium font-medium mb-1 block">Name</label>
+                <label className="text-xs text-slate-500 font-medium mb-1 block">Patient Name *</label>
                 <input value={patientDetails.name} onChange={e => setPatientDetails({...patientDetails, name: e.target.value})} disabled={patientMode === "registered" && patientDetails.id !== null} placeholder="Customer Name" className="border rounded-lg px-3 py-2 w-full text-sm" />
               </div>
               <div>
-                <label className="text-xs text-slate-500 font-medium font-medium mb-1 block">Mobile</label>
+                <label className="text-xs text-slate-500 font-medium mb-1 block">Mobile</label>
                 <input value={patientDetails.mobile} onChange={e => setPatientDetails({...patientDetails, mobile: e.target.value})} disabled={patientMode === "registered" && patientDetails.id !== null} placeholder="10-digit number" className="border rounded-lg px-3 py-2 w-full text-sm" />
               </div>
+              {patientMode === "walkin" && (
+                <>
+                  <div>
+                    <label className="text-xs text-slate-500 font-medium mb-1 block">Age (Years)</label>
+                    <input type="number" value={patientDetails.age} onChange={e => setPatientDetails({...patientDetails, age: e.target.value})} className="border rounded-lg px-3 py-2 w-full text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-500 font-medium mb-1 block">Gender</label>
+                    <select value={patientDetails.gender} onChange={e => setPatientDetails({...patientDetails, gender: e.target.value})} className="border rounded-lg px-3 py-2 w-full text-sm bg-white">
+                        <option>Male</option>
+                        <option>Female</option>
+                        <option>Other</option>
+                    </select>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs text-slate-500 font-medium mb-1 block">Address</label>
+                    <input value={patientDetails.address} onChange={e => setPatientDetails({...patientDetails, address: e.target.value})} placeholder="Full Address" className="border rounded-lg px-3 py-2 w-full text-sm" />
+                  </div>
+                </>
+              )}
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-slate-100">
+               <label className="text-xs text-slate-500 font-medium mb-1 block">External Prescriber (Optional)</label>
+               <input value={patientDetails.prescriberName} onChange={e => setPatientDetails({...patientDetails, prescriberName: e.target.value})} placeholder="Dr. Name / Clinic" className="border rounded-lg px-3 py-2 w-full text-sm bg-white" />
             </div>
           </div>
 

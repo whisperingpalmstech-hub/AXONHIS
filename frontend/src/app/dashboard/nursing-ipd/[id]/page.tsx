@@ -20,12 +20,8 @@ export default function IpdNursingCoversheet() {
   const [loading, setLoading] = useState(true);
   const [vitalsData, setVitalsData] = useState<any[]>([]);
   const [notesData, setNotesData] = useState<any[]>([]);
-  const [marQueue, setMarQueue] = useState<any[]>([
-    // Fallback queue so UI isn't empty if DB has 0 MARs
-    { id: 1, medication_name: "Paracetamol 500mg", route: "PO", frequency: "TDS", scheduled_slot: "08:00", is_administered: false },
-    { id: 2, medication_name: "Pantoprazole 40mg", route: "IV", frequency: "BD", scheduled_slot: "08:00", is_administered: true },
-    { id: 3, medication_name: "Ceftriaxone 1g", route: "IV", frequency: "BD", scheduled_slot: "09:00", is_administered: false },
-  ]);
+  const [marQueue, setMarQueue] = useState<any[]>([]);
+  const [inboundDeliveries, setInboundDeliveries] = useState<any[]>([]);
 
   // Form State
   const [newNote, setNewNote] = useState("");
@@ -38,30 +34,18 @@ export default function IpdNursingCoversheet() {
   const [scanCode, setScanCode] = useState("");
 
   // UI Interactive States
-  const [complaints, setComplaints] = useState([
-    { id: 1, title: "Severe Abdominal Pain", details: "Localized to right lower quadrant, sudden onset.", severity: "High Severity", clx: "bg-rose-100 text-rose-700", duration: "2 Days" },
-    { id: 2, title: "Nausea and Vomiting", details: "Post-prandial, leading to reduced oral intake.", severity: "Moderate Severity", clx: "bg-amber-100 text-amber-700", duration: "1 Day" }
-  ]);
+  const [complaints, setComplaints] = useState<any[]>([]);
   const [showComplaintModal, setShowComplaintModal] = useState(false);
   const [complaintForm, setComplaintForm] = useState({ title: "", details: "" });
 
-  const [diagnoses, setDiagnoses] = useState([
-    { id: 1, type: "Primary", label: "Primary", clx: "bg-indigo-100 text-indigo-700", desc: "K35.80 - Unspecified acute appendicitis", status: "Active" },
-    { id: 2, type: "Comorbidity", label: "Comorbidity", clx: "bg-slate-100 text-slate-600", desc: "E11.9 - Type 2 diabetes mellitus", status: "Chronic" }
-  ]);
+  const [diagnoses, setDiagnoses] = useState<any[]>([]);
   const [newDiagnosis, setNewDiagnosis] = useState("");
 
-  const [ioRecords, setIoRecords] = useState([
-    { id: 1, time: "08:00", type: "Intake", category: "IV Fluids (NS 0.9%)", value: 500, typeClx: "bg-blue-100 text-blue-700", valClx: "text-blue-600" },
-    { id: 2, time: "09:30", type: "Output", category: "Urine", value: -400, typeClx: "bg-amber-100 text-amber-700", valClx: "text-amber-600" }
-  ]);
+  const [ioRecords, setIoRecords] = useState<any[]>([]);
   const [showIoModal, setShowIoModal] = useState<"Intake" | "Output" | null>(null);
   const [ioForm, setIoForm] = useState({ category: "", volume: "" });
 
-  const [labs, setLabs] = useState([
-    { id: 1, title: "Complete Blood Count (CBC)", status: "Results Ready", time: "Today 06:00 AM", ready: true },
-    { id: 2, title: "Comprehensive Metabolic Panel", status: "Sample Collected", time: "Today 08:30 AM", ready: false }
-  ]);
+  const [labs, setLabs] = useState<any[]>([]);
   const [showPdfAlert, setShowPdfAlert] = useState(false);
 
   // Computations
@@ -147,6 +131,14 @@ export default function IpdNursingCoversheet() {
       if (data.vitals) setVitalsData(data.vitals);
       if (data.notes) setNotesData(data.notes);
       if (data.mar && data.mar.length > 0) setMarQueue(data.mar);
+      
+      // Fetch inbound "Dispensed" Pharmacy records
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9500'}/api/v1/pharmacy/ip-issues?status=Dispensed`);
+      if (res.ok) {
+         const issues = await res.json();
+         // strictly bind by admission_number
+         setInboundDeliveries(issues.filter((i: any) => i.admission_number === admission_number));
+      }
     } catch (e) {
       console.error("Failed to fetch coversheet", e);
     } finally {
@@ -209,6 +201,17 @@ export default function IpdNursingCoversheet() {
     setMarQueue(marQueue.map(m => m.id === showScanModal.id ? { ...m, is_administered: true, batch_number: scanCode } : m));
     setShowScanModal(null);
     setScanCode("");
+  };
+
+  const handleNursingAcceptance = async (issueId: string, accepted: boolean, rejectionReason?: string) => {
+    try {
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9500'}/api/v1/pharmacy/ip-issues/${issueId}/nursing-acceptance`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accepted, rejection_reason: rejectionReason || null })
+      });
+      if (resp.ok) fetchData();
+    } catch (error) { console.error("Acceptance failed", error); }
   };
 
   const latestVitals = vitalsData.length > 0 ? vitalsData[0] : { heart_rate: 84, blood_pressure_sys: 120, blood_pressure_dia: 80, spo2: 98, temperature_f: 98.6 };
@@ -334,6 +337,36 @@ export default function IpdNursingCoversheet() {
         {/* MAR TAB */}
         {activeTab === "MAR" && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+            {/* The Nursing Acceptance Inbound Gateway */}
+            {inboundDeliveries.length > 0 && (
+              <div className="bg-amber-50 p-6 border-b border-amber-200 animate-in slide-in-from-top-4">
+                 <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-black text-amber-800 uppercase tracking-widest flex items-center gap-2"><Beaker size={16}/> INBOUND PHARMACY DELIVERIES PENDING NURSING ACCEPTANCE</h3>
+                    <span className="text-[10px] font-bold bg-amber-600 text-white px-2 py-0.5 rounded-full shadow-sm">{inboundDeliveries.length} Requires Sign-Off</span>
+                 </div>
+                 
+                 <div className="grid grid-cols-2 gap-4">
+                    {inboundDeliveries.map(delivery => (
+                        <div key={delivery.id} className="bg-white p-4 rounded-xl shadow-sm border border-amber-200 flex flex-col justify-between">
+                            <div>
+                                <p className="text-xs font-bold text-slate-500 font-mono mb-1">Issue Route: {delivery.id}</p>
+                                {delivery.items.map((item: any, idx: number) => (
+                                   <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-slate-50 last:border-0">
+                                       <span className="font-bold text-slate-700">{item.medication_name}</span>
+                                       <span className="font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-[10px] font-bold">{item.dispensed_quantity} UNIT</span>
+                                   </div>
+                                ))}
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-amber-100 flex gap-2">
+                                <button onClick={() => handleNursingAcceptance(delivery.id, true)} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs transition shadow-sm border border-emerald-700 text-center">Accept Package</button>
+                                <button onClick={() => handleNursingAcceptance(delivery.id, false, "Not Required / Patient Discharged")} className="flex-1 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold py-2 rounded-lg text-xs transition border border-rose-200 text-center">Reject Delivery</button>
+                            </div>
+                        </div>
+                    ))}
+                 </div>
+              </div>
+            )}
+
             <div className="p-5 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-black text-slate-800 flex items-center gap-2"><Pill className="text-indigo-500"/> Electronic MAR</h2>

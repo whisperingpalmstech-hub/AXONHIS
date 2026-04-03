@@ -83,6 +83,9 @@ export default function IPIssuesPage() {
   const [statusFilter, setStatusFilter] = useState("Pending");
   const [isLoading, setIsLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: string; text: string } | null>(null);
+  
+  const [substitutesCache, setSubstitutesCache] = useState<Record<string, any[]>>({});
+  const [loadingSubstitutes, setLoadingSubstitutes] = useState<Record<string, boolean>>({});
 
   // Dispensing Form State
   const [dispenseState, setDispenseState] = useState<Record<string, any>>({});
@@ -144,6 +147,21 @@ export default function IPIssuesPage() {
       }
     });
     setDispenseState(state);
+  };
+
+  const lookupSubstitutes = async (recordId: string) => {
+    if (substitutesCache[recordId]) return;
+    setLoadingSubstitutes(prev => ({ ...prev, [recordId]: true }));
+    try {
+      const res = await fetch(`${API}/api/v1/pharmacy/ip-issues/items/${recordId}/substitutes`);
+      if (res.ok) {
+        const data = await res.json();
+        setSubstitutesCache(prev => ({ ...prev, [recordId]: data }));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setLoadingSubstitutes(prev => ({ ...prev, [recordId]: false }));
   };
 
   const seedMock = async () => {
@@ -380,15 +398,37 @@ export default function IPIssuesPage() {
                                    {!isDispensed ? (
                                        <div className="bg-white p-3 rounded-lg border border-slate-100 mt-2 space-y-3">
                                            <div className="grid grid-cols-12 gap-3 items-end">
-                                               {/* Sub & Store Info */}
                                                <div className="col-span-5">
                                                    <label className="text-[10px] text-slate-400 font-bold uppercase mb-1 block">Substitution / Generic (Optional)</label>
-                                                   <input 
-                                                       value={st?.substituted_for || ""}
-                                                       onChange={e => setDispenseState(prev => ({...prev, [item.id]: {...prev[item.id], substituted_for: e.target.value}}))}
-                                                       className="w-full text-xs px-2.5 py-1.5 border rounded-md" 
-                                                       placeholder="If substituting, type here..."
-                                                   />
+                                                   <div className="flex gap-2">
+                                                       <input 
+                                                           value={st?.substituted_for || ""}
+                                                           onChange={e => setDispenseState(prev => ({...prev, [item.id]: {...prev[item.id], substituted_for: e.target.value}}))}
+                                                           className="w-full text-xs px-2.5 py-1.5 border rounded-md" 
+                                                           placeholder="If substituting, type here..."
+                                                       />
+                                                       <button 
+                                                            onClick={() => lookupSubstitutes(item.id)}
+                                                            className="px-2 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-md text-xs font-bold whitespace-nowrap hover:bg-indigo-100"
+                                                       >
+                                                            {loadingSubstitutes[item.id] ? "..." : "Engine"}
+                                                       </button>
+                                                   </div>
+                                                   
+                                                   {/* Substitutes Suggestion Dropdown */}
+                                                   {substitutesCache[item.id] && substitutesCache[item.id].length > 0 && (
+                                                       <div className="mt-2 text-[10px] bg-slate-50 p-2 rounded-lg border border-slate-200 shadow-inner">
+                                                           <p className="font-bold text-slate-500 mb-1">Recommended Formulary Substitutes:</p>
+                                                           <div className="space-y-1">
+                                                              {substitutesCache[item.id].map((sub: any, i: number) => (
+                                                                  <div key={i} className="flex justify-between items-center bg-white p-1 rounded-sm border">
+                                                                      <span className="font-medium text-slate-800">{sub.medication_name} ({sub.available_quantity} available)</span>
+                                                                      <button onClick={() => setDispenseState(prev => ({...prev, [item.id]: {...prev[item.id], substituted_for: sub.medication_name}}))} className="text-indigo-600 font-bold px-1.5 hover:underline">Select</button>
+                                                                  </div>
+                                                              ))}
+                                                           </div>
+                                                       </div>
+                                                   )}
                                                </div>
                                                
                                                <div className="col-span-4">
@@ -419,7 +459,7 @@ export default function IPIssuesPage() {
                                               <div className="flex gap-2 text-[10px]">
                                                   <span className="font-bold text-slate-500 uppercase mt-0.5">Stock:</span>
                                                   {multiStock.map((ms, idx) => (
-                                                      <span key={idx} className={`px-2 py-0.5 rounded border ${ms.quantity > 0 ? "bg-green-50 text-green-700 border-green-200" : "bg-slate-50 text-slate-400"}`}>
+                                                      <span key={idx} className={`px-2 py-0.5 rounded border ${ms.quantity > 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200 font-bold"}`}>
                                                           {ms.store_name}: <strong>{ms.quantity}</strong>
                                                       </span>
                                                   ))}
@@ -430,8 +470,8 @@ export default function IPIssuesPage() {
                                        <div className="mt-2 text-xs text-slate-500 bg-white p-2 rounded-lg border border-dashed flex items-center justify-between">
                                             <div>
                                                 <span>Dispensed: <strong className="text-emerald-700">{item.dispensed_quantity}</strong></span>
-                                                {item.substituted_for && <span className="ml-3 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Sub: {item.substituted_for}</span>}
-                                                {item.is_non_formulary && <span className="ml-3">Manual Pricing Applied</span>}
+                                                {item.substituted_for && <span className="ml-3 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-bold">Sub: {item.substituted_for}</span>}
+                                                {item.is_non_formulary && <span className="ml-3 font-bold">Manual Pricing Applied</span>}
                                             </div>
                                             <span className="text-[10px] font-bold text-indigo-500">Charges Synced to IPD</span>
                                        </div>

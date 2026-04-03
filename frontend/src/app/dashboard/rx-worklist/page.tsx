@@ -70,6 +70,11 @@ export default function RxWorklistPage() {
   const [isDispensing, setIsDispensing] = useState(false);
   const [msg, setMsg] = useState<{ type: string; text: string } | null>(null);
 
+  // Substitute Engine State
+  const [showEngineIdx, setShowEngineIdx] = useState<number | null>(null);
+  const [engineResults, setEngineResults] = useState<any[]>([]);
+  const [isEngineLoading, setIsEngineLoading] = useState(false);
+
   // Dispensing state
   const [dispenseItems, setDispenseItems] = useState<
     {
@@ -123,6 +128,8 @@ export default function RxWorklistPage() {
     setSelectedItem(item);
     setActiveTab("dispensing");
     setMsg(null);
+    setShowEngineIdx(null);
+    setEngineResults([]);
     // Populate dispense form from prescriptions
     setDispenseItems(
       item.prescriptions.map((p) => ({
@@ -186,6 +193,24 @@ export default function RxWorklistPage() {
       setMsg({ type: "error", text: "Network error" });
     }
     setIsDispensing(false);
+  };
+
+  const handleEngineLookup = async (idx: number, keyword: string) => {
+    if (!keyword) return;
+    setShowEngineIdx(idx);
+    setIsEngineLoading(true);
+    setEngineResults([]);
+    try {
+      // Use existing endpoint, fallback gracefully if not integrated exactly, but we will reuse the inventory intelligence query
+      const res = await fetch(`${API}/api/v1/pharmacy/inventory/search?query=${encodeURIComponent(keyword)}`, { headers: getHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setEngineResults(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setIsEngineLoading(false);
   };
 
   const handleSeedMockData = async () => {
@@ -595,29 +620,77 @@ export default function RxWorklistPage() {
                         </div>
 
                         {/* Substitute Section */}
-                        <div className="mt-3 pt-3 border-t border-slate-100">
-                          <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">
-                            Substitute Medication (if prescribed is unavailable)
-                          </label>
-                          <div className="flex gap-3">
+                        <div className="mt-4 pt-4 border-t border-slate-100 bg-amber-50/30 -mx-4 px-4 pb-4 rounded-b-xl border border-amber-100/50">
+                          <div className="flex justify-between items-center mb-2">
+                             <label className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1.5">
+                               Substitute Medication Engine
+                             </label>
+                          </div>
+                          <div className="flex gap-3 relative">
                             <input
                               value={d.substitute_name}
                               onChange={(e) => {
                                 const updated = [...dispenseItems];
                                 updated[idx].substitute_name = e.target.value;
-                                updated[idx].substituted_for =
-                                  e.target.value ? d.medication_name : "";
+                                updated[idx].substituted_for = e.target.value ? d.medication_name : "";
                                 setDispenseItems(updated);
                               }}
                               disabled={selectedItem.status === "Completed"}
                               placeholder="Enter substitute drug name..."
-                              className="border rounded-lg px-3 py-2 w-full text-sm disabled:opacity-50 disabled:bg-slate-100"
+                              className="border border-amber-200 rounded-lg px-3 py-2 w-full text-sm disabled:opacity-50 disabled:bg-slate-100 focus:ring-2 focus:ring-amber-200"
                             />
+                            <button 
+                              onClick={() => handleEngineLookup(idx, d.medication_name)}
+                              disabled={selectedItem.status === "Completed"}
+                              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 font-bold text-white text-xs rounded-lg shadow disabled:opacity-50 flex items-center gap-1 shrink-0"
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                Engine
+                            </button>
+                            
+                            {/* Dropdown Results */}
+                            {showEngineIdx === idx && (
+                                <div className="absolute top-12 left-0 w-full bg-white shadow-2xl border border-amber-100 rounded-xl z-10 overflow-hidden divide-y divide-slate-50 max-h-48 overflow-y-auto">
+                                    {isEngineLoading ? (
+                                        <div className="p-4 text-center text-xs text-amber-500 flex justify-center items-center gap-2 font-medium">
+                                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                            Polling Intelligence Engine...
+                                        </div>
+                                    ) : engineResults.length === 0 ? (
+                                        <div className="p-4 text-center text-xs text-slate-500 bg-slate-50 italic">No direct generic alternatives found in stock.</div>
+                                    ) : (
+                                        engineResults.map((alt, aidx) => (
+                                            <div key={aidx} className="flex justify-between items-center p-3 hover:bg-amber-50/50 cursor-pointer group" onClick={() => {
+                                                const u = [...dispenseItems];
+                                                u[idx].substitute_name = alt.drug_name || alt.generic_name;
+                                                u[idx].substituted_for = d.medication_name;
+                                                u[idx].unit_price = alt.unit_price || u[idx].unit_price;
+                                                setDispenseItems(u);
+                                                setShowEngineIdx(null);
+                                            }}>
+                                               <div>
+                                                   <p className="text-sm font-bold text-slate-800">{alt.drug_name}</p>
+                                                   <p className="text-[10px] text-slate-500">{alt.strength} &bull; Form: {alt.form}</p>
+                                               </div>
+                                               <div className="text-right">
+                                                    <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">Stock: {alt.quantity_available || 0}</span>
+                                                    <p className="text-[11px] font-bold text-slate-400 mt-1">₹{alt.unit_price}</p>
+                                               </div>
+                                            </div>
+                                        ))
+                                    )}
+                                    <div className="bg-slate-50 border-t p-2 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest cursor-pointer hover:bg-slate-100 transition" onClick={() => setShowEngineIdx(null)}>Close Engine</div>
+                                </div>
+                            )}
                           </div>
                           {d.substitute_name && (
-                            <p className="mt-1 text-xs text-amber-600">
-                              ⚠ Substituting <strong>{d.medication_name}</strong> →{" "}
-                              <strong>{d.substitute_name}</strong>
+                            <p className="mt-2 text-xs text-amber-700 font-medium flex items-center gap-1.5 bg-amber-100 w-max px-2 py-1 rounded">
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                              Substituting <strong>{d.medication_name}</strong> → <strong>{d.substitute_name}</strong>
                             </p>
                           )}
                         </div>

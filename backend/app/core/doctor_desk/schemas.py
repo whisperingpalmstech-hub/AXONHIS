@@ -10,6 +10,7 @@ class DoctorWorklistCreate(BaseModel):
     doctor_id: UUID
     visit_id: UUID
     patient_id: UUID
+    encounter_type: Optional[str] = "opd"
     priority_indicator: str = "normal"
     queue_position: Optional[int] = None
 
@@ -147,3 +148,84 @@ class PatientTimelineNode(BaseModel):
 class PatientTimelineEMRViewer(BaseModel):
     patient_id: UUID
     chronological_nodes: List[PatientTimelineNode]
+
+# ── Extension for Universal EMR Subsystems ───────────────────────────
+
+class ClinicalComplaintCreate(BaseModel):
+    visit_id: UUID
+    patient_id: UUID
+    encounter_type: str
+    icpc_code: Optional[str] = None
+    complaint_description: str
+    duration: Optional[str] = None
+    severity: Optional[str] = None
+    associated_observations: Optional[str] = None
+
+class ClinicalComplaintOut(ClinicalComplaintCreate):
+    id: UUID
+    created_at: datetime
+    org_id: Optional[UUID] = None
+    class Config: from_attributes = True
+
+class PatientMedicalHistoryCreate(BaseModel):
+    patient_id: UUID
+    category: str
+    description: str
+    status: str = "active"
+    diagnosed_date: Optional[str] = None
+
+class PatientMedicalHistoryOut(PatientMedicalHistoryCreate):
+    id: UUID
+    recorded_by: UUID
+    created_at: datetime
+    org_id: Optional[UUID] = None
+    class Config: from_attributes = True
+
+class ExaminationRecordCreate(BaseModel):
+    visit_id: UUID
+    patient_id: UUID
+    general_examination: Optional[str] = None
+    systemic_examination: Optional[Dict[str, Any]] = None
+    local_examination: Optional[str] = None
+
+class ExaminationRecordOut(ExaminationRecordCreate):
+    id: UUID
+    recorded_by: UUID
+    created_at: datetime
+    org_id: Optional[UUID] = None
+    class Config: from_attributes = True
+
+class DiagnosisRecordCreate(BaseModel):
+    visit_id: UUID
+    patient_id: UUID
+    icd_code: Optional[str] = None
+    diagnosis_description: str
+    diagnosis_type: str = "provisional"
+    is_primary: bool = False
+
+class DiagnosisRecordOut(DiagnosisRecordCreate):
+    id: UUID
+    recorded_by: UUID
+    created_at: datetime
+    org_id: Optional[UUID] = None
+    class Config: from_attributes = True
+
+class EMRConsultationVitalsCreate(BaseModel):
+    visit_id: UUID
+    patient_id: UUID
+    temperature: Optional[str] = None
+    pulse_rate: Optional[str] = None
+    respiratory_rate: Optional[str] = None
+    bp_systolic: Optional[int] = None
+    bp_diastolic: Optional[int] = None
+    spo2: Optional[str] = None
+    height_cm: Optional[str] = None
+    weight_kg: Optional[str] = None
+    bmi: Optional[str] = None
+
+class EMRConsultationVitalsOut(EMRConsultationVitalsCreate):
+    id: UUID
+    recorded_by: UUID
+    created_at: datetime
+    org_id: Optional[UUID] = None
+    class Config: from_attributes = True

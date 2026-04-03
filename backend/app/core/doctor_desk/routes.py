@@ -263,3 +263,65 @@ async def compile_visit_discharge_summary(visit_id: uuid.UUID, doctor_id: uuid.U
 async def log_follow_up_action(data: FollowUpRecordInput, db: AsyncSession = Depends(get_db)):
     svc = FollowUpCertificateManager(db)
     return await svc.log_action(data)
+
+
+# ── Extension for Universal EMR Subsystems ───────────────────────────
+
+from .schemas import (
+    ClinicalComplaintCreate, ClinicalComplaintOut,
+    PatientMedicalHistoryCreate, PatientMedicalHistoryOut,
+    ExaminationRecordCreate, ExaminationRecordOut,
+    DiagnosisRecordCreate, DiagnosisRecordOut,
+    EMRConsultationVitalsCreate, EMRConsultationVitalsOut
+)
+from .services import AdvancedEMRService
+
+@router.post("/advanced/complaints", response_model=ClinicalComplaintOut)
+async def add_clinical_complaint(data: ClinicalComplaintCreate, db: DBSession, user: CurrentUser):
+    svc = AdvancedEMRService(db)
+    return await svc.add_complaint(data, org_id=user.org_id)
+
+@router.get("/advanced/complaints/{visit_id}", response_model=List[ClinicalComplaintOut])
+async def get_clinical_complaints(visit_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    svc = AdvancedEMRService(db)
+    return await svc.get_complaints(visit_id)
+
+@router.post("/advanced/medical-history", response_model=PatientMedicalHistoryOut)
+async def add_medical_history(data: PatientMedicalHistoryCreate, db: DBSession, user: CurrentUser):
+    svc = AdvancedEMRService(db)
+    return await svc.add_medical_history(recorded_by=user.id, data=data, org_id=user.org_id)
+
+@router.get("/advanced/medical-history/{patient_id}", response_model=List[PatientMedicalHistoryOut])
+async def get_medical_history(patient_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    svc = AdvancedEMRService(db)
+    return await svc.get_medical_history(patient_id)
+
+@router.post("/advanced/examinations", response_model=ExaminationRecordOut)
+async def add_examination_record(data: ExaminationRecordCreate, db: DBSession, user: CurrentUser):
+    svc = AdvancedEMRService(db)
+    return await svc.add_examination(recorded_by=user.id, data=data, org_id=user.org_id)
+
+@router.get("/advanced/examinations/{visit_id}", response_model=List[ExaminationRecordOut])
+async def get_examination_records(visit_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    svc = AdvancedEMRService(db)
+    return await svc.get_examinations(visit_id)
+
+@router.post("/advanced/diagnoses", response_model=DiagnosisRecordOut)
+async def add_diagnosis_record(data: DiagnosisRecordCreate, db: DBSession, user: CurrentUser):
+    svc = AdvancedEMRService(db)
+    return await svc.add_diagnosis(recorded_by=user.id, data=data, org_id=user.org_id)
+
+@router.get("/advanced/diagnoses/{visit_id}", response_model=List[DiagnosisRecordOut])
+async def get_diagnosis_records(visit_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    svc = AdvancedEMRService(db)
+    return await svc.get_diagnoses(visit_id)
+
+@router.post("/advanced/vitals", response_model=EMRConsultationVitalsOut)
+async def add_consultation_vitals(data: EMRConsultationVitalsCreate, db: DBSession, user: CurrentUser):
+    svc = AdvancedEMRService(db)
+    return await svc.add_vitals(recorded_by=user.id, data=data, org_id=user.org_id)
+
+@router.get("/advanced/vitals/{visit_id}", response_model=List[EMRConsultationVitalsOut])
+async def get_consultation_vitals(visit_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    svc = AdvancedEMRService(db)
+    return await svc.get_vitals(visit_id)

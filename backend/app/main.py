@@ -346,6 +346,10 @@ def create_app() -> FastAPI:
     from app.core.cssd.router import router as cssd_router
     app.include_router(cssd_router, prefix="/api/v1/cssd", tags=["CSSD"])
 
+    # Phase 27 - Hospital Inventory and Store Management Module
+    from app.core.inventory.router import router as inventory_router
+    app.include_router(inventory_router, prefix="/api/v1/inventory", tags=["Inventory & Stores"])
+
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])
     async def health_check() -> dict[str, str]:

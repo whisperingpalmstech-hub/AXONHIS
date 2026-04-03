@@ -49,7 +49,16 @@ from .schemas import (
     IpdVisitorLogCreate, IpdVisitorLogOut,
     IpdMlcCaseCreate, IpdMlcCaseOut, IpdMlcCaseUpdate,
     IpdMlcDocumentCreate, IpdMlcDocumentOut,
-    IpdSecurityNotificationOut
+    IpdSecurityNotificationOut,
+    PatientSearchResult,
+    IpdNextOfKinCreate, IpdNextOfKinOut,
+    IpdDiscountRequestCreate, IpdDiscountApproval, IpdDiscountRequestOut,
+    IpdCreditNoteCreate, IpdCreditNoteOut,
+    IpdIntermediateBillOut,
+    IpdConsentTemplateCreate, IpdConsentTemplateOut,
+    IpdCorporateAccountCreate, IpdCorporateAccountOut,
+    IpdRefundProcessCreate, IpdRefundProcessOut,
+    DashboardStatsExtended,
 )
 from .services import IPDService
 
@@ -455,16 +464,20 @@ async def reject_transfer(req_id: str, remarks: str, db: AsyncSession = Depends(
 
 @router.get("/discharge/{admission_number}")
 async def get_discharge_state(admission_number: str, db: AsyncSession = Depends(get_db)):
-    service = IPDService(db)
-    result = await service.get_or_create_discharge_state(admission_number)
-    if not result:
-        raise HTTPException(status_code=404, detail="Admission not found")
-    
-    return {
-        "plan": IpdDischargePlanOut.model_validate(result["plan"]).model_dump(mode='json'),
-        "checklist": IpdDischargeChecklistOut.model_validate(result["checklist"]).model_dump(mode='json'),
-        "summary": IpdDischargeSummaryOut.model_validate(result["summary"]).model_dump(mode='json')
-    }
+    try:
+        service = IPDService(db)
+        result = await service.get_or_create_discharge_state(admission_number)
+        if not result:
+            raise HTTPException(status_code=404, detail="Admission not found")
+        
+        return {
+            "plan": IpdDischargePlanOut.model_validate(result["plan"]).model_dump(mode='json'),
+            "checklist": IpdDischargeChecklistOut.model_validate(result["checklist"]).model_dump(mode='json'),
+            "summary": IpdDischargeSummaryOut.model_validate(result["summary"]).model_dump(mode='json')
+        }
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=400, detail=str(traceback.format_exc()))
 
 @router.put("/discharge/{admission_number}/plan", response_model=IpdDischargePlanOut)
 async def update_discharge_plan(admission_number: str, data: IpdDischargePlanCreate, db: AsyncSession = Depends(get_db)):
@@ -755,3 +768,186 @@ async def mark_notification_read(notif_id: str, db: AsyncSession = Depends(get_d
         raise HTTPException(status_code=404, detail="Notification not found")
     await db.commit()
     return notif
+
+
+# ─── Phase 23: FRD Gap Closure Routes ──────────────
+
+
+# --- Patient Search ---
+@router.get("/patients/search", response_model=List[PatientSearchResult])
+async def search_patients(q: str, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    return await svc.search_patients(q)
+
+
+# --- Next of Kin ---
+@router.post("/admissions/{adm_no}/next-of-kin", response_model=IpdNextOfKinOut)
+async def add_next_of_kin(adm_no: str, data: IpdNextOfKinCreate, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    nok = await svc.add_next_of_kin(adm_no, data.model_dump())
+    await db.commit()
+    return nok
+
+@router.get("/admissions/{adm_no}/next-of-kin", response_model=List[IpdNextOfKinOut])
+async def get_next_of_kin(adm_no: str, db: AsyncSession = Depends(get_db)):
+    svc = IPDService(db)
+    return await svc.get_next_of_kin(adm_no)
+
+
+# --- Discount Request/Approval ---
+@router.post("/billing/{adm_no}/discount-requests", response_model=IpdDiscountRequestOut)
+async def create_discount_request(adm_no: str, data: IpdDiscountRequestCreate, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    user_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Staff') if current_user else 'Staff'
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    req = await svc.create_discount_request(adm_no, data.model_dump(), str(user_name))
+    if not req:
+        raise HTTPException(status_code=404, detail="Admission not found")
+    await db.commit()
+    return req
+
+@router.get("/billing/{adm_no}/discount-requests", response_model=List[IpdDiscountRequestOut])
+async def get_discount_requests(adm_no: str, db: AsyncSession = Depends(get_db)):
+    svc = IPDService(db)
+    return await svc.get_discount_requests(adm_no)
+
+@router.post("/billing/discount-requests/{discount_id}/action", response_model=IpdDiscountRequestOut)
+async def approve_or_reject_discount(discount_id: str, data: IpdDiscountApproval, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    user_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Finance') if current_user else 'Finance'
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    req = await svc.approve_discount(discount_id, data.model_dump(), str(user_name))
+    if not req:
+        raise HTTPException(status_code=404, detail="Discount request not found or not Pending")
+    await db.commit()
+    return req
+
+
+# --- Credit Notes ---
+@router.post("/billing/{adm_no}/credit-notes", response_model=IpdCreditNoteOut)
+async def create_credit_note(adm_no: str, data: IpdCreditNoteCreate, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    user_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Staff') if current_user else 'Staff'
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    cn = await svc.create_credit_note(adm_no, data.model_dump(), str(user_name))
+    if not cn:
+        raise HTTPException(status_code=404, detail="Admission not found")
+    await db.commit()
+    return cn
+
+@router.get("/billing/{adm_no}/credit-notes", response_model=List[IpdCreditNoteOut])
+async def get_credit_notes(adm_no: str, db: AsyncSession = Depends(get_db)):
+    svc = IPDService(db)
+    return await svc.get_credit_notes(adm_no)
+
+
+# --- Refunds ---
+@router.post("/billing/{adm_no}/refunds", response_model=IpdRefundProcessOut)
+async def create_refund(adm_no: str, data: IpdRefundProcessCreate, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    user_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Staff') if current_user else 'Staff'
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    refund = await svc.create_refund(adm_no, data.model_dump(), str(user_name))
+    if not refund:
+        raise HTTPException(status_code=404, detail="Admission not found")
+    await db.commit()
+    return refund
+
+@router.post("/billing/refunds/{refund_id}/approve", response_model=IpdRefundProcessOut)
+async def approve_refund(refund_id: str, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    user_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Finance') if current_user else 'Finance'
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    refund = await svc.approve_refund(refund_id, str(user_name))
+    if not refund:
+        raise HTTPException(status_code=404, detail="Refund not found or not Pending")
+    await db.commit()
+    return refund
+
+@router.get("/billing/{adm_no}/refunds", response_model=List[IpdRefundProcessOut])
+async def get_refunds(adm_no: str, db: AsyncSession = Depends(get_db)):
+    svc = IPDService(db)
+    return await svc.get_refunds(adm_no)
+
+
+# --- Intermediate Bills ---
+@router.post("/billing/{adm_no}/intermediate-bill", response_model=IpdIntermediateBillOut)
+async def generate_intermediate_bill(adm_no: str, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    user_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Staff') if current_user else 'Staff'
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    bill = await svc.generate_intermediate_bill(adm_no, str(user_name))
+    if not bill:
+        raise HTTPException(status_code=404, detail="Admission not found")
+    await db.commit()
+    return bill
+
+@router.get("/billing/{adm_no}/intermediate-bills", response_model=List[IpdIntermediateBillOut])
+async def get_intermediate_bills(adm_no: str, db: AsyncSession = Depends(get_db)):
+    svc = IPDService(db)
+    return await svc.get_intermediate_bills(adm_no)
+
+
+# --- Consent Templates ---
+@router.post("/consent-templates", response_model=IpdConsentTemplateOut)
+async def create_consent_template(data: IpdConsentTemplateCreate, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    user_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Admin') if current_user else 'Admin'
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    tmpl = await svc.create_consent_template(data.model_dump(), str(user_name))
+    await db.commit()
+    return tmpl
+
+@router.get("/consent-templates", response_model=List[IpdConsentTemplateOut])
+async def get_consent_templates(consent_type: str = None, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    return await svc.get_consent_templates(consent_type)
+
+
+# --- Corporate Accounts ---
+@router.post("/billing/{adm_no}/corporate", response_model=IpdCorporateAccountOut)
+async def create_corporate_account(adm_no: str, data: IpdCorporateAccountCreate, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    corp = await svc.create_corporate_account(adm_no, data.model_dump())
+    if not corp:
+        raise HTTPException(status_code=404, detail="Admission not found")
+    await db.commit()
+    return corp
+
+@router.get("/billing/{adm_no}/corporate", response_model=IpdCorporateAccountOut)
+async def get_corporate_account(adm_no: str, db: AsyncSession = Depends(get_db)):
+    svc = IPDService(db)
+    corp = await svc.get_corporate_account(adm_no)
+    if not corp:
+        raise HTTPException(status_code=404, detail="No corporate account for this admission")
+    return corp
+
+
+# --- Extended Dashboard ---
+@router.get("/dashboard/stats-extended")
+async def get_dashboard_stats_extended(db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    return await svc.get_dashboard_stats_extended()
+
+
+# --- Bed Grid ---
+@router.get("/bed-grid")
+async def get_bed_grid(ward_type: str = None, status: str = None, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    return await svc.get_bed_grid(ward_type, status)
+
+
+# --- Discharged Patients ---
+@router.get("/discharged-patients")
+async def get_discharged_patients(db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    patients = await svc.get_discharged_patients()
+    return [{"admission_number": a.admission_number, "patient_uhid": a.patient_uhid,
+             "ward_id": a.ward_id, "bed_number": a.bed_number, "status": a.status,
+             "admission_time": str(a.admission_time) if a.admission_time else None,
+             "discharge_time": str(a.discharge_time) if a.discharge_time else None,
+             } for a in patients]
+
+
+# --- Pending Discharges ---
+@router.get("/pending-discharges")
+async def get_pending_discharges(db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    svc = IPDService(db, org_id=current_user.org_id if current_user else None)
+    plans = await svc.get_pending_discharges()
+    return [{"admission_number": p.admission_number, "patient_uhid": p.patient_uhid,
+             "planned_discharge_date": str(p.planned_discharge_date) if p.planned_discharge_date else None,
+             "status": p.status,
+             } for p in plans]

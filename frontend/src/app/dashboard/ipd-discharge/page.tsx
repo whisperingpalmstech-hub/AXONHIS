@@ -39,7 +39,7 @@ export default function IpdDischargePage() {
       setPendingOrders(ordersRes.data || ordersRes);
     } catch (err) {
       console.error(err);
-      alert("Error loading discharge state.");
+      alert("Error loading discharge state from API.");
     } finally {
       setLoading(false);
     }

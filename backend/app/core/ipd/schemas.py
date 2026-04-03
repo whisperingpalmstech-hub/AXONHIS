@@ -965,3 +965,198 @@ class IpdSecurityNotificationOut(IpdSecurityNotificationBase):
     is_read: bool
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- Phase 23: FRD Gap Closure Schemas ---
+
+class PatientSearchResult(BaseModel):
+    id: UUID
+    patient_uuid: Optional[str] = None
+    mrn: Optional[str] = None
+    first_name: str
+    last_name: str
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    mobile: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class IpdNextOfKinCreate(BaseModel):
+    relative_name: str
+    relationship: str
+    phone_number: str
+    alternate_phone: Optional[str] = None
+    address: Optional[str] = None
+    is_emergency_contact: bool = True
+    id_proof_type: Optional[str] = None
+    id_proof_number: Optional[str] = None
+
+class IpdNextOfKinOut(IpdNextOfKinCreate):
+    id: UUID
+    admission_number: str
+    patient_uhid: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class IpdDiscountRequestCreate(BaseModel):
+    requested_discount_amount: float
+    discount_percent: Optional[float] = None
+    discount_reason: str
+    discount_category: str = "General"
+
+class IpdDiscountApproval(BaseModel):
+    status: str  # Approved or Rejected
+    rejection_reason: Optional[str] = None
+
+class IpdDiscountRequestOut(BaseModel):
+    id: UUID
+    admission_number: str
+    patient_uhid: str
+    requested_discount_amount: float
+    discount_percent: Optional[float] = None
+    discount_reason: str
+    discount_category: str
+    requested_by: str
+    requested_at: datetime
+    approved_by: Optional[str] = None
+    approved_at: Optional[datetime] = None
+    status: str
+    rejection_reason: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class IpdCreditNoteCreate(BaseModel):
+    original_bill_id: Optional[str] = None
+    credit_amount: float
+    reason: str
+    credit_type: str = "Service Cancellation"
+
+class IpdCreditNoteOut(BaseModel):
+    id: UUID
+    credit_note_number: str
+    admission_number: str
+    patient_uhid: str
+    original_bill_id: Optional[str] = None
+    credit_amount: float
+    reason: str
+    credit_type: str
+    status: str
+    created_by: str
+    approved_by: Optional[str] = None
+    created_at: datetime
+    approved_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class IpdIntermediateBillOut(BaseModel):
+    id: UUID
+    bill_number: str
+    admission_number: str
+    patient_uhid: str
+    bill_period_start: datetime
+    bill_period_end: datetime
+    total_charges: float
+    total_deposits: float
+    insurance_covered: float
+    discount_amount: float
+    net_payable: float
+    amount_paid: float
+    balance_due: float
+    bill_type: str
+    status: str
+    generated_by: str
+    generated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class IpdConsentTemplateCreate(BaseModel):
+    template_name: str
+    consent_type: str
+    template_body: str
+    language: str = "en"
+
+class IpdConsentTemplateOut(BaseModel):
+    id: UUID
+    template_name: str
+    consent_type: str
+    template_body: str
+    language: str
+    is_active: bool
+    version: int
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class IpdCorporateAccountCreate(BaseModel):
+    company_name: str
+    company_contract_id: Optional[str] = None
+    employee_id: Optional[str] = None
+    designation: Optional[str] = None
+    credit_limit: float = 0.0
+    authorization_letter: Optional[str] = None
+
+class IpdCorporateAccountOut(BaseModel):
+    id: UUID
+    admission_number: str
+    patient_uhid: str
+    company_name: str
+    company_contract_id: Optional[str] = None
+    employee_id: Optional[str] = None
+    designation: Optional[str] = None
+    credit_limit: float
+    approved_amount: float
+    authorization_letter: Optional[str] = None
+    status: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class IpdRefundProcessCreate(BaseModel):
+    refund_amount: float
+    refund_mode: str
+    refund_reason: Optional[str] = None
+
+class IpdRefundProcessOut(BaseModel):
+    id: UUID
+    admission_number: str
+    patient_uhid: str
+    refund_amount: float
+    refund_mode: str
+    refund_reason: Optional[str] = None
+    approved_by: Optional[str] = None
+    processed_by: Optional[str] = None
+    status: str
+    refund_date: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class BedGridItem(BaseModel):
+    bed_id: UUID
+    bed_code: str
+    bed_number: str
+    bed_type: str
+    status: str
+    room_number: str
+    room_type: str
+    ward_name: str
+    ward_code: str
+    floor: Optional[str] = None
+    department: str
+    patient_uhid: Optional[str] = None
+    patient_name: Optional[str] = None
+    admission_number: Optional[str] = None
+
+class BedGridFloor(BaseModel):
+    floor: str
+    wards: list[dict] = []
+    total_beds: int = 0
+    occupied: int = 0
+    available: int = 0
+
+class DashboardStatsExtended(BaseModel):
+    total_beds: int
+    occupied_beds: int
+    available_beds: int
+    housekeeping_beds: int
+    reserved_beds: int
+    maintenance_beds: int
+    pending_requests: int
+    active_admissions: int
+    pending_discharges: int
+    discharges_today: int
+    occupancy_rate: float
+    avg_length_of_stay: float
+

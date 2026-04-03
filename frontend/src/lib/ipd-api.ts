@@ -172,4 +172,8 @@ export const ipdApi = {
   getMlcDocuments: (mlcId: string) => api.get<any[]>(`/ipd/mlc-documents/${mlcId}`),
   getSecurityNotifications: (filter?: string) => api.get<any[]>(`/ipd/security-notifications${filter ? `?read_filter=${filter}` : ''}`),
   markNotificationRead: (id: string) => api.put<any>(`/ipd/security-notifications/${id}/read`, {}),
+  
+  // Consent Management
+  getConsentTemplates: (type?: string) => api.get<any[]>(`/ipd/consent-templates${type ? `?consent_type=${type}` : ''}`),
+  createConsentTemplate: (data: any) => api.post<any>('/ipd/consent-templates', data),
 };

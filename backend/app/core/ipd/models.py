@@ -1162,3 +1162,139 @@ class IpdSecurityNotification(Base):
     message = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# --- Phase 23: FRD Gap Closure Models ---
+
+
+class IpdNextOfKin(Base):
+    """Next of Kin / Emergency Contact for admitted patient."""
+    __tablename__ = "ipd_next_of_kin"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    admission_number = Column(
+        String,
+        ForeignKey("ipd_admission_records.admission_number", ondelete="CASCADE"),
+        nullable=False,
+    )
+    patient_uhid = Column(String, nullable=False)
+    relative_name = Column(String, nullable=False)
+    relationship = Column(String, nullable=False)  # Father, Mother, Spouse, Son, Daughter, Other
+    phone_number = Column(String, nullable=False)
+    alternate_phone = Column(String, nullable=True)
+    address = Column(Text, nullable=True)
+    is_emergency_contact = Column(Boolean, default=True)
+    id_proof_type = Column(String, nullable=True)  # Aadhaar, PAN, Passport
+    id_proof_number = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+
+class IpdDiscountRequest(Base):
+    """Discount request with approval workflow for IPD billing."""
+    __tablename__ = "ipd_discount_requests"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    admission_number = Column(
+        String,
+        ForeignKey("ipd_admission_records.admission_number", ondelete="CASCADE"),
+        nullable=False,
+    )
+    patient_uhid = Column(String, nullable=False)
+    requested_discount_amount = Column(Float, nullable=False)
+    discount_percent = Column(Float, nullable=True)  # Alternative: percentage
+    discount_reason = Column(Text, nullable=False)
+    discount_category = Column(String, default="General")  # General, Staff, Senior Citizen, BPL, Charity
+    requested_by = Column(String, nullable=False)
+    requested_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    approved_by = Column(String, nullable=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String, default="Pending")  # Pending, Approved, Rejected
+    rejection_reason = Column(Text, nullable=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+
+class IpdCreditNote(Base):
+    """Credit note for billing corrections and service cancellations."""
+    __tablename__ = "ipd_credit_notes"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    credit_note_number = Column(String, unique=True, nullable=False)
+    admission_number = Column(
+        String,
+        ForeignKey("ipd_admission_records.admission_number", ondelete="CASCADE"),
+        nullable=False,
+    )
+    patient_uhid = Column(String, nullable=False)
+    original_bill_id = Column(String, nullable=True)  # Reference to original bill/service
+    credit_amount = Column(Float, nullable=False)
+    reason = Column(Text, nullable=False)  # Service cancelled, Billing error, Duplicate charge
+    credit_type = Column(String, default="Service Cancellation")  # Service Cancellation, Billing Error, Other
+    status = Column(String, default="Draft")  # Draft, Approved, Applied
+    created_by = Column(String, nullable=False)
+    approved_by = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+
+class IpdIntermediateBill(Base):
+    """Intermediate/Partial bills for long-stay patients."""
+    __tablename__ = "ipd_intermediate_bills"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    bill_number = Column(String, unique=True, nullable=False)
+    admission_number = Column(
+        String,
+        ForeignKey("ipd_admission_records.admission_number", ondelete="CASCADE"),
+        nullable=False,
+    )
+    patient_uhid = Column(String, nullable=False)
+    bill_period_start = Column(DateTime(timezone=True), nullable=False)
+    bill_period_end = Column(DateTime(timezone=True), nullable=False)
+    total_charges = Column(Float, default=0.0)
+    total_deposits = Column(Float, default=0.0)
+    insurance_covered = Column(Float, default=0.0)
+    discount_amount = Column(Float, default=0.0)
+    net_payable = Column(Float, default=0.0)
+    amount_paid = Column(Float, default=0.0)
+    balance_due = Column(Float, default=0.0)
+    bill_type = Column(String, default="Intermediate")  # Intermediate, Final
+    status = Column(String, default="Generated")  # Generated, Sent, Paid, Cancelled
+    generated_by = Column(String, nullable=False)
+    generated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+
+class IpdConsentTemplate(Base):
+    """Reusable consent form templates for hospital administration."""
+    __tablename__ = "ipd_consent_templates"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    template_name = Column(String, nullable=False)
+    consent_type = Column(String, nullable=False)  # Admission, Surgical, Anesthesia, Diagnostic, Blood Transfusion
+    template_body = Column(Text, nullable=False)  # Rich text template with placeholders
+    language = Column(String, default="en")
+    is_active = Column(Boolean, default=True)
+    version = Column(Integer, default=1)
+    created_by = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+
+class IpdCorporateAccount(Base):
+    """Corporate billing accounts for employee admissions."""
+    __tablename__ = "ipd_corporate_accounts"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    admission_number = Column(
+        String,
+        ForeignKey("ipd_admission_records.admission_number", ondelete="CASCADE"),
+        nullable=False,
+    )
+    patient_uhid = Column(String, nullable=False)
+    company_name = Column(String, nullable=False)
+    company_contract_id = Column(String, nullable=True)
+    employee_id = Column(String, nullable=True)
+    designation = Column(String, nullable=True)
+    credit_limit = Column(Float, default=0.0)
+    approved_amount = Column(Float, default=0.0)
+    authorization_letter = Column(String, nullable=True)  # File URL
+    status = Column(String, default="Pending")  # Pending, Verified, Active, Closed
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)

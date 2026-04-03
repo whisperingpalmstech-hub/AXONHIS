@@ -28,7 +28,7 @@ class ERRegistrationCreate(BaseModel):
 
 class EREncounterOut(BaseModel):
     id: UUID
-    org_id: UUID
+    org_id: Optional[UUID]
     er_number: str
     registration_type: str
     patient_id: Optional[UUID]
@@ -100,7 +100,7 @@ class ERBedCreate(BaseModel):
 
 class ERBedOut(BaseModel):
     id: UUID
-    org_id: UUID
+    org_id: Optional[UUID]
     bed_code: str
     zone: str
     bed_type: str
@@ -133,7 +133,7 @@ class ERMlcCreate(BaseModel):
 
 class ERMlcOut(ERMlcCreate):
     id: UUID
-    org_id: UUID
+    org_id: Optional[UUID]
     mlc_number: str
     status: str
     created_at: datetime
@@ -152,7 +152,7 @@ class ERNursingScoreCreate(BaseModel):
 
 class ERNursingScoreOut(ERNursingScoreCreate):
     id: UUID
-    org_id: UUID
+    org_id: Optional[UUID]
     scored_by: UUID
     scored_by_name: Optional[str]
     scored_at: datetime
@@ -169,7 +169,7 @@ class EROrderCreate(BaseModel):
 
 class EROrderOut(EROrderCreate):
     id: UUID
-    org_id: UUID
+    org_id: Optional[UUID]
     order_id: Optional[UUID]
     status: str
     ordered_by: UUID
@@ -201,3 +201,76 @@ class ERDashboardStats(BaseModel):
     beds_occupied: int = 0
     avg_wait_minutes: Optional[float] = None
     zone_occupancy: Optional[dict] = None
+
+
+# ── Discharge ───────────────────────────────────────────
+class ERDischargeCreate(BaseModel):
+    er_encounter_id: UUID
+    discharge_type: str  # normal, dama, lama, death, absconded
+    discharge_summary: Optional[str] = None
+    follow_up_instructions: Optional[str] = None
+    follow_up_date: Optional[datetime] = None
+    total_amount: Optional[float] = None
+    paid_amount: Optional[float] = None
+    payment_mode: Optional[str] = None
+    disposition: Optional[str] = None
+    destination_department: Optional[str] = None
+
+class ERDischargeOut(BaseModel):
+    id: UUID
+    org_id: Optional[UUID]
+    er_encounter_id: UUID
+    discharge_type: str
+    discharge_summary: Optional[str]
+    follow_up_instructions: Optional[str]
+    billing_cleared: bool
+    total_amount: Optional[float]
+    paid_amount: Optional[float]
+    payment_mode: Optional[str]
+    disposition: Optional[str]
+    bed_vacated: bool
+    discharged_by_name: Optional[str]
+    discharged_at: datetime
+    class Config: from_attributes = True
+
+
+# ── Clinical Notes ──────────────────────────────────────
+class ERClinicalNoteCreate(BaseModel):
+    er_encounter_id: UUID
+    note_type: str  # complaint, history, examination, observation, shift_note, soap
+    content: Optional[str] = None
+    structured_data: Optional[dict] = None
+
+class ERClinicalNoteOut(BaseModel):
+    id: UUID
+    org_id: Optional[UUID]
+    er_encounter_id: UUID
+    note_type: str
+    content: Optional[str]
+    structured_data: Optional[dict]
+    authored_by_name: Optional[str]
+    authored_by_role: Optional[str]
+    authored_at: datetime
+    is_addendum: bool
+    class Config: from_attributes = True
+
+
+# ── Diagnosis ───────────────────────────────────────────
+class ERDiagnosisCreate(BaseModel):
+    er_encounter_id: UUID
+    icd_code: Optional[str] = None
+    diagnosis_description: str
+    diagnosis_type: str = "working"
+    is_primary: bool = False
+
+class ERDiagnosisOut(BaseModel):
+    id: UUID
+    org_id: Optional[UUID]
+    er_encounter_id: UUID
+    icd_code: Optional[str]
+    diagnosis_description: str
+    diagnosis_type: str
+    is_primary: bool
+    recorded_by_name: Optional[str]
+    recorded_at: datetime
+    class Config: from_attributes = True

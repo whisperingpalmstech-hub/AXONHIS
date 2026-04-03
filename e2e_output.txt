@@ -1,29 +1,31 @@
-============================================================
-🚀 AXONHIS ENTERPRISE E2E AUTOMATED TEST SUITE
-============================================================
 
-[0] Authenticating as Hospital Admin...
-✅ Admin Authentication Successful!
-
-[1] Registering New Patient in Main HIS...
-✅ Patient Registered Successfully! ID: c730c29f-dd47-4d63-b83d-bc14581316e5
-
-[2] Patient Portal: Searching for records by Email...
-✅ Portal Search Successful! Found matching core record.
-
-[3] Patient Portal: Creating Portal Login Credentials...
-✅ Portal Account Linked & Created Successfully!
-
-[4] Patient Portal: Executing Secure Login...
-✅ Patient Login Successful! JWT Token acquired.
-
-[5] Patient Portal: Fetching Encounters & Profile...
-✅ Profile Fetched Data Name: James
-❌ Failed to fetch encounters (Status 404): {"detail":"Not Found"}
-
-[6] Cross-Module Integration: Booking OPD Appointment via Portal
-❌ Appointment Booking Failed (Status 500): {"detail":"Failed to book appointment: (sqlalchemy.dialects.postgresql.asyncpg.IntegrityError) <class 'asyncpg.exceptions.ForeignKeyViolationError'>: insert or update on table \"portal_appointments\" violates foreign key constraint \"portal_appointments_doctor_id_fkey\"\nDETAIL:  Key (doctor_id)=(23f9ea88-cc27-4e8b-b9de-70d4f92f873f) is not present in table \"users\".\n[SQL: INSERT INTO portal_appointments (id, patient_id, doctor_id, department, appointment_time, appointment_type, status, created_at) VALUES ($1::UUID, $2::UUID, $3::UUID, $4::VARCHAR, $5::TIMESTAMP WITH TIME ZONE, $6::VARCHAR, $7::VARCHAR, $8::TIMESTAMP WITH TIME ZONE)]\n[parameters: (UUID('a44385b4-b41f-4862-a683-db9ed994270b'), UUID('c730c29f-dd47-4d63-b83d-bc14581316e5'), UUID('23f9ea88-cc27-4e8b-b9de-70d4f92f873f'), 'General Practice', datetime.datetime(2026, 4, 3, 10, 23, 43, 877231), <AppointmentType.IN_PERSON: 'in_person'>, <AppointmentStatus.SCHEDULED: 'scheduled'>, datetime.datetime(2026, 4, 2, 9, 23, 43, 878732, tzinfo=datetime.timezone.utc))]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"}
+████████████████████████████████████████████████████████████
+█  AXONHIS ER MODULE — FULL LIFECYCLE E2E TEST
+█  Testing: Registration → Triage → Bed → Notes → Orders
+█           → Diagnosis → Score → Discharge → Verify
+████████████████████████████████████████████████████████████
 
 ============================================================
-🎯 END TO END AUTOMATED TEST SUITE COMPLETED
+  [0] ✅ AUTHENTICATE AS HOSPITAL ADMIN
+      Status: 200
+      access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhNzljNmNkNy1kYzE1LTQ3YzctYTJiNi1...
+      refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhNzljNmNkNy1kYzE1LTQ3YzctYTJiNi1...
+      token_type: bearer
+      expires_in: 28800
 ============================================================
+      Admin ID: a79c6cd7-dc15-47c7-a2b6-f3cb61a4df14
+
+============================================================
+  [1] ✅ SEED ER BEDS (26 beds across 5 zones)
+      Status: 500
+      detail: Internal Server Error
+============================================================
+
+============================================================
+  [2] ❌ REGISTER ER PATIENT (Urgent Ambulance Arrival)
+      Status: 500
+      Response: {
+  "detail": "(sqlalchemy.dialects.postgresql.asyncpg.IntegrityError) <class 'asyncpg.exceptions.NotNullViolationError'>: null value in column \"org_id\" of relation \"er_encounters\" violates not-null constraint\nDETAIL:  Failing row contains (d271142a-daf8-4f6e-b8b9-f5181ab34796, null, ER-20260403110937-ADE9, urgent, 07ca954f-418a-40e3-ab42-f3ab74601611, null, Rajesh Kumar Sharma, null, 45, years, male, +919876543210, null, ambulance, AMB-4521, Wife - Sunita Sharma, null, Severe chest pain ra
+============================================================
+
+⛔ Cannot proceed without patient registration. Aborting.

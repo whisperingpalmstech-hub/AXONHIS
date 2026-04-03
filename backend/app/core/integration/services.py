@@ -38,6 +38,7 @@ class ChargePostingService:
         
         # GST (5% for healthcare services)
         tax = net * Decimal("0.05")
+        org_id = org_id or uuid.UUID(int=0)
         
         charge = ChargePosting(
             org_id=org_id,

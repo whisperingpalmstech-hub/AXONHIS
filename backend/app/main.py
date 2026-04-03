@@ -59,6 +59,7 @@ from app.core.smart_queue.routes import router as smart_queue_router
 
 # OPD Nursing Clinical Triage Engine
 from app.core.nursing_triage.routes import router as nursing_triage_router
+from app.core.nursing.routes import router as nursing_router
 
 # AI Doctor Desk & Intelligent EMR Engine
 from app.core.doctor_desk.routes import router as doctor_desk_router
@@ -202,6 +203,8 @@ def create_app() -> FastAPI:
     app.include_router(billing_router, prefix=api)
     app.include_router(ai_router, prefix=api)
     app.include_router(analytics_router, prefix=api)
+    app.include_router(nursing_triage_router, prefix=api)
+    app.include_router(nursing_router, prefix=api)
     app.include_router(communication_router, prefix=api)
 
     # Phase 11 - Deployments & Systems

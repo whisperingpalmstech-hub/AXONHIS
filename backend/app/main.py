@@ -51,6 +51,7 @@ from app.core.patient_portal.router import portal_router
 from app.core.diagnostics.routes import router as diagnostics_router
 from app.core.advanced_lab.routes import router as new_advanced_lab_router
 from app.core.procurement.routes import router as procurement_router
+from app.core.kiosk.routes import router as kiosk_router
 
 # Diagnostic Procedures Engine
 from app.core.diagnostics.routes import router as diagnostics_router
@@ -371,6 +372,7 @@ def create_app() -> FastAPI:
     app.include_router(diagnostics_router, prefix="/api/v1/diagnostics", tags=["Diagnostic Procedures"])
     app.include_router(new_advanced_lab_router, prefix="/api/v1/advanced", tags=["Advanced Diagnostics"])
     app.include_router(procurement_router, prefix="/api/v1", tags=["Procurement & Supply Chain"])
+    app.include_router(kiosk_router, prefix="/api/v1", tags=["Self-Service Kiosk"])
 
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])

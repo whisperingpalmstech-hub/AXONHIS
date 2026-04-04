@@ -200,6 +200,7 @@ const NAV_GROUPS: NavGroup[] = [
     ),
     roles: ["admin", "director", "nurse"],
     children: [
+      { label: "Procurement & Purchasing", href: "/dashboard/procurement", badge: "SCM", roles: ["admin", "director"] },
       { label: "Inventory & Stores", href: "/dashboard/inventory", badge: "SCM", roles: ["admin", "director", "nurse"] },
       { label: "Linen & Laundry", href: "/dashboard/linen", badge: "OPS" },
       { label: "CSSD", href: "/dashboard/cssd", badge: "STERILE" },

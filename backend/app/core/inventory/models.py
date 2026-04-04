@@ -19,6 +19,10 @@ class InventoryItem(Base):
     name = Column(String(200), nullable=False)
     category = Column(String(50)) # 'MEDICATION', 'CONSUMABLE', 'REAGENT', 'EQUIPMENT'
     uom = Column(String(20)) # Unit of measure: 'Box', 'Vial', 'Each', 'Strip'
+    hsn_code = Column(String(20), nullable=True)
+    gst_percentage = Column(Numeric(5, 2), default=0.0)
+    reorder_level = Column(Numeric(12, 2), default=0.0)
+    is_approved = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
 
 class BatchRecord(Base):

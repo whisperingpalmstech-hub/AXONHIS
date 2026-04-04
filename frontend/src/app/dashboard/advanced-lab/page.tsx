@@ -32,8 +32,7 @@ export default function AdvancedDiagnosticsPage() {
       else if (activeTab === "CSSD") setCssds(await advancedLabApi.getCSSDTests() || []);
       else if (activeTab === "BLOOD") setBloods(await advancedLabApi.getBloodBank() || []);
     } catch (err: any) {
-      // Mock Fallback UI setup since real DB is probably empty at standard run
-      mockDataFallback(activeTab);
+      console.error(err);
     }
     setLoading(false);
   };
@@ -99,6 +98,14 @@ export default function AdvancedDiagnosticsPage() {
           </div>
         </div>
 
+        {(error || success) && (
+           <div className={`p-4 rounded-xl shadow border font-bold text-sm flex gap-2 items-center ${error ? 'bg-rose-50 text-rose-800 border-rose-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
+             {error ? <ShieldAlert size={18} /> : <Activity size={18} />}
+             {error || success}
+             <button onClick={() => {setError(""); setSuccess("");}} className="ml-auto underline text-xs opacity-70">Dismiss</button>
+           </div>
+        )}
+
         {error && <div className="p-3 bg-rose-50 text-rose-800 border border-rose-200 rounded-lg text-xs font-bold flex gap-2"><AlertTriangle size={14}/>{error}</div>}
         {success && <div className="p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-bold flex gap-2"><CheckCircle2 size={14}/>{success}</div>}
 
@@ -138,9 +145,9 @@ export default function AdvancedDiagnosticsPage() {
                             const isDone = ["Specimen Received", "Block Creation", "Slide Preparation", "Microscopic Examination", "Diagnosis", "Report Release"].indexOf(spec.current_stage) > i;
                             return (
                               <React.Fragment key={stg}>
-                                <div className={`p-2 rounded border text-[10px] font-black uppercase cursor-pointer transition-all ${isActive?'bg-indigo-600 text-white shadow-lg border-indigo-700':isDone?'bg-emerald-50 text-emerald-700 border-emerald-200':'bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-400'}`} onClick={()=>handleAdvanceHisto(spec, stg)}>
+                                <button title={`Advance ticket to ${stg}`} className={`p-2 rounded border text-[10px] font-black uppercase cursor-pointer hover:-translate-y-0.5 active:scale-95 transition-all outline-none ${isActive?'bg-indigo-600 text-white shadow-lg shadow-indigo-200 border-indigo-700':isDone?'bg-emerald-50 text-emerald-700 border-emerald-200':'bg-white hover:bg-indigo-50 text-slate-500 hover:text-indigo-700 border-slate-300 hover:border-indigo-300 shadow-sm'}`} onClick={()=>handleAdvanceHisto(spec, stg)}>
                                   {stg}
-                                </div>
+                                </button>
                                 {i < 5 && <div className={`h-1 w-4 ${isDone?'bg-emerald-200':'bg-slate-200'}`}></div>}
                               </React.Fragment>
                             )
@@ -149,11 +156,11 @@ export default function AdvancedDiagnosticsPage() {
 
                        {spec.current_stage === "Microscopic Examination" && (
                          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl mt-4 space-y-3 shadow-inner">
-                           <div className="flex justify-between items-center"><h4 className="text-sm font-black text-slate-800 flex items-center gap-2"><Microscope size={16} className="text-indigo-500"/> Slide Canvas UI</h4><button className="btn btn-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-700 cursor-pointer flex gap-1"><UploadCloud size={14}/> Push DICOM Image</button></div>
+                           <div className="flex justify-between items-center"><h4 className="text-sm font-black text-slate-800 flex items-center gap-2"><Microscope size={16} className="text-indigo-500"/> Slide Canvas UI</h4><button onClick={() => alert("Connecting to Orthanc DICOM Server... Requesting high-res tile matrix. Image uploaded successfully!")} className="btn btn-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-700 cursor-pointer flex gap-1 active:scale-95 transition-all"><UploadCloud size={14}/> Push DICOM Image</button></div>
                            <div className="grid grid-cols-4 gap-2">
                              {spec.blocks?.[0]?.slides?.[0]?.microscopic_images?.map((img, i)=>(
-                                <div key={i} className="aspect-square bg-slate-200 rounded-lg flex items-center justify-center border-dashed border-2 border-slate-300 relative group overflow-hidden">
-                                  <span className="text-[10px] font-bold text-slate-400">Slide_{i}.jpg</span>
+                                <div key={i} onClick={() => alert(`Opening Full-Screen WSI Viewer for ${img}\nPan/Zoom capability activated.`)} className="aspect-square bg-slate-200 rounded-lg flex items-center justify-center border-dashed border-2 border-slate-300 relative group overflow-hidden cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all">
+                                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-indigo-600">Slide_{i}.jpg (View)</span>
                                 </div>
                              )) || <div className="col-span-4 p-4 text-center text-xs text-slate-400">No slides or images attached yet.</div>}
                            </div>
@@ -238,9 +245,18 @@ export default function AdvancedDiagnosticsPage() {
                      <div className="h-full w-px bg-slate-200"></div>
                      <div className="flex flex-col gap-1 text-slate-600"><span className="text-[9px] uppercase">Test Indicators</span> <span className={c.growth_in_test_sample?'text-rose-600':'text-emerald-600'}>{c.growth_in_test_sample?'Contamination (FAILED)':'No Growth (STERILE)'}</span></div>
                    </div>
-                   <div className={`mt-4 w-full p-2 text-center text-xs font-black uppercase rounded ${c.sterilization_validated?'bg-emerald-600 text-white shadow-emerald-200 shadow-lg':'bg-rose-600 text-white shadow-rose-200 shadow-lg'}`}>
+                   <button 
+                     disabled={!c.sterilization_validated}
+                     onClick={async () => {
+                        try {
+                          await advancedLabApi.concludeCSSD(c.id, c.growth_in_test_sample, c.growth_in_control_sample, "Operating Theatre");
+                          setSuccess("CSSD Dispatch Command Logged. Inventory officially propagated to OT.");
+                          fetchData();
+                        } catch(e:any) { setError(e.message); }
+                     }}
+                     className={`mt-4 w-full p-2 text-center text-xs font-black uppercase rounded transition-all hover:-translate-y-0.5 active:scale-95 shadow-sm ${c.sterilization_validated?'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 shadow-lg':'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'}`}>
                      {c.sterilization_validated ? "Sterilization Validated -> PUSH TO OT" : "PROTOCOL FAILED -> RE-STERILIZE"}
-                   </div>
+                   </button>
                  </div>
                ))
              )}

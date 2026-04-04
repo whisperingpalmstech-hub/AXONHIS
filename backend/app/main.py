@@ -48,6 +48,12 @@ from app.core.ot.router import router as ot_router
 from app.core.communication.routes import communication_router
 from app.core.patient_portal.router import portal_router
 
+from app.core.diagnostics.routes import router as diagnostics_router
+from app.core.advanced_lab.routes import router as new_advanced_lab_router
+
+# Diagnostic Procedures Engine
+from app.core.diagnostics.routes import router as diagnostics_router
+
 # Enterprise Scheduling
 from app.core.scheduling.routes import router as scheduling_router
 
@@ -77,6 +83,17 @@ from app.core.scheduling.models import SlotBooking
 from app.core.lab.models import LabOrder, LabResult
 from app.core.pharmacy.prescriptions.models import Prescription
 from app.core.auth.models import User
+from app.core.diagnostics.models import (
+    DiagnosticTemplate,
+    DiagnosticProcedureOrder,
+    DiagnosticWorkbenchRecord,
+    DiagnosticResultEntry,
+    DiagnosticValidation,
+    DiagnosticReport,
+    DiagnosticReportHandover,
+    DiagnosticAmendmentLog
+)
+from app.core.advanced_lab.models import HistoSpecimen
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -229,6 +246,7 @@ def create_app() -> FastAPI:
 
     # Phase 16 - Patient Portal
     app.include_router(portal_router, prefix="/api/v1")
+    app.include_router(diagnostics_router)
 
     # Enterprise Scheduling
     app.include_router(scheduling_router, prefix="/api/v1")
@@ -306,8 +324,8 @@ def create_app() -> FastAPI:
     app.include_router(reporting_router, prefix="/api/v1")
 
     # LIS Advanced Diagnostic Modules
-    from app.core.lab.advanced_diagnostics.routes import router as advanced_lab_router
-    app.include_router(advanced_lab_router, prefix="/api/v1")
+    # from app.core.lab.advanced_diagnostics.routes import router as advanced_lab_router
+    # app.include_router(advanced_lab_router, prefix="/api/v1")
 
     # LIS Extended Services & Quality Management
     from app.core.lab.extended_services.routes import router as extended_lab_router
@@ -349,6 +367,8 @@ def create_app() -> FastAPI:
     # Phase 27 - Hospital Inventory and Store Management Module
     from app.core.inventory.router import router as inventory_router
     app.include_router(inventory_router, prefix="/api/v1/inventory", tags=["Inventory & Stores"])
+    app.include_router(diagnostics_router, prefix="/api/v1/diagnostics", tags=["Diagnostic Procedures"])
+    app.include_router(new_advanced_lab_router, prefix="/api/v1/advanced", tags=["Advanced Diagnostics"])
 
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])

@@ -97,5 +97,23 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
 
+  axonhis_md:
+    build:
+      context: ./apps/axonhis-md
+      dockerfile: Dockerfile
+    container_name: axonhis_md
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./apps/axonhis-md:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "9503:3000"
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+
 volumes:
   postgres_data:

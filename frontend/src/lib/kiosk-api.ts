@@ -17,12 +17,15 @@ export interface TokenQueue {
 }
 
 export const kioskApi = {
-  generateToken: (data: any) => api.post<TokenQueue>(`${BASE}/token`, data),
   getQueue: (status?: string) => api.get<TokenQueue[]>(`${BASE}/queue${status ? `?status=${status}` : ''}`),
-  callPatient: (token_id: string, counter_id?: string) => api.post<any>(`${BASE}/call`, { token_id, counter_id }),
-  updateStatus: (token_id: string, new_status: string) => api.put<TokenQueue>(`${BASE}/token/${token_id}/status`, { status: new_status }),
+  generateToken: (data: any) => api.post<TokenQueue>(`${BASE}/token`, data),
+  callPatient: (token_id: string) => api.post<any>(`${BASE}/call`, { token_id }),
+  
   checkIn: (identifier: string) => api.post<TokenQueue>(`${BASE}/check-in`, { identifier }),
-  getDepartments: () => api.get<any[]>(`${BASE}/departments`),
-  getDoctors: (department: string) => api.get<any[]>(`${BASE}/doctors?department=${department}`),
   bookAppointment: (data: any) => api.post<TokenQueue>(`${BASE}/appointments`, data),
+  
+  updateStatus: (id: string, status: string) => api.put<TokenQueue>(`${BASE}/token/${id}/status`, { status }),
+
+  getDepartments: () => api.get<any[]>(`${BASE}/departments`),
+  getDoctors: (department_name?: string) => api.get<any[]>(`${BASE}/doctors${department_name ? `?department=${department_name}` : ''}`),
 };

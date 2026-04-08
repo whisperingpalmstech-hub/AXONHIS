@@ -99,6 +99,7 @@ from app.core.advanced_lab.models import HistoSpecimen
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+
     """Startup / shutdown lifecycle."""
     yield
     await engine.dispose()
@@ -121,7 +122,7 @@ def create_app() -> FastAPI:
         allowed_origins = [i.strip() for i in allowed_origins.split(",") if i.strip()]
     
     # Add local developer origins for safety
-    for dev_origin in ["http://localhost:3000", "http://localhost:9501", "http://localhost:9502", "http://127.0.0.1:9502"]:
+    for dev_origin in ["http://localhost:3000", "http://localhost:9501", "http://localhost:9502", "http://localhost:9503", "http://127.0.0.1:9502", "http://127.0.0.1:9503"]:
         if dev_origin not in allowed_origins:
             allowed_origins.append(dev_origin)
 
@@ -373,6 +374,25 @@ def create_app() -> FastAPI:
     app.include_router(new_advanced_lab_router, prefix="/api/v1/advanced", tags=["Advanced Diagnostics"])
     app.include_router(procurement_router, prefix="/api/v1", tags=["Procurement & Supply Chain"])
     app.include_router(kiosk_router, prefix="/api/v1", tags=["Self-Service Kiosk"])
+
+    # AxonHIS MD — Unified Clinical Practice + Health ATM Platform
+    from app.core.axonhis_md.routes import router as axonhis_md_router
+    app.include_router(axonhis_md_router, prefix="/api/v1", tags=["AxonHIS MD"])
+
+    # MCP Integration for AI Tool Usage
+    from app.core.mcp.routes import router as mcp_router
+    app.include_router(mcp_router, prefix="/api/v1")
+
+    # Force-load AxonHIS MD models for SQLAlchemy registry
+    from app.core.axonhis_md.models import (
+        MdOrganization, MdFacility, MdSpecialtyProfile, MdClinician,
+        MdPatient, MdPatientIdentifier, MdConsentProfile, MdChannel,
+        MdAppointment, MdEncounter, MdEncounterNote, MdDiagnosis,
+        MdServiceRequest, MdMedicationRequest, MdDevice, MdDeviceResult,
+        MdObservation, MdDocument, MdShareGrant, MdShareAccessLog,
+        MdPayer, MdCoverage, MdBillingInvoice, MdBillingLineItem,
+        MdIntegrationEvent, MdAuditEvent,
+    )
 
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])

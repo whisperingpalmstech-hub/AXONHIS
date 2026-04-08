@@ -16,7 +16,6 @@ class MedicalRecordService:
         query = (
             select(LabResult)
             .where(LabResult.patient_id == patient_id)
-            .options(joinedload(LabResult.sample))
             .order_by(LabResult.entered_at.desc())
         )
         result = await db.execute(query)

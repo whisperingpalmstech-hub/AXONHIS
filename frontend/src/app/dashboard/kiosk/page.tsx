@@ -39,7 +39,13 @@ export default function QueueDashboard() {
     try {
       await kioskApi.updateStatus(tokenId, "Completed");
       fetchQueue();
-    } catch(e: any) { alert(e.message); }
+    } catch(e: any) { 
+        if (e.message.includes("Failed to fetch") || e.message.includes("NetworkError")) {
+            alert("Backend service unavailable or CORS issue. Please try again in 5 seconds.");
+        } else {
+            alert(e.message); 
+        }
+    }
   };
 
   return (

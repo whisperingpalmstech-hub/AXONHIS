@@ -46,8 +46,10 @@ export interface PurchaseOrder {
   po_number: string;
   vendor_id: string;
   total_amount: number;
+  net_amount: number;
   status: string;
   delivery_date: string;
+  pr_id?: string;
   created_at: string;
   items: POItem[];
 }

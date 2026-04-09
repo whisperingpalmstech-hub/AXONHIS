@@ -28,6 +28,7 @@ from .models import (
     IpdPainScore,
     IpdNutritionAssessment,
     IpdNursingObservation,
+    IpdDietPrescription,
 )
 
 
@@ -649,6 +650,45 @@ class IPDService:
         self.db.add(na)
         await self.db.flush()
         return na
+
+    async def update_diet_prescription(
+        self, adm_no: str, data: dict, user_name: str = "Dietician"
+    ) -> IpdDietPrescription:
+        from .models import IpdAdmissionRecord
+
+        adm = (
+            await self.db.execute(select(IpdAdmissionRecord).where(IpdAdmissionRecord.admission_number == adm_no))
+        ).scalar_one_or_none()
+        if not adm:
+            return None
+
+        res = await self.db.execute(
+            select(IpdDietPrescription).where(IpdDietPrescription.admission_number == adm_no)
+        )
+        diet = res.scalars().first()
+
+        if diet:
+            diet.diet_type = data.get("diet_type", diet.diet_type)
+            diet.meal_instructions = data.get("meal_instructions", diet.meal_instructions)
+            diet.allergies = data.get("allergies", diet.allergies)
+            diet.prescribed_by = user_name
+            diet.prescribed_at = datetime.now(timezone.utc)
+        else:
+            diet = IpdDietPrescription(
+                admission_number=adm_no,
+                patient_uhid=adm.patient_uhid,
+                prescribed_by=user_name,
+                **data
+            )
+            self.db.add(diet)
+        await self.db.flush()
+        return diet
+
+    async def get_diet_prescription(self, adm_no: str) -> Optional[IpdDietPrescription]:
+        res = await self.db.execute(
+            select(IpdDietPrescription).where(IpdDietPrescription.admission_number == adm_no)
+        )
+        return res.scalars().first()
 
     async def add_observation(
         self, adm_no: str, data: dict, user_name: str = "Nurse"
@@ -1430,7 +1470,7 @@ class IPDService:
             .all()
         )
         diag_text = (
-            ", ".join([d.diagnosis_name for d in diagnoses_records])
+            ", ".join([d.description for d in diagnoses_records])
             if diagnoses_records
             else "Admitting Diagnosis"
         )

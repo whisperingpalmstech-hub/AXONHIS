@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Utensils, Search, Filter, Plus, FileText, CheckCircle2, Clock } from "lucide-react";
+import { Utensils, Search, Filter, Plus, FileText, CheckCircle2, Clock, X } from "lucide-react";
 import { ipdApi } from "@/lib/ipd-api";
 
 export default function IpdDietManagementPage() {
@@ -9,20 +9,44 @@ export default function IpdDietManagementPage() {
   const [loading, setLoading] = useState(true);
   
   const [patients, setPatients] = useState<any[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [showDietModal, setShowDietModal] = useState(false);
+  const [updatingDiet, setUpdatingDiet] = useState(false);
+  const [dietForm, setDietForm] = useState({
+    diet_type: "",
+    meal_instructions: "",
+    allergies: ""
+  });
 
   useEffect(() => {
     const fetchDietRoster = async () => {
       try {
         const res: any = await ipdApi.getAdmissions();
         const activeAdmissions = res.data || res;
-        const mappedRoster = activeAdmissions.map((adm: any) => ({
-          id: adm.admission_number,
-          name: adm.patient_name || reqNameMapping(adm.patient_uhid) || "Unregistered Patient",
-          ward: "General Ward", // Fallback, could map from bed_uuid if extended
-          diet: adm.status === "ADMITTED" ? "Standard Routine" : "NPO (Nil Per Os)",
-          status: adm.status,
-          allergies: "NKDA",
-          nextMeal: "Lunch (12:30 PM)"
+        const mappedRoster = await Promise.all(activeAdmissions.map(async (adm: any) => {
+          try {
+            const dietRes = await ipdApi.getDietPrescription(adm.admission_number);
+            const dietData = dietRes.data || dietRes;
+            return {
+              id: adm.admission_number,
+              name: adm.patient_name || reqNameMapping(adm.patient_uhid) || "Unregistered Patient",
+              ward: "General Ward",
+              diet: dietData?.diet_type || (adm.status === "ADMITTED" ? "Standard Routine" : "NPO (Nil Per Os)"),
+              status: adm.status,
+              allergies: dietData?.allergies || "NKDA",
+              nextMeal: "Lunch (12:30 PM)"
+            };
+          } catch {
+            return {
+              id: adm.admission_number,
+              name: adm.patient_name || reqNameMapping(adm.patient_uhid) || "Unregistered Patient",
+              ward: "General Ward",
+              diet: adm.status === "ADMITTED" ? "Standard Routine" : "NPO (Nil Per Os)",
+              status: adm.status,
+              allergies: "NKDA",
+              nextMeal: "Lunch (12:30 PM)"
+            };
+          }
         }));
         setPatients(mappedRoster);
       } catch (err) {
@@ -40,10 +64,39 @@ export default function IpdDietManagementPage() {
     return null;
   };
 
-  const handleUpdateDiet = () => {
-    const newDiet = prompt("Enter new diet prescription (e.g. Liquid, Diabetic, Normal):");
-    if (newDiet) {
-      alert(`Diet updated to ${newDiet}. Kitchen notified.`);
+  const handleUpdateDiet = (patient: any) => {
+    setSelectedPatient(patient);
+    setDietForm({
+      diet_type: patient.diet || "",
+      meal_instructions: "",
+      allergies: patient.allergies || ""
+    });
+    setShowDietModal(true);
+  };
+
+  const handleSaveDiet = async () => {
+    if (!selectedPatient) return;
+    setUpdatingDiet(true);
+    try {
+      await ipdApi.updateDietPrescription(selectedPatient.id, {
+        diet_type: dietForm.diet_type,
+        meal_instructions: dietForm.meal_instructions,
+        allergies: dietForm.allergies
+      });
+      
+      setPatients(prev => prev.map(p => 
+        p.id === selectedPatient.id 
+          ? { ...p, diet: dietForm.diet_type, allergies: dietForm.allergies }
+          : p
+      ));
+      
+      setShowDietModal(false);
+      alert("Diet prescription updated successfully. Kitchen notified.");
+    } catch (err) {
+      console.error("Failed to update diet", err);
+      alert("Failed to update diet. Please try again.");
+    } finally {
+      setUpdatingDiet(false);
     }
   };
 
@@ -123,7 +176,7 @@ export default function IpdDietManagementPage() {
                     </div>
                   </td>
                   <td className="p-4 text-right">
-                    <button onClick={handleUpdateDiet} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition">Update Diet</button>
+                    <button onClick={() => handleUpdateDiet(p)} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition">Update Diet</button>
                   </td>
                 </tr>
               ))}
@@ -197,6 +250,84 @@ export default function IpdDietManagementPage() {
             </table>
           </div>
         )
+      )}
+
+      {/* Diet Update Modal */}
+      {showDietModal && selectedPatient && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-800">Update Diet Prescription</h3>
+              <button onClick={() => setShowDietModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-sm font-medium text-slate-600 mb-1">Patient</p>
+                <p className="text-sm font-bold text-slate-800">{selectedPatient.name}</p>
+                <p className="text-xs text-slate-400">{selectedPatient.id}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Diet Type</label>
+                <select
+                  value={dietForm.diet_type}
+                  onChange={(e) => setDietForm({...dietForm, diet_type: e.target.value})}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
+                >
+                  <option value="">Select Diet Type</option>
+                  <option value="Standard Routine">Standard Routine</option>
+                  <option value="Liquid">Liquid</option>
+                  <option value="Diabetic">Diabetic</option>
+                  <option value="Low Sodium">Low Sodium</option>
+                  <option value="High Protein">High Protein</option>
+                  <option value="Low Fat">Low Fat</option>
+                  <option value="Vegetarian">Vegetarian</option>
+                  <option value="NPO (Nil Per Os)">NPO (Nil Per Os)</option>
+                  <option value="Clear Liquid">Clear Liquid</option>
+                  <option value="Full Liquid">Full Liquid</option>
+                  <option value="Soft Diet">Soft Diet</option>
+                  <option value="Bland Diet">Bland Diet</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Meal Instructions</label>
+                <textarea
+                  value={dietForm.meal_instructions}
+                  onChange={(e) => setDietForm({...dietForm, meal_instructions: e.target.value})}
+                  placeholder="Special instructions for meal preparation..."
+                  className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition resize-none"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Allergies</label>
+                <input
+                  type="text"
+                  value={dietForm.allergies}
+                  onChange={(e) => setDietForm({...dietForm, allergies: e.target.value})}
+                  placeholder="e.g., NKDA, Peanuts, Dairy"
+                  className="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 p-6 border-t border-slate-100">
+              <button
+                onClick={() => setShowDietModal(false)}
+                className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveDiet}
+                disabled={updatingDiet || !dietForm.diet_type}
+                className="flex-1 px-4 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updatingDiet ? "Updating..." : "Update Diet"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -92,6 +92,8 @@ export const ipdApi = {
   getRiskAssessments: (admNo: string) => api.get<any[]>(`/ipd/risks/${admNo}`),
   addPainScore: (admNo: string, data: any) => api.post<any>(`/ipd/pain/${admNo}`, data),
   addNutritionAssessment: (admNo: string, data: any) => api.post<any>(`/ipd/nutrition/${admNo}`, data),
+  updateDietPrescription: (admNo: string, data: any) => api.put<any>(`/ipd/diet/${admNo}`, data),
+  getDietPrescription: (admNo: string) => api.get<any>(`/ipd/diet/${admNo}`),
   addObservation: (admNo: string, data: any) => api.post<any>(`/ipd/observations/${admNo}`, data),
   getObservations: (admNo: string) => api.get<any[]>(`/ipd/observations/${admNo}`),
 

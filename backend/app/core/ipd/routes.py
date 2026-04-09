@@ -59,6 +59,7 @@ from .schemas import (
     IpdCorporateAccountCreate, IpdCorporateAccountOut,
     IpdRefundProcessCreate, IpdRefundProcessOut,
     DashboardStatsExtended,
+    DietPrescriptionCreate, DietPrescriptionOut,
 )
 from .services import IPDService
 
@@ -256,6 +257,24 @@ async def add_nutrition_assessment(adm_no: str, data: IpdNutritionAssessmentCrea
     na = await service.add_nutrition_assessment(adm_no, data.model_dump(exclude_none=True))
     await db.commit()
     return na
+
+@router.put("/diet/{adm_no}", response_model=DietPrescriptionOut)
+async def update_diet_prescription(adm_no: str, data: DietPrescriptionCreate, db: AsyncSession = Depends(get_db), current_user: CurrentUser = None):
+    service = IPDService(db)
+    user_name = getattr(current_user, "email", "Dietician") if current_user else "Dietician"
+    diet = await service.update_diet_prescription(adm_no, data.model_dump(exclude_none=True), user_name)
+    if not diet:
+        raise HTTPException(status_code=404, detail="Admission not found")
+    await db.commit()
+    return diet
+
+@router.get("/diet/{adm_no}", response_model=DietPrescriptionOut)
+async def get_diet_prescription(adm_no: str, db: AsyncSession = Depends(get_db)):
+    service = IPDService(db)
+    diet = await service.get_diet_prescription(adm_no)
+    if not diet:
+        raise HTTPException(status_code=404, detail="Diet prescription not found")
+    return diet
 
 @router.post("/observations/{adm_no}", response_model=IpdNursingObservationOut)
 async def add_observation(adm_no: str, data: IpdNursingObservationCreate, db: AsyncSession = Depends(get_db)):

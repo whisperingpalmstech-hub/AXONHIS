@@ -1297,4 +1297,22 @@ class IpdCorporateAccount(Base):
     authorization_letter = Column(String, nullable=True)  # File URL
     status = Column(String, default="Pending")  # Pending, Verified, Active, Closed
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class IpdDietPrescription(Base):
+    """Diet prescriptions for IPD patients."""
+    __tablename__ = "ipd_diet_prescriptions"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    admission_number = Column(
+        String,
+        ForeignKey("ipd_admission_records.admission_number", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    patient_uhid = Column(String, nullable=False)
+    diet_type = Column(String, nullable=False)  # Standard Routine, Liquid, Diabetic, Low Sodium, High Protein, NPO, etc.
+    meal_instructions = Column(Text, nullable=True)
+    allergies = Column(String, nullable=True)
+    prescribed_by = Column(String, nullable=True)
+    prescribed_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     org_id = Column(UUID(as_uuid=True), nullable=True, index=True)

@@ -1160,3 +1160,20 @@ class DashboardStatsExtended(BaseModel):
     occupancy_rate: float
     avg_length_of_stay: float
 
+class DietPrescriptionCreate(BaseModel):
+    diet_type: str  # Standard Routine, Liquid, Diabetic, Low Sodium, High Protein, NPO, etc.
+    meal_instructions: Optional[str] = None
+    allergies: Optional[str] = None
+    prescribed_by: Optional[str] = None
+
+class DietPrescriptionOut(BaseModel):
+    id: UUID
+    admission_number: str
+    patient_uhid: str
+    diet_type: str
+    meal_instructions: Optional[str] = None
+    allergies: Optional[str] = None
+    prescribed_by: Optional[str] = None
+    prescribed_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+

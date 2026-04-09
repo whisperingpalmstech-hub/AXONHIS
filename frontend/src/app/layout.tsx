@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { I18nProvider } from "@/i18n";
+import VoiceInputProvider from "@/components/VoiceInputProvider";
 
 export const metadata: Metadata = {
   title: "AXONHIS – Hospital Information System",
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <I18nProvider>{children}</I18nProvider>
+        <I18nProvider>
+          <VoiceInputProvider>{children}</VoiceInputProvider>
+        </I18nProvider>
       </body>
     </html>
   );

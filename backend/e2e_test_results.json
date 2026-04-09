@@ -1,0 +1,69 @@
+{
+  "test_results": [
+    {
+      "step": "Authentication",
+      "status": "PASS",
+      "message": "Login successful",
+      "timestamp": "2026-04-09T08:42:13.954799"
+    },
+    {
+      "step": "Health Check",
+      "status": "PASS",
+      "message": "System is healthy",
+      "timestamp": "2026-04-09T08:42:13.960802"
+    },
+    {
+      "step": "Create Patient",
+      "status": "PASS",
+      "message": "Patient created with ID: 4908baaf-2e25-42d8-b2fb-73d555b2669b",
+      "timestamp": "2026-04-09T08:42:13.984243"
+    },
+    {
+      "step": "Get Patient",
+      "status": "PASS",
+      "message": "Retrieved patient 4908baaf-2e25-42d8-b2fb-73d555b2669b",
+      "timestamp": "2026-04-09T08:42:13.999490"
+    },
+    {
+      "step": "Create IPD Request",
+      "status": "PASS",
+      "message": "Admission request created: None",
+      "timestamp": "2026-04-09T08:42:14.014714"
+    },
+    {
+      "step": "Get IPD Admissions",
+      "status": "PASS",
+      "message": "Retrieved admissions list",
+      "timestamp": "2026-04-09T08:42:14.027362"
+    },
+    {
+      "step": "Create OT Room",
+      "status": "PASS",
+      "message": "OT room created with ID: 7a0363af-1e4a-46f7-b006-38a29b622f00",
+      "timestamp": "2026-04-09T08:42:14.039691"
+    },
+    {
+      "step": "Get OT Dashboard",
+      "status": "PASS",
+      "message": "Retrieved OT dashboard stats",
+      "timestamp": "2026-04-09T08:42:14.053201"
+    },
+    {
+      "step": "Get Lab Dashboard",
+      "status": "PASS",
+      "message": "Retrieved lab dashboard stats",
+      "timestamp": "2026-04-09T08:42:14.064749"
+    },
+    {
+      "step": "Get OPD Pre-Registration",
+      "status": "PASS",
+      "message": "Retrieved OPD pre-registration list",
+      "timestamp": "2026-04-09T08:42:14.072907"
+    }
+  ],
+  "test_data": {
+    "patient_id": "4908baaf-2e25-42d8-b2fb-73d555b2669b",
+    "admission_number": null,
+    "ot_room_id": "7a0363af-1e4a-46f7-b006-38a29b622f00"
+  }
+}

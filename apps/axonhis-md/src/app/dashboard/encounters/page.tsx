@@ -23,6 +23,16 @@ export default function EncountersPage() {
   const [orderForm, setOrderForm] = useState<any>({ request_type: "LAB", priority: "ROUTINE" });
   const [rxForm, setRxForm] = useState<any>({ route: "ORAL" });
   
+  // Clinical Encounter Flow
+  const [flowId, setFlowId] = useState<string | null>(null);
+  const [currentPhase, setCurrentPhase] = useState<string>("COMPLAINT_CAPTURE");
+  const [currentQuestion, setCurrentQuestion] = useState<string | null>(null);
+  const [turnId, setTurnId] = useState<string | null>(null);
+  const [turnNumber, setTurnNumber] = useState(0);
+  const [shouldMoveToExam, setShouldMoveToExam] = useState(false);
+  const [examinationGuidance, setExaminationGuidance] = useState<any>(null);
+  const [managementPlan, setManagementPlan] = useState<any>(null);
+  
   // Voice and AI features
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -255,6 +265,155 @@ export default function EncountersPage() {
     }
   };
 
+  // Clinical Encounter Flow Functions
+  const startClinicalFlow = async () => {
+    if (!selected) return;
+    try {
+      const response = await fetch(`${API}/api/v1/clinical-encounter-flow/start`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          encounter_id: selected.encounter_id,
+          patient_id: selected.patient_id,
+          clinician_id: selected.clinician_id
+        })
+      });
+      const data = await response.json();
+      setFlowId(data.flow_id);
+      setCurrentPhase(data.current_phase);
+      alert('Clinical encounter flow started');
+    } catch (e) {
+      alert('Error starting clinical flow: ' + e);
+    }
+  };
+
+  const submitComplaint = async () => {
+    if (!flowId || !transcript) return;
+    try {
+      const response = await fetch(`${API}/api/v1/clinical-encounter-flow/flow/${flowId}/complaint`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          flow_id: flowId,
+          complaint_transcript: transcript,
+          language: 'en'
+        })
+      });
+      const data = await response.json();
+      setCurrentPhase(data.current_phase);
+      setTranscript('');
+    } catch (e) {
+      alert('Error submitting complaint: ' + e);
+    }
+  };
+
+  const getNextQuestion = async () => {
+    if (!flowId || !selected) return;
+    try {
+      const response = await fetch(`${API}/api/v1/clinical-encounter-flow/flow/${flowId}/next-question?encounter_id=${selected.encounter_id}`, {
+        method: 'GET',
+        headers: authHeaders()
+      });
+      const data = await response.json();
+      setCurrentQuestion(data.question);
+      setTurnId(data.turn_id);
+      setTurnNumber(data.turn_number);
+      setShouldMoveToExam(data.should_move_to_examination || false);
+    } catch (e) {
+      alert('Error getting next question: ' + e);
+    }
+  };
+
+  const submitAnswer = async () => {
+    if (!flowId || !transcript || !selected || !turnId) return;
+    try {
+      const response = await fetch(`${API}/api/v1/clinical-encounter-flow/flow/${flowId}/answer?turn_id=${turnId}`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          flow_id: flowId,
+          encounter_id: selected.encounter_id,
+          answer_transcript: transcript,
+          language: 'en'
+        })
+      });
+      const data = await response.json();
+      setTranscript('');
+      await getNextQuestion();
+    } catch (e) {
+      alert('Error submitting answer: ' + e);
+    }
+  };
+
+  const generateExaminationGuidance = async () => {
+    if (!flowId || !selected) return;
+    try {
+      const response = await fetch(`${API}/api/v1/clinical-encounter-flow/flow/${flowId}/examination/guidance?encounter_id=${selected.encounter_id}`, {
+        method: 'POST',
+        headers: authHeaders()
+      });
+      const data = await response.json();
+      setExaminationGuidance(data);
+      setCurrentPhase('EXAMINATION');
+    } catch (e) {
+      alert('Error generating examination guidance: ' + e);
+    }
+  };
+
+  const submitExaminationFindings = async () => {
+    if (!flowId || !examinationFindings) return;
+    try {
+      const response = await fetch(`${API}/api/v1/clinical-encounter-flow/flow/${flowId}/examination/findings`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          flow_id: flowId,
+          examination_transcript: examinationFindings,
+          language: 'en'
+        })
+      });
+      const data = await response.json();
+      setExaminationGuidance(data);
+    } catch (e) {
+      alert('Error submitting examination findings: ' + e);
+    }
+  };
+
+  const generateManagementPlan = async () => {
+    if (!flowId || !selected) return;
+    try {
+      const response = await fetch(`${API}/api/v1/clinical-encounter-flow/flow/${flowId}/management-plan?encounter_id=${selected.encounter_id}`, {
+        method: 'POST',
+        headers: authHeaders()
+      });
+      const data = await response.json();
+      setManagementPlan(data);
+      setCurrentPhase('MANAGEMENT_PLANNING');
+    } catch (e) {
+      alert('Error generating management plan: ' + e);
+    }
+  };
+
+  const generateDocuments = async () => {
+    if (!flowId || !selected) return;
+    try {
+      const response = await fetch(`${API}/api/v1/clinical-encounter-flow/flow/${flowId}/documents/generate`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          flow_id: flowId,
+          encounter_id: selected.encounter_id,
+          document_types: ['clinic_letter', 'prescription', 'lab_orders']
+        })
+      });
+      const data = await response.json();
+      setCurrentPhase('COMPLETED');
+      alert('Documents generated successfully');
+    } catch (e) {
+      alert('Error generating documents: ' + e);
+    }
+  };
+
   const addNote = async () => {
     try { await apiPost("/notes", { ...noteForm, encounter_id: selected.encounter_id }); setShowNoteModal(false); setNoteForm({ note_type: "HISTORY" }); loadDetails(selected); } catch(e) { alert("Error: " + e); }
   };
@@ -467,6 +626,202 @@ export default function EncountersPage() {
                   <li key={i} className="text-xs text-slate-700 bg-white p-2 rounded-lg border border-indigo-200">{s}</li>
                 ))}
               </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Clinical Encounter Flow */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-sm text-slate-700">AI-Powered Clinical Encounter Flow</h3>
+            <span className={`text-xs px-3 py-1 rounded-full font-bold ${currentPhase === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}>
+              Phase: {currentPhase}
+            </span>
+          </div>
+          
+          {!flowId ? (
+            <button onClick={startClinicalFlow} className="w-full text-sm px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition font-semibold">
+              Start AI-Powered Clinical Flow
+            </button>
+          ) : (
+            <div className="space-y-3">
+              {/* Manual Text Input (for when voice is not available) */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <p className="text-xs font-bold text-slate-700 mb-2">
+                  {currentPhase === 'COMPLAINT_CAPTURE' ? 'Enter Patient Complaint (Type or Use Voice)' : 
+                   currentPhase === 'INTERACTIVE_QUESTIONING' ? 'Enter Answer to Question (Type or Use Voice)' : 
+                   'Enter Text (Type or Use Voice)'}
+                </p>
+                <textarea
+                  value={transcript}
+                  onChange={(e) => setTranscript(e.target.value)}
+                  placeholder="Type here or use voice recording above..."
+                  className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  rows={3}
+                />
+              </div>
+
+              {/* Complaint Capture */}
+              {currentPhase === 'COMPLAINT_CAPTURE' && (
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                  <p className="text-xs font-bold text-amber-800 mb-2">Step 1: Capture Patient Complaint</p>
+                  <div className="flex gap-2">
+                    <button onClick={submitComplaint} disabled={!transcript.trim()} className="text-xs px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition disabled:opacity-50">
+                      Submit Complaint
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Interactive Questioning */}
+              {currentPhase === 'INTERACTIVE_QUESTIONING' && (
+                <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                  <p className="text-xs font-bold text-purple-800 mb-2">Step 2: Interactive Questioning (Turn {turnNumber})</p>
+                  {currentQuestion && (
+                    <div className="bg-white p-3 rounded-lg mb-2 border border-purple-200">
+                      <p className="text-sm text-slate-700 font-semibold">{currentQuestion}</p>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <button onClick={getNextQuestion} className="text-xs px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                      Get Next Question
+                    </button>
+                    <button onClick={submitAnswer} disabled={!transcript.trim() || !turnId} className="text-xs px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50">
+                      Submit Answer
+                    </button>
+                  </div>
+                  {shouldMoveToExam && (
+                    <button onClick={generateExaminationGuidance} className="mt-2 text-xs px-3 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition w-full">
+                      Move to Examination Phase
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Examination */}
+              {currentPhase === 'EXAMINATION' && (
+                <div className="p-4 bg-teal-50 rounded-xl border border-teal-200">
+                  <p className="text-xs font-bold text-teal-800 mb-2">Step 3: Examination</p>
+                  {examinationGuidance && (
+                    <div className="bg-white p-3 rounded-lg mb-2 border border-teal-200">
+                      <p className="text-sm text-slate-700">{examinationGuidance.guidance}</p>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <button onClick={submitExaminationFindings} disabled={!examinationFindings.trim()} className="text-xs px-3 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50">
+                      Submit Findings
+                    </button>
+                    <button onClick={generateManagementPlan} className="text-xs px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition">
+                      Generate Management Plan
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Management Planning */}
+              {currentPhase === 'MANAGEMENT_PLANNING' && (
+                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                  <p className="text-xs font-bold text-emerald-800 mb-2">Step 4: Management Planning</p>
+                  {managementPlan && (
+                    <div className="space-y-3">
+                      {/* Diagnoses */}
+                      {managementPlan.suggested_diagnoses && managementPlan.suggested_diagnoses.length > 0 && (
+                        <div className="bg-white p-3 rounded-lg border border-emerald-200">
+                          <p className="text-xs font-bold text-slate-800 mb-2">Suggested Diagnoses</p>
+                          {managementPlan.suggested_diagnoses.map((diag: any, idx: number) => (
+                            <div key={idx} className="text-xs text-slate-700 mb-1">
+                              <span className="font-semibold">{diag.code || diag.name || 'Unknown'}:</span> {diag.description || diag.reason || ''}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Medications */}
+                      {managementPlan.suggested_medications && managementPlan.suggested_medications.length > 0 && (
+                        <div className="bg-white p-3 rounded-lg border border-emerald-200">
+                          <p className="text-xs font-bold text-slate-800 mb-2">Suggested Medications</p>
+                          {managementPlan.suggested_medications.map((med: any, idx: number) => (
+                            <div key={idx} className="text-xs text-slate-700 mb-1">
+                              <span className="font-semibold">{med.name || 'Unknown'}:</span> {med.dosage || ''} {med.frequency || ''} {med.duration || ''}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Lab Orders */}
+                      {managementPlan.suggested_lab_orders && managementPlan.suggested_lab_orders.length > 0 && (
+                        <div className="bg-white p-3 rounded-lg border border-emerald-200">
+                          <p className="text-xs font-bold text-slate-800 mb-2">Suggested Lab Orders</p>
+                          {managementPlan.suggested_lab_orders.map((lab: any, idx: number) => (
+                            <div key={idx} className="text-xs text-slate-700 mb-1">
+                              <span className="font-semibold">{lab.name || 'Unknown'}:</span> {lab.reason || ''}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Imaging */}
+                      {managementPlan.suggested_imaging && managementPlan.suggested_imaging.length > 0 && (
+                        <div className="bg-white p-3 rounded-lg border border-emerald-200">
+                          <p className="text-xs font-bold text-slate-800 mb-2">Suggested Imaging</p>
+                          {managementPlan.suggested_imaging.map((img: any, idx: number) => (
+                            <div key={idx} className="text-xs text-slate-700 mb-1">
+                              <span className="font-semibold">{img.name || 'Unknown'}:</span> {img.reason || ''}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Procedures */}
+                      {managementPlan.suggested_procedures && managementPlan.suggested_procedures.length > 0 && (
+                        <div className="bg-white p-3 rounded-lg border border-emerald-200">
+                          <p className="text-xs font-bold text-slate-800 mb-2">Suggested Procedures</p>
+                          {managementPlan.suggested_procedures.map((proc: any, idx: number) => (
+                            <div key={idx} className="text-xs text-slate-700 mb-1">
+                              <span className="font-semibold">{proc.name || 'Unknown'}:</span> {proc.reason || ''}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Follow-up Recommendations */}
+                      {managementPlan.follow_up_recommendations && managementPlan.follow_up_recommendations.length > 0 && (
+                        <div className="bg-white p-3 rounded-lg border border-emerald-200">
+                          <p className="text-xs font-bold text-slate-800 mb-2">Follow-up Recommendations</p>
+                          {managementPlan.follow_up_recommendations.map((rec: string, idx: number) => (
+                            <div key={idx} className="text-xs text-slate-700 mb-1">
+                              • {rec}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Fallback to text if no structured data */}
+                      {(!managementPlan.suggested_diagnoses || managementPlan.suggested_diagnoses.length === 0) &&
+                       (!managementPlan.suggested_medications || managementPlan.suggested_medications.length === 0) && (
+                        <div className="bg-white p-3 rounded-lg border border-emerald-200">
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap">{managementPlan.current_plan_text || managementPlan.original_plan_text || JSON.stringify(managementPlan.current_plan, null, 2)}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <button onClick={generateDocuments} className="text-xs px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition w-full">
+                    Generate Documents
+                  </button>
+                </div>
+              )}
+
+              {/* Document Generation */}
+              {currentPhase === 'DOCUMENT_GENERATION' && (
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <p className="text-xs font-bold text-blue-800 mb-2">Step 5: Document Generation</p>
+                  <button onClick={generateDocuments} className="text-xs px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition w-full">
+                    Generate Clinical Documents
+                  </button>
+                </div>
+              )}
+
+              {/* Completed */}
+              {currentPhase === 'COMPLETED' && (
+                <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+                  <p className="text-xs font-bold text-green-800 mb-2">Clinical Flow Completed</p>
+                  <p className="text-sm text-slate-700">All phases completed successfully.</p>
+                </div>
+              )}
             </div>
           )}
         </div>

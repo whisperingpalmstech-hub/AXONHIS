@@ -347,6 +347,10 @@ def create_app() -> FastAPI:
     from app.core.rpiw.routes import router as rpiw_router
     app.include_router(rpiw_router)
 
+    # Clinical Encounter Flow - AI-Powered Interactive Consultation
+    from app.core.clinical_encounter_flow.routes import router as clinical_encounter_flow_router
+    app.include_router(clinical_encounter_flow_router, prefix="/api/v1")
+
     # Phase 24 - RPIW Patient Summary Engine
     from app.core.rpiw_summary.routes import router as rpiw_summary_router
     app.include_router(rpiw_summary_router)

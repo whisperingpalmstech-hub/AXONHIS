@@ -12,9 +12,12 @@ import uuid
 import secrets
 import os
 import json
+import logging
 from datetime import datetime, date, timedelta
 from typing import List, Optional
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Form, File, UploadFile
 from fastapi.responses import FileResponse

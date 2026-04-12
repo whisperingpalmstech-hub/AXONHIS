@@ -31,6 +31,10 @@ class SaleCreate(BaseModel):
     patient_id: Optional[uuid.UUID] = None
     walkin_name: Optional[str] = None
     walkin_mobile: Optional[str] = None
+    walkin_age: Optional[str] = None
+    walkin_gender: Optional[str] = None
+    walkin_address: Optional[str] = None
+    prescriber_name: Optional[str] = None
     items: List[SaleItemCreate]
     discount_amount: Decimal = Decimal('0.0')
 
@@ -39,6 +43,10 @@ class SaleOut(BaseModel):
     patient_id: Optional[uuid.UUID] = None
     walkin_name: Optional[str] = None
     walkin_mobile: Optional[str] = None
+    walkin_age: Optional[str] = None
+    walkin_gender: Optional[str] = None
+    walkin_address: Optional[str] = None
+    prescriber_name: Optional[str] = None
     pharmacist_id: uuid.UUID
     sale_date: datetime
     total_amount: Decimal

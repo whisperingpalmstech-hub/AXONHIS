@@ -1,0 +1,858 @@
+{
+  "timestamp": "2026-04-04T11:53:03.337748",
+  "summary": {
+    "total": 106,
+    "passed": 106,
+    "failed": 0
+  },
+  "results": [
+    {
+      "module": "Auth",
+      "test": "Login",
+      "method": "POST",
+      "path": "/auth/login",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Auth",
+      "test": "Invalid Login Rejected",
+      "method": "POST",
+      "path": "/auth/login",
+      "status_code": 401,
+      "passed": true
+    },
+    {
+      "module": "Auth",
+      "test": "Get Current User",
+      "method": "GET",
+      "path": "/auth/me",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Auth",
+      "test": "List Users",
+      "method": "GET",
+      "path": "/auth/users",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Auth",
+      "test": "List Roles",
+      "method": "GET",
+      "path": "/auth/roles",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Audit",
+      "test": "Audit Logs",
+      "method": "GET",
+      "path": "/audit",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Config",
+      "test": "System Config",
+      "method": "GET",
+      "path": "/config",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Notifications",
+      "test": "Notifications",
+      "method": "GET",
+      "path": "/notifications",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Patients",
+      "test": "List Patients",
+      "method": "GET",
+      "path": "/patients/",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Patients",
+      "test": "Register Patient",
+      "method": "POST",
+      "path": "/patients/",
+      "status_code": 201,
+      "passed": true
+    },
+    {
+      "module": "Patients",
+      "test": "Get Patient by ID",
+      "method": "GET",
+      "path": "/patients/19b81c89-0c90-482b-9197-ed5aedc04386",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Scheduling",
+      "test": "List Calendars",
+      "method": "GET",
+      "path": "/scheduling/calendars",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Scheduling",
+      "test": "List Bookings",
+      "method": "GET",
+      "path": "/scheduling/bookings",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Scheduling",
+      "test": "Scheduling Analytics",
+      "method": "GET",
+      "path": "/scheduling/analytics?from_date=2026-01-01&to_date=2026-12-31",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Departments",
+      "method": "GET",
+      "path": "/kiosk/departments",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Doctors (Cardiology)",
+      "method": "GET",
+      "path": "/kiosk/doctors?department=Cardiology",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Generate Token",
+      "method": "POST",
+      "path": "/kiosk/token",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Live Queue",
+      "method": "GET",
+      "path": "/kiosk/queue",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Call Patient",
+      "method": "POST",
+      "path": "/kiosk/call",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Complete Token",
+      "method": "PUT",
+      "path": "/kiosk/token/14fa5960-76b2-4f06-a549-f11bb8e312e9/status",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Check-In",
+      "method": "POST",
+      "path": "/kiosk/check-in",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Book Appointment",
+      "method": "POST",
+      "path": "/kiosk/appointments",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Encounters",
+      "test": "List Encounters",
+      "method": "GET",
+      "path": "/encounters",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Encounters",
+      "test": "Create Encounter",
+      "method": "POST",
+      "path": "/encounters/",
+      "status_code": 201,
+      "passed": true
+    },
+    {
+      "module": "OPD",
+      "test": "Pre-Registration List",
+      "method": "GET",
+      "path": "/opd/pre-registration",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "OPD",
+      "test": "Deposits List",
+      "method": "GET",
+      "path": "/opd/deposits",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "OPD",
+      "test": "Consent Templates",
+      "method": "GET",
+      "path": "/opd/consent-templates",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "OPD",
+      "test": "Consent Documents",
+      "method": "GET",
+      "path": "/opd/consent-documents",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "OPD",
+      "test": "Proforma Bills",
+      "method": "GET",
+      "path": "/opd/proforma-bills",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "OPD",
+      "test": "Waitlist",
+      "method": "GET",
+      "path": "/opd/waitlist",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "NursingTriage",
+      "test": "Worklist",
+      "method": "GET",
+      "path": "/nursing-triage/worklist",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "NursingTriage",
+      "test": "Templates",
+      "method": "GET",
+      "path": "/nursing-triage/templates",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "DoctorDesk",
+      "test": "Prescriptions",
+      "method": "GET",
+      "path": "/doctor-desk/prescriptions",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "DoctorDesk",
+      "test": "Orders",
+      "method": "GET",
+      "path": "/doctor-desk/orders",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Lab Orders",
+      "method": "GET",
+      "path": "/lab/orders",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Test Order Panels",
+      "method": "GET",
+      "path": "/lis-orders/panels",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Phlebotomy Worklist",
+      "method": "GET",
+      "path": "/phlebotomy/worklist",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Phlebotomy Samples",
+      "method": "GET",
+      "path": "/phlebotomy/samples",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Central Receiving Dashboard",
+      "method": "GET",
+      "path": "/central-receiving/dashboard",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Central Receiving Receipts",
+      "method": "GET",
+      "path": "/central-receiving/receipts",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Lab Processing Dashboard",
+      "method": "GET",
+      "path": "/lab-processing/dashboard",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Lab Processing Worklist",
+      "method": "GET",
+      "path": "/lab-processing/worklist",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Lab Processing Results",
+      "method": "GET",
+      "path": "/lab-processing/results",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Validation Worklist",
+      "method": "GET",
+      "path": "/validation/worklist",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Validation Metrics",
+      "method": "GET",
+      "path": "/validation/metrics",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "Report List",
+      "method": "GET",
+      "path": "/reports/",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "RIS",
+      "test": "Radiology Orders",
+      "method": "GET",
+      "path": "/radiology/orders",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "RIS",
+      "test": "Radiology Reports",
+      "method": "GET",
+      "path": "/radiology/reports",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Diagnostics",
+      "test": "Templates",
+      "method": "GET",
+      "path": "/diagnostics/templates",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Pharmacy",
+      "test": "Prescriptions",
+      "method": "GET",
+      "path": "/pharmacy/prescriptions",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Pharmacy",
+      "test": "Pharmacy Sales List",
+      "method": "GET",
+      "path": "/pharmacy/sales",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "IPD",
+      "test": "Pending Requests",
+      "method": "GET",
+      "path": "/ipd/requests/pending",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "IPD",
+      "test": "Active Admissions",
+      "method": "GET",
+      "path": "/ipd/admissions",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "IPD",
+      "test": "Nursing Worklist",
+      "method": "GET",
+      "path": "/ipd/nursing/worklist",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "IPD",
+      "test": "Doctor Worklist",
+      "method": "GET",
+      "path": "/ipd/doctor/worklist",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "IPD",
+      "test": "Dashboard Stats",
+      "method": "GET",
+      "path": "/ipd/dashboard/stats",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "ER",
+      "test": "ER Dashboard",
+      "method": "GET",
+      "path": "/er/dashboard",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "ER",
+      "test": "ER Encounters",
+      "method": "GET",
+      "path": "/er/encounters",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "ER",
+      "test": "ER Beds",
+      "method": "GET",
+      "path": "/er/beds",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "ER",
+      "test": "MLC Cases",
+      "method": "GET",
+      "path": "/er/mlc",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Wards",
+      "test": "List Wards",
+      "method": "GET",
+      "path": "/wards",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Wards",
+      "test": "List Beds",
+      "method": "GET",
+      "path": "/wards/beds",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Billing",
+      "test": "Billing Entries",
+      "method": "GET",
+      "path": "/billing/entries",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Billing",
+      "test": "Insurance Claims",
+      "method": "GET",
+      "path": "/billing/insurance/claims",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BillingMasters",
+      "test": "Service Groups",
+      "method": "GET",
+      "path": "/billing-masters/service-groups",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BillingMasters",
+      "test": "Tariff Plans",
+      "method": "GET",
+      "path": "/billing-masters/tariff-plans",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BillingMasters",
+      "test": "Payment Modes",
+      "method": "GET",
+      "path": "/billing-masters/payment-modes",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BillingMasters",
+      "test": "Patient Categories",
+      "method": "GET",
+      "path": "/billing-masters/patient-categories",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BillingMasters",
+      "test": "Insurance Providers",
+      "method": "GET",
+      "path": "/billing-masters/insurance-providers",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BillingMasters",
+      "test": "Tax Groups",
+      "method": "GET",
+      "path": "/billing-masters/tax-groups",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "RCM",
+      "test": "RCM Daily Revenue",
+      "method": "GET",
+      "path": "/rcm-billing/analytics/daily-revenue",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Procurement",
+      "test": "Vendors",
+      "method": "GET",
+      "path": "/procurement/vendors",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Procurement",
+      "test": "Purchase Requests",
+      "method": "GET",
+      "path": "/procurement/requests",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Procurement",
+      "test": "Purchase Orders",
+      "method": "GET",
+      "path": "/procurement/orders",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Procurement",
+      "test": "GRNs",
+      "method": "GET",
+      "path": "/procurement/grn",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Procurement",
+      "test": "Stores",
+      "method": "GET",
+      "path": "/procurement/utils/stores",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Procurement",
+      "test": "Items Catalog",
+      "method": "GET",
+      "path": "/procurement/utils/items",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Inventory",
+      "test": "Inventory Stores",
+      "method": "GET",
+      "path": "/inventory/stores",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BloodBank",
+      "test": "Blood Inventory",
+      "method": "GET",
+      "path": "/advanced/blood-bank/inventory",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "CSSD",
+      "test": "CSSD Tests",
+      "method": "GET",
+      "path": "/advanced/cssd/tests",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Linen",
+      "test": "Categories",
+      "method": "GET",
+      "path": "/linen/categories",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Linen",
+      "test": "Batches",
+      "method": "GET",
+      "path": "/linen/batches",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "System",
+      "test": "System Health",
+      "method": "GET",
+      "path": "/system/health",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "System",
+      "test": "Error Monitoring",
+      "method": "GET",
+      "path": "/system/monitoring/errors",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "System",
+      "test": "Performance Metrics",
+      "method": "GET",
+      "path": "/system/monitoring/performance",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BI",
+      "test": "Realtime Dashboard",
+      "method": "GET",
+      "path": "/bi-intelligence/dashboard/realtime",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BI",
+      "test": "Management Dashboard",
+      "method": "GET",
+      "path": "/bi-intelligence/dashboard/management",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BI",
+      "test": "Clinical Analytics",
+      "method": "GET",
+      "path": "/bi-intelligence/analytics/clinical",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BI",
+      "test": "Financial Analytics",
+      "method": "GET",
+      "path": "/bi-intelligence/analytics/financial",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Analytics",
+      "test": "Clinical Metrics",
+      "method": "GET",
+      "path": "/analytics/clinical-metrics",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Analytics",
+      "test": "Financial Metrics",
+      "method": "GET",
+      "path": "/analytics/financial-metrics",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Analytics",
+      "test": "Executive Dashboard",
+      "method": "GET",
+      "path": "/analytics/dashboards/executive",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Portal Login",
+      "method": "POST",
+      "path": "/portal/accounts/login",
+      "status_code": 401,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Portal Register",
+      "method": "POST",
+      "path": "/portal/accounts/register",
+      "status_code": 422,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Account Profile",
+      "method": "GET",
+      "path": "/portal/accounts/profile?patient_id=db3de349-158a-4b7a-b577-0eccd6523f90",
+      "status_code": 404,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Account Search",
+      "method": "GET",
+      "path": "/portal/accounts/search?query=9999999999",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "List Doctors",
+      "method": "GET",
+      "path": "/portal/appointments/doctors?patient_id=d8dcd308-52a0-4a27-8e52-a1c737812bb9",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "My Appointments",
+      "method": "GET",
+      "path": "/portal/appointments/my?patient_id=239dc9db-021e-49a9-b6e8-2c178b5a48a6",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Doctor Slots",
+      "method": "GET",
+      "path": "/portal/appointments/slots?doctor_id=e6ee8744-edd5-4ad5-8dcd-dc2ace88a4b0&date=2026-05-01",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Book Appointment",
+      "method": "POST",
+      "path": "/portal/appointments/book",
+      "status_code": 422,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Lab Results",
+      "method": "GET",
+      "path": "/portal/medical-records/lab-results?patient_id=4edcec45-7c91-4c7c-b138-e261a8976cea",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Prescriptions",
+      "method": "GET",
+      "path": "/portal/medical-records/prescriptions?patient_id=2abc3038-3e06-44b3-b765-0b008d5bae4d",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Encounters",
+      "method": "GET",
+      "path": "/portal/medical-records/encounters?patient_id=7a76da46-096d-4f74-9a07-c15a8ee9da8a",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Documents",
+      "method": "GET",
+      "path": "/portal/medical-records/documents?patient_id=98d095a8-08b8-4535-a8de-104238ca2733",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Teleconsultations",
+      "method": "GET",
+      "path": "/portal/telemedicine/sessions?patient_id=84eb7e2a-afd7-4e09-80c2-b0371b9f6421",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Portal",
+      "test": "Invoices",
+      "method": "GET",
+      "path": "/portal/billing/invoices?patient_id=f7fe28d5-0eca-4f78-aab0-d5d2684e20b3",
+      "status_code": 200,
+      "passed": true
+    }
+  ]
+}

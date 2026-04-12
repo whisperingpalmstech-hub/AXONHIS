@@ -22,27 +22,29 @@ async def register(data: PatientAccountCreate, db: DBSession) -> PatientAccountO
     account = await PatientAccountService.create_account(db, data)
     return account
 
-@router.get("/search", response_model=PatientAccountOut)
+@router.get("/search")
 async def search_patient(query: str, db: DBSession) -> dict:
     from app.core.patients.patients.models import Patient
-    # Search in main patients table
     from sqlalchemy import or_
-    stmt = select(Patient).where(or_(Patient.email == query, Patient.primary_phone == query))
-    result = await db.execute(stmt)
-    patient = result.scalar_one_or_none()
-    
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found in HIS")
+    try:
+        stmt = select(Patient).where(or_(Patient.email == query, Patient.primary_phone == query))
+        result = await db.execute(stmt)
+        patient = result.scalars().first()
         
-    return {
-        "id": uuid.uuid4(), # Placeholder ID for the account-to-be
-        "patient_id": patient.id,
-        "email": patient.email,
-        "first_name": patient.first_name,
-        "last_name": patient.last_name,
-        "account_status": "PENDING",
-        "created_at": datetime.now()
-    }
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found in HIS")
+            
+        return {
+            "id": str(uuid.uuid4()),
+            "patient_id": str(patient.id),
+            "email": patient.email or "no-email@test.com",
+            "first_name": patient.first_name,
+            "last_name": patient.last_name,
+            "account_status": "PENDING",
+            "created_at": str(datetime.now())
+        }
+    except Exception as e:
+        return {"error": str(e), "trace": repr(e)}
 
 @router.post("/login", response_model=Token)
 async def login(data: PatientAccountLogin, db: DBSession) -> Token:

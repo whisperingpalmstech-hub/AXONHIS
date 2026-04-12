@@ -267,7 +267,7 @@ export default function PhlebotomyPage() {
                     <th className="py-3 px-4">Location</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">Consent</th>
-                    <th className="py-3 px-4 text-right">Action</th>
+                    <th className="py-3 px-4 sticky right-0 bg-slate-50 border-l shadow-sm text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -286,7 +286,7 @@ export default function PhlebotomyPage() {
                             : <span className="text-red-500 font-bold text-xs flex items-center gap-1"><AlertCircle size={14} /> Required</span>
                         ) : <span className="text-slate-400 text-xs">N/A</span>}
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-4 text-right sticky right-0 bg-white border-l shadow-sm group-hover:bg-slate-50">
                         {item.status === "PENDING_COLLECTION" && (
                           <button onClick={() => { setSelectedItem(item); setVerified(false); setActiveTab("collect"); }}
                             className="btn-primary py-1.5 px-3 text-xs inline-flex items-center gap-1">

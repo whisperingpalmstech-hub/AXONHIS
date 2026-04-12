@@ -10,7 +10,7 @@ import {
 import { ipdApi } from "@/lib/ipd-api";
 import { useTranslation } from "@/i18n";
 
-type NursingTab = "WORKLIST" | "COVERSHEETS" | "NOTES";
+type NursingTab = "BED_MAP" | "WORKLIST" | "COVERSHEETS" | "NOTES";
 
 const PRIORITY_CONFIG: Record<string, { color: string; bg: string; border: string; icon: React.ReactNode }> = {
   Critical: { color: "text-red-700", bg: "bg-red-50", border: "border-red-200", icon: <AlertTriangle size={14} className="text-red-600"/> },
@@ -21,7 +21,7 @@ const PRIORITY_CONFIG: Record<string, { color: string; bg: string; border: strin
 
 export default function NursingIPDDashboard() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<NursingTab>("WORKLIST");
+  const [activeTab, setActiveTab] = useState<NursingTab>("BED_MAP");
   const [worklist, setWorklist] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -155,9 +155,9 @@ export default function NursingIPDDashboard() {
         {/* Tabs */}
         <div className="flex gap-2 p-1.5 bg-white/50 backdrop-blur border border-slate-200 rounded-2xl w-fit mb-8 shadow-sm">
           {[
+            { id: "BED_MAP", label: "Ward Bed Map", icon: <Bed size={16}/> },
             { id: "WORKLIST", label: t('nursingIpd.tabWorklist') || 'Admission Worklist', icon: <ClipboardList size={16}/> },
-            { id: "COVERSHEETS", label: t('nursingIpd.tabCoversheets') || 'Accepted Patients', icon: <FileText size={16}/> },
-            { id: "NOTES", label: t('nursingIpd.tabNotes') || 'Nursing Notes', icon: <Heart size={16}/> },
+            { id: "COVERSHEETS", label: t('nursingIpd.tabCoversheets') || 'Active Encounters', icon: <FileText size={16}/> },
           ].map(tObj => (
             <button key={tObj.id} onClick={() => setActiveTab(tObj.id as NursingTab)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
@@ -175,6 +175,77 @@ export default function NursingIPDDashboard() {
           <div className="h-64 flex items-center justify-center text-slate-400 font-medium">{t('common.loading') || 'Loading...'}</div>
         ) : (
           <div className="space-y-6">
+
+            {/* BED MAP TAB */}
+            {activeTab === "BED_MAP" && (
+              <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-bold text-slate-800">Cardiology Ward - General</h2>
+                  <div className="flex gap-4 text-xs font-bold">
+                    <span className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></div> Available</span>
+                    <span className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-blue-100 border border-blue-300"></div> Occupied</span>
+                    <span className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-amber-100 border border-amber-300"></div> Cleaning</span>
+                    <span className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div> Reserved</span>
+                    <span className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-rose-100 border border-rose-300"></div> Discharging</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-5 gap-6">
+                  {[1,2,3,4,5,6,7,8,9,10].map(bed => {
+                    // Generate pseudo-random states for demonstration
+                    let status = "Available";
+                    let bg = "bg-emerald-50 border-emerald-200 hover:border-emerald-400";
+                    let inner = "text-emerald-700";
+                    let ptName = null;
+                    let uhid = null;
+                    
+                    if (bed === 2 || bed === 5 || bed === 8) {
+                      status = "Occupied";
+                      bg = "bg-blue-50 border-blue-200 shadow-md shadow-blue-100";
+                      inner = "text-blue-700";
+                      ptName = `Patient OP-${bed}X`;
+                      uhid = `UHID-99${bed}8`;
+                    } else if (bed === 4) {
+                      status = "Discharging";
+                      bg = "bg-rose-50 border-rose-200 shadow-md shadow-rose-100";
+                      inner = "text-rose-700";
+                      ptName = `Ritesh Kumar`;
+                    } else if (bed === 7) {
+                      status = "Cleaning";
+                      bg = "bg-amber-50 border-amber-200";
+                      inner = "text-amber-700";
+                    }
+
+                    return (
+                      <div key={bed} className={`relative flex flex-col h-40 rounded-xl border-2 transition-all p-4 ${bg} cursor-pointer group`}
+                        onClick={() => status !== "Available" && status !== "Cleaning" ? window.location.href=`/dashboard/nursing-ipd/IPD-ADM-100${bed}` : null}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <span className={`font-black text-xl ${inner}`}>B-0{bed}</span>
+                          {status !== "Available" && <Activity size={16} className={`${inner} opacity-50`}/>}
+                        </div>
+                        <div className="flex-1 flex flex-col justify-center">
+                          {status === "Available" ? <span className="text-emerald-600/70 font-semibold text-sm">Available</span> : 
+                           status === "Cleaning" ? <span className="text-amber-600/70 font-semibold text-sm">Room Cleaning</span> :
+                           (
+                             <>
+                               <div className="text-sm font-bold text-slate-800 leading-tight">{ptName}</div>
+                               <div className="text-[10px] text-slate-500 font-mono mt-1">{uhid}</div>
+                             </>
+                           )}
+                        </div>
+                        {(status === "Occupied" || status === "Discharging") && (
+                          <div className="absolute inset-x-0 bottom-0 bg-white/80 backdrop-blur-sm p-2 border-t border-black/5 flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-b-xl">
+                            <button className="text-[10px] font-bold bg-indigo-50 text-indigo-600 px-2 py-1 rounded hover:bg-indigo-100">Tasks</button>
+                            <button className="text-[10px] font-bold bg-rose-50 text-rose-600 px-2 py-1 rounded hover:bg-rose-100">SOS</button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* WORKLIST TAB */}
             {activeTab === "WORKLIST" && (
@@ -273,7 +344,12 @@ export default function NursingIPDDashboard() {
                             </div>
                           </div>
                           <div className="flex gap-2">
+                            <a href={`/dashboard/nursing-ipd/${cs.admission_number}`}
+                              className="text-xs font-bold bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors shadow-sm shadow-purple-200">
+                              Open Coversheet
+                            </a>
                             <button onClick={() => setShowNotesModal(cs.admission_number)}
+
                               className="text-xs font-bold bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg hover:bg-indigo-100 transition-colors">
                               + {t('nursingIpd.addNote') || 'Nursing Note'}
                             </button>

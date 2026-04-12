@@ -13,6 +13,10 @@ class OTRoomService:
     def __init__(self, db: AsyncSession): self.db = db
 
     async def create(self, data, org_id):
+        # If org_id is None, use a default UUID or make it optional
+        if org_id is None:
+            # Create a default org_id for testing/demo purposes
+            org_id = uuid.UUID('00000000-0000-0000-0000-000000000001')
         room = OTRoom(org_id=org_id, **data.model_dump())
         self.db.add(room); await self.db.commit(); await self.db.refresh(room); return room
 

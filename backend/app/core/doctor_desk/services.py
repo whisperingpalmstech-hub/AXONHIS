@@ -13,7 +13,8 @@ from .models import (
 from .schemas import (
     DoctorWorklistCreate, ConsultationNoteInput, 
     DoctorClinicalTemplateCreate, PrescriptionInput, DiagnosticOrderInput,
-    FollowUpRecordInput, AISuggestionOutput, PatientTimelineNode, PatientTimelineEMRViewer
+    FollowUpRecordInput, AISuggestionOutput, PatientTimelineNode, PatientTimelineEMRViewer,
+    ClinicalComplaintCreate, PatientMedicalHistoryCreate, ExaminationRecordCreate, DiagnosisRecordCreate, EMRConsultationVitalsCreate
 )
 
 class DoctorWorklistService:
@@ -193,6 +194,42 @@ class DiagnosticOrderingEngine:
         self.db.add(order)
         await self.db.commit()
         await self.db.refresh(order)
+        
+        # Integration hooks for Billing (CPOE -> RCM)
+        try:
+            from app.core.integration.services import ChargePostingService
+            from app.core.integration.schemas import ChargePostingCreate
+            from decimal import Decimal
+            cp_service = ChargePostingService(self.db)
+            
+            # Figure out patient_id from worklist
+            wl_stmt = select(DoctorWorklist.patient_id).where(DoctorWorklist.visit_id == data.visit_id).limit(1)
+            patient_id = (await self.db.execute(wl_stmt)).scalars().first()
+            
+            if patient_id:
+                # Post the charge into RCM immediately
+                fee = Decimal("100.00") if data.order_type == "lab" else Decimal("500.00")
+                await cp_service.post_charge(
+                    data=ChargePostingCreate(
+                        patient_id=patient_id,
+                        encounter_type="opd",
+                        encounter_id=data.visit_id,
+                        service_name=f"{data.order_type.upper()} - {data.test_name}",
+                        service_code=f"CPOE-{data.order_type.upper()[0:3]}",
+                        service_group="diagnostics",
+                        source_module="doctor_desk",
+                        source_order_id=order.id,
+                        quantity=1,
+                        unit_price=fee,
+                        is_stat=False
+                    ),
+                    posted_by=data.doctor_id,
+                    posted_by_name="Doctor",
+                    org_id=org_id or uuid.UUID(int=0)
+                )
+        except Exception as e:
+            print("Failed to push to billing from CPOE:", e)
+        
         return order
 
 
@@ -296,3 +333,78 @@ class FollowUpCertificateManager:
         await self.db.commit()
         await self.db.refresh(rec)
         return rec
+
+# ── Extension for Universal EMR Subsystems ───────────────────────────
+
+from .models import ClinicalComplaint, PatientMedicalHistory, ExaminationRecord, DiagnosisRecord, EMRConsultationVitals
+
+class AdvancedEMRService:
+    """Manages the full suite of clinical EMR parameters, diagnoses and history"""
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def add_complaint(self, data: ClinicalComplaintCreate, org_id: Optional[uuid.UUID] = None) -> ClinicalComplaint:
+        obj = ClinicalComplaint(**data.model_dump(), org_id=org_id)
+        self.db.add(obj)
+        await self.db.commit()
+        await self.db.refresh(obj)
+        return obj
+
+    async def get_complaints(self, visit_id: uuid.UUID) -> List[ClinicalComplaint]:
+        q = select(ClinicalComplaint).where(ClinicalComplaint.visit_id == visit_id)
+        return list((await self.db.execute(q)).scalars().all())
+
+    async def add_medical_history(self, recorded_by: uuid.UUID, data: PatientMedicalHistoryCreate, org_id: Optional[uuid.UUID] = None) -> PatientMedicalHistory:
+        obj = PatientMedicalHistory(**data.model_dump(), recorded_by=recorded_by, org_id=org_id)
+        self.db.add(obj)
+        await self.db.commit()
+        await self.db.refresh(obj)
+        return obj
+
+    async def get_medical_history(self, patient_id: uuid.UUID) -> List[PatientMedicalHistory]:
+        q = select(PatientMedicalHistory).where(PatientMedicalHistory.patient_id == patient_id)
+        return list((await self.db.execute(q)).scalars().all())
+
+    async def add_examination(self, recorded_by: uuid.UUID, data: ExaminationRecordCreate, org_id: Optional[uuid.UUID] = None) -> ExaminationRecord:
+        obj = ExaminationRecord(**data.model_dump(), recorded_by=recorded_by, org_id=org_id)
+        self.db.add(obj)
+        await self.db.commit()
+        await self.db.refresh(obj)
+        return obj
+
+    async def get_examinations(self, visit_id: uuid.UUID) -> List[ExaminationRecord]:
+        q = select(ExaminationRecord).where(ExaminationRecord.visit_id == visit_id)
+        return list((await self.db.execute(q)).scalars().all())
+
+    async def add_diagnosis(self, recorded_by: uuid.UUID, data: DiagnosisRecordCreate, org_id: Optional[uuid.UUID] = None) -> DiagnosisRecord:
+        obj = DiagnosisRecord(**data.model_dump(), recorded_by=recorded_by, org_id=org_id)
+        self.db.add(obj)
+        await self.db.commit()
+        await self.db.refresh(obj)
+        
+        # Integration logic here if notifying CDSS or generating alerts
+        return obj
+
+    async def get_diagnoses(self, visit_id: uuid.UUID) -> List[DiagnosisRecord]:
+        q = select(DiagnosisRecord).where(DiagnosisRecord.visit_id == visit_id)
+        return list((await self.db.execute(q)).scalars().all())
+
+    async def add_vitals(self, recorded_by: uuid.UUID, data: EMRConsultationVitalsCreate, org_id: Optional[uuid.UUID] = None) -> EMRConsultationVitals:
+        obj = EMRConsultationVitals(**data.model_dump(), recorded_by=recorded_by, org_id=org_id)
+        # Auto compute BMI
+        if obj.height_cm and obj.weight_kg:
+            try:
+                h_m = float(obj.height_cm) / 100
+                w_kg = float(obj.weight_kg)
+                bmi = w_kg / (h_m * h_m)
+                obj.bmi = f"{bmi:.1f}"
+            except Exception:
+                pass
+        self.db.add(obj)
+        await self.db.commit()
+        await self.db.refresh(obj)
+        return obj
+
+    async def get_vitals(self, visit_id: uuid.UUID) -> List[EMRConsultationVitals]:
+        q = select(EMRConsultationVitals).where(EMRConsultationVitals.visit_id == visit_id)
+        return list((await self.db.execute(q)).scalars().all())

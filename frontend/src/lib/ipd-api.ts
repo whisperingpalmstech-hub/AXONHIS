@@ -92,6 +92,8 @@ export const ipdApi = {
   getRiskAssessments: (admNo: string) => api.get<any[]>(`/ipd/risks/${admNo}`),
   addPainScore: (admNo: string, data: any) => api.post<any>(`/ipd/pain/${admNo}`, data),
   addNutritionAssessment: (admNo: string, data: any) => api.post<any>(`/ipd/nutrition/${admNo}`, data),
+  updateDietPrescription: (admNo: string, data: any) => api.put<any>(`/ipd/diet/${admNo}`, data),
+  getDietPrescription: (admNo: string) => api.get<any>(`/ipd/diet/${admNo}`),
   addObservation: (admNo: string, data: any) => api.post<any>(`/ipd/observations/${admNo}`, data),
   getObservations: (admNo: string) => api.get<any[]>(`/ipd/observations/${admNo}`),
 
@@ -172,4 +174,8 @@ export const ipdApi = {
   getMlcDocuments: (mlcId: string) => api.get<any[]>(`/ipd/mlc-documents/${mlcId}`),
   getSecurityNotifications: (filter?: string) => api.get<any[]>(`/ipd/security-notifications${filter ? `?read_filter=${filter}` : ''}`),
   markNotificationRead: (id: string) => api.put<any>(`/ipd/security-notifications/${id}/read`, {}),
+  
+  // Consent Management
+  getConsentTemplates: (type?: string) => api.get<any[]>(`/ipd/consent-templates${type ? `?consent_type=${type}` : ''}`),
+  createConsentTemplate: (data: any) => api.post<any>('/ipd/consent-templates', data),
 };

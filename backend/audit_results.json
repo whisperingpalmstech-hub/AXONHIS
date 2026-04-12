@@ -1,0 +1,644 @@
+{
+  "timestamp": "2026-04-04T08:37:22.829495",
+  "summary": {
+    "total": 72,
+    "passed": 43,
+    "failed": 29
+  },
+  "results": [
+    {
+      "module": "Core",
+      "test": "Health Check",
+      "method": "GET",
+      "path": "/../../health",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-001",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "Auth",
+      "test": "Login Endpoint",
+      "method": "POST",
+      "path": "/auth/login",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Auth",
+      "test": "Invalid Login Rejected",
+      "method": "POST",
+      "path": "/auth/login",
+      "status_code": 401,
+      "passed": true
+    },
+    {
+      "module": "Auth",
+      "test": "Get Current User Profile",
+      "method": "GET",
+      "path": "/auth/me",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Patients",
+      "test": "List All Patients",
+      "method": "GET",
+      "path": "/patients",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Patients",
+      "test": "Search Patients",
+      "method": "GET",
+      "path": "/patients?search=test",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Patients",
+      "test": "Register New Patient",
+      "method": "POST",
+      "path": "/patients",
+      "status_code": 307,
+      "passed": false,
+      "bug_id": "BUG-002",
+      "detail": "No response"
+    },
+    {
+      "module": "Scheduling",
+      "test": "List Slots",
+      "method": "GET",
+      "path": "/scheduling/slots",
+      "status_code": 405,
+      "passed": false,
+      "bug_id": "BUG-003",
+      "detail": "{'detail': 'Method Not Allowed'}"
+    },
+    {
+      "module": "Scheduling",
+      "test": "List Bookings",
+      "method": "GET",
+      "path": "/scheduling/bookings",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Get Departments",
+      "method": "GET",
+      "path": "/kiosk/departments",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Get Doctors (Cardiology)",
+      "method": "GET",
+      "path": "/kiosk/doctors?department=Cardiology",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Generate Token",
+      "method": "POST",
+      "path": "/kiosk/token",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Get Live Queue",
+      "method": "GET",
+      "path": "/kiosk/queue",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Call Patient",
+      "method": "POST",
+      "path": "/kiosk/call",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Update Token Status",
+      "method": "PUT",
+      "path": "/kiosk/token/28d2eb05-d593-44f0-9466-b3961a233fe3/status",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Check-In with Identifier",
+      "method": "POST",
+      "path": "/kiosk/check-in",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Kiosk",
+      "test": "Book Appointment via Kiosk",
+      "method": "POST",
+      "path": "/kiosk/appointments",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Encounters",
+      "test": "List Encounters",
+      "method": "GET",
+      "path": "/encounters",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Orders",
+      "test": "List Orders",
+      "method": "GET",
+      "path": "/orders",
+      "status_code": 405,
+      "passed": false,
+      "bug_id": "BUG-004",
+      "detail": "{'detail': 'Method Not Allowed'}"
+    },
+    {
+      "module": "Orders",
+      "test": "Get Order Templates",
+      "method": "GET",
+      "path": "/orders/templates",
+      "status_code": 422,
+      "passed": false,
+      "bug_id": "BUG-005",
+      "detail": "{'detail': [{'loc': ['path', 'order_id'], 'msg': 'Input should be a valid UUID, invalid character: expected an optional prefix of `urn:uuid:` followed by [0-9a-fA-F-], found `t` at 1', 'type': 'uuid_p"
+    },
+    {
+      "module": "LIS",
+      "test": "List Lab Orders",
+      "method": "GET",
+      "path": "/lab/orders",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "LIS",
+      "test": "List Lab Results",
+      "method": "GET",
+      "path": "/lab/results",
+      "status_code": 405,
+      "passed": false,
+      "bug_id": "BUG-006",
+      "detail": "{'detail': 'Method Not Allowed'}"
+    },
+    {
+      "module": "LIS",
+      "test": "Test Order Engine - List Orders",
+      "method": "GET",
+      "path": "/lis/test-orders",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-007",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "LIS",
+      "test": "Phlebotomy Worklist",
+      "method": "GET",
+      "path": "/lis/phlebotomy/worklist",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-008",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "LIS",
+      "test": "Central Receiving Queue",
+      "method": "GET",
+      "path": "/lis/central-receiving/queue",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-009",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "LIS",
+      "test": "Processing Queue",
+      "method": "GET",
+      "path": "/lis/processing/queue",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-010",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "LIS",
+      "test": "Validation Queue",
+      "method": "GET",
+      "path": "/lis/validation/queue",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-011",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "LIS",
+      "test": "Reporting Queue",
+      "method": "GET",
+      "path": "/lis/reporting/queue",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-012",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "RIS",
+      "test": "List Radiology Orders",
+      "method": "GET",
+      "path": "/radiology/orders",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "RIS",
+      "test": "List Radiology Reports",
+      "method": "GET",
+      "path": "/radiology/reports",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Diagnostics",
+      "test": "List Templates",
+      "method": "GET",
+      "path": "/diagnostics/templates",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Diagnostics",
+      "test": "Procedure Worklist",
+      "method": "GET",
+      "path": "/diagnostics/procedures/orders",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-013",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "Pharmacy",
+      "test": "OP Rx Worklist",
+      "method": "GET",
+      "path": "/pharmacy/prescriptions",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Pharmacy",
+      "test": "Walk-in Sales",
+      "method": "GET",
+      "path": "/pharmacy/sales",
+      "status_code": 500,
+      "passed": false,
+      "bug_id": "BUG-014",
+      "detail": "{'detail': 'Internal Server Error'}"
+    },
+    {
+      "module": "Pharmacy",
+      "test": "Drug Catalog",
+      "method": "GET",
+      "path": "/pharmacy/drugs",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-015",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "IPD",
+      "test": "Dashboard Stats",
+      "method": "GET",
+      "path": "/ipd/dashboard",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-016",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "IPD",
+      "test": "Pending Admission Requests",
+      "method": "GET",
+      "path": "/ipd/requests",
+      "status_code": 405,
+      "passed": false,
+      "bug_id": "BUG-017",
+      "detail": "{'detail': 'Method Not Allowed'}"
+    },
+    {
+      "module": "IPD",
+      "test": "Active Admissions",
+      "method": "GET",
+      "path": "/ipd/admissions",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "IPD",
+      "test": "Nursing Worklist",
+      "method": "GET",
+      "path": "/ipd/nursing/worklist",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "IPD",
+      "test": "Doctor Worklist",
+      "method": "GET",
+      "path": "/ipd/doctor/worklist",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Wards",
+      "test": "List Wards",
+      "method": "GET",
+      "path": "/wards",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Wards",
+      "test": "List Beds",
+      "method": "GET",
+      "path": "/wards/beds",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "ER",
+      "test": "ER Dashboard",
+      "method": "GET",
+      "path": "/er/dashboard",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "ER",
+      "test": "Active ER Cases",
+      "method": "GET",
+      "path": "/er/cases",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-018",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "Billing",
+      "test": "List Invoices",
+      "method": "GET",
+      "path": "/billing/invoices",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Billing",
+      "test": "List Payments",
+      "method": "GET",
+      "path": "/billing/payments",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "BillingMasters",
+      "test": "Service Category Master",
+      "method": "GET",
+      "path": "/billing-masters/service-categories",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-019",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "BillingMasters",
+      "test": "Tariff Schedules",
+      "method": "GET",
+      "path": "/billing-masters/tariff-schedules",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-020",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "RCM",
+      "test": "RCM Billing Dashboard",
+      "method": "GET",
+      "path": "/rcm/dashboard",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-021",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "Procurement",
+      "test": "List Vendors",
+      "method": "GET",
+      "path": "/procurement/vendors",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Procurement",
+      "test": "List PRs",
+      "method": "GET",
+      "path": "/procurement/requests",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Procurement",
+      "test": "List POs",
+      "method": "GET",
+      "path": "/procurement/orders",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Procurement",
+      "test": "List GRNs",
+      "method": "GET",
+      "path": "/procurement/grn",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Procurement",
+      "test": "Stores",
+      "method": "GET",
+      "path": "/procurement/utils/stores",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Procurement",
+      "test": "Items Catalog",
+      "method": "GET",
+      "path": "/procurement/utils/items",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Inventory",
+      "test": "List Stores",
+      "method": "GET",
+      "path": "/inventory/stores",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "OPD",
+      "test": "OPD Dashboard",
+      "method": "GET",
+      "path": "/opd/dashboard",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-022",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "SmartQueue",
+      "test": "Queue Dashboard",
+      "method": "GET",
+      "path": "/smart-queue/dashboard",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-023",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "NursingTriage",
+      "test": "Triage Queue",
+      "method": "GET",
+      "path": "/nursing-triage/queue",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-024",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "DoctorDesk",
+      "test": "Doctor Worklist",
+      "method": "GET",
+      "path": "/doctor-desk/worklist",
+      "status_code": 405,
+      "passed": false,
+      "bug_id": "BUG-025",
+      "detail": "{'detail': 'Method Not Allowed'}"
+    },
+    {
+      "module": "BloodBank",
+      "test": "Blood Inventory",
+      "method": "GET",
+      "path": "/blood-bank/inventory",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "CSSD",
+      "test": "Instrument Sets",
+      "method": "GET",
+      "path": "/cssd/instrument-sets",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Linen",
+      "test": "Linen Items",
+      "method": "GET",
+      "path": "/linen/items",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-026",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "Admin",
+      "test": "List Users",
+      "method": "GET",
+      "path": "/auth/users",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Admin",
+      "test": "Audit Logs",
+      "method": "GET",
+      "path": "/audit",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Admin",
+      "test": "System Config",
+      "method": "GET",
+      "path": "/config",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "Admin",
+      "test": "Notifications",
+      "method": "GET",
+      "path": "/notifications",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "System",
+      "test": "System Health",
+      "method": "GET",
+      "path": "/system/health",
+      "status_code": 200,
+      "passed": true
+    },
+    {
+      "module": "System",
+      "test": "System Monitoring",
+      "method": "GET",
+      "path": "/system/monitoring/metrics",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-027",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "Portal",
+      "test": "Portal Login",
+      "method": "POST",
+      "path": "/portal/accounts/login",
+      "status_code": 401,
+      "passed": true
+    },
+    {
+      "module": "Analytics",
+      "test": "Hospital BI Dashboard",
+      "method": "GET",
+      "path": "/hospital-intelligence/dashboard",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-028",
+      "detail": "{'detail': 'Not Found'}"
+    },
+    {
+      "module": "Analytics",
+      "test": "Department Analytics",
+      "method": "GET",
+      "path": "/analytics/dashboard",
+      "status_code": 404,
+      "passed": false,
+      "bug_id": "BUG-029",
+      "detail": "{'detail': 'Not Found'}"
+    }
+  ]
+}

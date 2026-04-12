@@ -1,0 +1,100 @@
+[
+  {
+    "endpoint": "/auth/login",
+    "method": "POST",
+    "status": "PASS",
+    "message": "Authentication successful",
+    "timestamp": "2026-04-09T08:38:09.779820"
+  },
+  {
+    "endpoint": "/health",
+    "method": "GET",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.784541"
+  },
+  {
+    "endpoint": "/health/readiness",
+    "method": "GET",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.788481"
+  },
+  {
+    "endpoint": "/health/liveness",
+    "method": "GET",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.791049"
+  },
+  {
+    "endpoint": "/patients",
+    "method": "GET",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.825620"
+  },
+  {
+    "endpoint": "/patients",
+    "method": "POST",
+    "status": "PASS",
+    "message": "Status 201",
+    "timestamp": "2026-04-09T08:38:09.845971"
+  },
+  {
+    "endpoint": "/patients/8115c270-18d1-4b2b-97ba-0c4a02197c7f",
+    "method": "GET",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.860318"
+  },
+  {
+    "endpoint": "/ipd/admissions",
+    "method": "GET",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.872347"
+  },
+  {
+    "endpoint": "/ipd/requests",
+    "method": "POST",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.888213"
+  },
+  {
+    "endpoint": "/opd/pre-registration",
+    "method": "GET",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.900658"
+  },
+  {
+    "endpoint": "/ot-enhanced/dashboard",
+    "method": "GET",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.924456"
+  },
+  {
+    "endpoint": "/ot-enhanced/rooms",
+    "method": "GET",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.937291"
+  },
+  {
+    "endpoint": "/ot-enhanced/rooms",
+    "method": "POST",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.950130"
+  },
+  {
+    "endpoint": "/lab/dashboard/stats",
+    "method": "GET",
+    "status": "PASS",
+    "message": "Status 200",
+    "timestamp": "2026-04-09T08:38:09.968115"
+  }
+]

@@ -44,6 +44,20 @@ export interface DoctorDeskApiType {
 
   // 10 Follow-up
   logFollowUp: (data: any) => Promise<any>;
+
+  // Advanced EMR
+  addComplaint: (data: any) => Promise<any>;
+  getComplaints: (visitId: string) => Promise<any[]>;
+  addMedicalHistory: (data: any) => Promise<any>;
+  getMedicalHistory: (patientId: string) => Promise<any[]>;
+  addExamination: (data: any) => Promise<any>;
+  getExaminations: (visitId: string) => Promise<any[]>;
+  addDiagnosis: (data: any) => Promise<any>;
+  getDiagnoses: (visitId: string) => Promise<any[]>;
+  addVitals: (data: any) => Promise<any>;
+  getVitals: (visitId: string) => Promise<any[]>;
+  getPrescriptions: (visitId: string) => Promise<any[]>;
+  getOrders: (visitId: string) => Promise<any[]>;
 }
 
 export const doctorDeskApi: DoctorDeskApiType = {
@@ -69,4 +83,23 @@ export const doctorDeskApi: DoctorDeskApiType = {
   generateSummary: (visitId, doctorId) => api.post(`/doctor-desk/summary/${visitId}?doctor_id=${doctorId}`, {}),
 
   logFollowUp: (data) => api.post(`/doctor-desk/follow-ups`, data),
+
+  // ── Advanced EMR Subsystems ──────────────────────────────────────
+  addComplaint: (data: any) => api.post(`/doctor-desk/advanced/complaints`, data),
+  getComplaints: (visitId: string) => api.get(`/doctor-desk/advanced/complaints/${visitId}`),
+
+  addMedicalHistory: (data: any) => api.post(`/doctor-desk/advanced/medical-history`, data),
+  getMedicalHistory: (patientId: string) => api.get(`/doctor-desk/advanced/medical-history/${patientId}`),
+
+  addExamination: (data: any) => api.post(`/doctor-desk/advanced/examinations`, data),
+  getExaminations: (visitId: string) => api.get(`/doctor-desk/advanced/examinations/${visitId}`),
+
+  addDiagnosis: (data: any) => api.post(`/doctor-desk/advanced/diagnoses`, data),
+  getDiagnoses: (visitId: string) => api.get(`/doctor-desk/advanced/diagnoses/${visitId}`),
+
+  addVitals: (data: any) => api.post(`/doctor-desk/advanced/vitals`, data),
+  getVitals: (visitId: string) => api.get(`/doctor-desk/advanced/vitals/${visitId}`),
+
+  getPrescriptions: (visitId: string) => api.get(`/doctor-desk/prescriptions?visit_id=${visitId}`),
+  getOrders: (visitId: string) => api.get(`/doctor-desk/orders?visit_id=${visitId}`),
 };

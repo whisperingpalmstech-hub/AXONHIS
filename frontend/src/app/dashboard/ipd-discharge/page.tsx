@@ -11,6 +11,7 @@ export default function IpdDischargePage() {
   const [selectedAdmNo, setSelectedAdmNo] = useState("");
   const [stateData, setStateData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function IpdDischargePage() {
       setPendingOrders(ordersRes.data || ordersRes);
     } catch (err) {
       console.error(err);
-      alert("Error loading discharge state.");
+      alert("Error loading discharge state from API.");
     } finally {
       setLoading(false);
     }
@@ -89,16 +90,26 @@ export default function IpdDischargePage() {
   };
 
   const handleFinalize = async () => {
-    if (!confirm("Are you sure you want to finalize patient discharge? This will release the bed.")) return;
+    if (!selectedAdmNo) {
+      alert("Please select an admission first.");
+      return;
+    }
+    setFinalizing(true);
     try {
-      await ipdApi.finalizeDischarge(selectedAdmNo);
+      console.log("Finalizing discharge for:", selectedAdmNo);
+      const response = await ipdApi.finalizeDischarge(selectedAdmNo);
+      console.log("Discharge finalize response:", response);
       alert("Discharge completed successfully.");
       setStateData(null);
       setSelectedAdmNo("");
+      setPendingOrders([]);
       fetchAdmissions(); // refresh
     } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Failed to finalize discharge.");
+      console.error("Error finalizing discharge:", err);
+      const errorMsg = err.response?.data?.detail || err.message || "Failed to finalize discharge.";
+      alert("Error: " + errorMsg);
+    } finally {
+      setFinalizing(false);
     }
   };
 
@@ -251,12 +262,25 @@ export default function IpdDischargePage() {
                <div className="text-sm text-gray-500">
                   {t("ipdDischarge.checklist")}
                </div>
-               <button 
+               <button
                   onClick={handleFinalize}
-                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center"
+                  disabled={finalizing}
+                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                >
-                  <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  {t("ipdDischarge.completeDischarge")}
+                  {finalizing ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      {t("ipdDischarge.completeDischarge")}
+                    </>
+                  )}
                </button>
             </div>
           </div>

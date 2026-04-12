@@ -1,0 +1,93 @@
+
+openapi: 3.0.3
+info:
+  title: Unified Clinical Platform API
+  version: 0.1.0
+servers:
+  - url: https://api.example.com
+paths:
+  /patients:
+    get:
+      summary: Search patients
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create patient
+      responses:
+        '201':
+          description: Created
+  /appointments:
+    get:
+      summary: List appointments
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create appointment
+      responses:
+        '201':
+          description: Created
+  /encounters:
+    post:
+      summary: Open encounter
+      responses:
+        '201':
+          description: Created
+  /encounters/{encounterId}/documents:
+    get:
+      summary: List encounter documents
+      parameters:
+        - in: path
+          name: encounterId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /share-grants:
+    post:
+      summary: Create patient-authorised share grant
+      responses:
+        '201':
+          description: Created
+  /integration/events:
+    get:
+      summary: Retrieve integration events
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Patient:
+      type: object
+      properties:
+        patientId:
+          type: string
+        displayName:
+          type: string
+        mobileNumber:
+          type: string
+    Appointment:
+      type: object
+      properties:
+        appointmentId:
+          type: string
+        patientId:
+          type: string
+        clinicianId:
+          type: string
+        appointmentMode:
+          type: string
+    Encounter:
+      type: object
+      properties:
+        encounterId:
+          type: string
+        patientId:
+          type: string
+        encounterMode:
+          type: string
+        encounterStatus:
+          type: string

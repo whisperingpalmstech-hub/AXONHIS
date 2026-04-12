@@ -61,6 +61,42 @@ async def process_dispense(
     }
 
 
+# ── Substitute Medication Engine ──────────────────────────────────────
+@router.get("/items/{item_id}/substitutes")
+async def get_substitutes(
+    item_id: uuid.UUID,
+    svc: IPIssuesService = Depends(get_svc),
+):
+    """Provides formulary alternatives for an out-of-stock or non-formulary item."""
+    return await svc.get_substitutes(item_id)
+
+
+# ── Nursing Acceptance Gateway ────────────────────────────────────────
+from pydantic import BaseModel
+class NursingAcceptanceModel(BaseModel):
+    accepted: bool
+    rejection_reason: str = None
+
+@router.post("/{issue_id}/nursing-acceptance")
+async def process_nursing_acceptance(
+    issue_id: uuid.UUID,
+    data: NursingAcceptanceModel,
+    nurse_id: str = "00000000-0000-0000-0000-000000000002",  # Mock auth user
+    svc: IPIssuesService = Depends(get_svc),
+):
+    nurse_uuid = uuid.UUID(nurse_id)
+    issue = await svc.process_nursing_acceptance(
+        issue_id=issue_id,
+        accepted=data.accepted,
+        nurse_id=nurse_uuid,
+        rejection_reason=data.rejection_reason
+    )
+    return {
+        "status": "success",
+        "message": f"Successfully processed nursing acceptance for {issue.admission_number}"
+    }
+
+
 # ── Audit Trail ───────────────────────────────────────────────────────
 @router.get("/{issue_id}/audit", response_model=list[IPOrderLogOut])
 async def get_audit_trail(

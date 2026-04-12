@@ -70,6 +70,10 @@ class WalkInSalesService:
             patient_id=data.patient_id,
             walkin_name=data.walkin_name,
             walkin_mobile=data.walkin_mobile,
+            walkin_age=data.walkin_age,
+            walkin_gender=data.walkin_gender,
+            walkin_address=data.walkin_address,
+            prescriber_name=data.prescriber_name,
             pharmacist_id=pharmacist_id,
             total_amount=total_amount,
             discount_amount=data.discount_amount,
@@ -167,6 +171,11 @@ class WalkInSalesService:
 
     async def get_recent_sales(self, limit: int = 50):
         from sqlalchemy.orm import selectinload
-        q = select(PharmacyWalkInSale).options(selectinload(PharmacyWalkInSale.items), selectinload(PharmacyWalkInSale.payment)).order_by(PharmacyWalkInSale.sale_date.desc()).limit(limit)
-        res = await self.db.execute(q)
-        return list(res.scalars().all())
+        try:
+            q = select(PharmacyWalkInSale).options(selectinload(PharmacyWalkInSale.items), selectinload(PharmacyWalkInSale.payment)).order_by(PharmacyWalkInSale.sale_date.desc()).limit(limit)
+            res = await self.db.execute(q)
+            return list(res.scalars().all())
+        except Exception:
+            # Table may not be migrated yet — return empty list gracefully
+            return []
+

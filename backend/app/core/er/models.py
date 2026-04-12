@@ -66,7 +66,7 @@ class EREncounter(Base):
     __tablename__ = "er_encounters"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    org_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
     # Registration
     er_number = Column(String(50), unique=True, nullable=False)
@@ -140,7 +140,7 @@ class ERTriage(Base):
     __tablename__ = "er_triage"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    org_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     er_encounter_id = Column(UUID(as_uuid=True), ForeignKey("er_encounters.id"), nullable=False)
 
     # ESI Assessment
@@ -188,7 +188,7 @@ class ERBed(Base):
     __tablename__ = "er_beds"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    org_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
     bed_code = Column(String(50), nullable=False)
     zone = Column(String(20), nullable=False)  # ERZone enum
@@ -214,7 +214,7 @@ class ERMlcCase(Base):
     __tablename__ = "er_mlc_cases"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    org_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     er_encounter_id = Column(UUID(as_uuid=True), ForeignKey("er_encounters.id"), nullable=False)
 
     mlc_number = Column(String(50), unique=True, nullable=False)
@@ -251,7 +251,7 @@ class ERNursingScore(Base):
     __tablename__ = "er_nursing_scores"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    org_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     er_encounter_id = Column(UUID(as_uuid=True), ForeignKey("er_encounters.id"), nullable=False)
 
     score_type = Column(String(30), nullable=False)  # mews, sofa, apache_ii, gcs, pediatric, fall_risk, pain
@@ -274,7 +274,7 @@ class EROrder(Base):
     __tablename__ = "er_orders"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    org_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     er_encounter_id = Column(UUID(as_uuid=True), ForeignKey("er_encounters.id"), nullable=False)
 
     order_type = Column(String(30), nullable=False)  # lab, radiology, medication, procedure, consult
@@ -287,3 +287,92 @@ class EROrder(Base):
     ordered_by_name = Column(String(255), nullable=True)
     ordered_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     completed_at = Column(DateTime(timezone=True), nullable=True)
+
+
+# ════════════════════════════════════════════════════════════════
+#  ER DISCHARGE
+# ════════════════════════════════════════════════════════════════
+
+class ERDischarge(Base):
+    """Formal ER discharge record — links to billing settlement."""
+    __tablename__ = "er_discharges"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    er_encounter_id = Column(UUID(as_uuid=True), ForeignKey("er_encounters.id"), nullable=False)
+
+    # Discharge classification
+    discharge_type = Column(String(50), nullable=False)  # normal, dama, lama, death, absconded
+    discharge_summary = Column(Text, nullable=True)
+    follow_up_instructions = Column(Text, nullable=True)
+    follow_up_date = Column(DateTime(timezone=True), nullable=True)
+
+    # Billing clearance
+    billing_cleared = Column(Boolean, default=False)
+    total_amount = Column(Numeric(12, 2), nullable=True)
+    paid_amount = Column(Numeric(12, 2), nullable=True)
+    payment_mode = Column(String(50), nullable=True)  # cash, card, upi, cheque, insurance
+
+    # Final disposition
+    disposition = Column(String(50), nullable=True)  # home, ipd_admit, transfer_other, morgue
+    destination_department = Column(String(100), nullable=True)
+
+    # Bed release
+    bed_vacated = Column(Boolean, default=False)
+    bed_id = Column(UUID(as_uuid=True), nullable=True)
+
+    discharged_by = Column(UUID(as_uuid=True), nullable=False)
+    discharged_by_name = Column(String(255), nullable=True)
+    discharged_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# ════════════════════════════════════════════════════════════════
+#  ER CLINICAL NOTES (Nursing Cover Sheet)
+# ════════════════════════════════════════════════════════════════
+
+class ERClinicalNote(Base):
+    """Clinical documentation — complaints, history, exam, shift notes, SOAP."""
+    __tablename__ = "er_clinical_notes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    er_encounter_id = Column(UUID(as_uuid=True), ForeignKey("er_encounters.id"), nullable=False)
+
+    note_type = Column(String(50), nullable=False)
+    # complaint, history, examination, observation, shift_note, soap, procedure_note
+
+    # Structured content
+    content = Column(Text, nullable=True)
+    structured_data = Column(JSONB, nullable=True)
+    # For complaint: {icpc_code, description, onset, severity}
+    # For history: {medical_hx, surgical_hx, allergies, medications, lifestyle, vaccinations}
+    # For examination: {vitals: {temp, pulse, bp, rr, spo2, pain}, systems_review: {...}}
+
+    # Metadata
+    authored_by = Column(UUID(as_uuid=True), nullable=False)
+    authored_by_name = Column(String(255), nullable=True)
+    authored_by_role = Column(String(50), nullable=True)  # doctor, nurse
+    authored_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    is_addendum = Column(Boolean, default=False)
+
+
+# ════════════════════════════════════════════════════════════════
+#  ER DIAGNOSIS (ICD-10)
+# ════════════════════════════════════════════════════════════════
+
+class ERDiagnosis(Base):
+    """ICD-10 coded diagnosis for ER encounter."""
+    __tablename__ = "er_diagnoses"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    er_encounter_id = Column(UUID(as_uuid=True), ForeignKey("er_encounters.id"), nullable=False)
+
+    icd_code = Column(String(20), nullable=True)
+    diagnosis_description = Column(Text, nullable=False)
+    diagnosis_type = Column(String(30), default="working")  # working, confirmed, differential, final
+    is_primary = Column(Boolean, default=False)
+
+    recorded_by = Column(UUID(as_uuid=True), nullable=False)
+    recorded_by_name = Column(String(255), nullable=True)
+    recorded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

@@ -623,3 +623,104 @@ html {
 .speak-animate {
   animation: speakPulse 1.2s infinite;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   GLOBAL VOICE INPUT — Mic button on every input/textarea
+   ══════════════════════════════════════════════════════════════════ */
+.axon-voice-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.axon-voice-wrapper > input,
+.axon-voice-wrapper > textarea {
+  flex: 1;
+  padding-right: 38px !important;
+}
+.axon-voice-mic-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.axon-voice-mic-btn:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  box-shadow: 0 2px 8px rgba(37,99,235,0.15);
+  transform: translateY(-50%) scale(1.08);
+}
+.axon-voice-mic-btn.axon-voice-active {
+  border-color: #ef4444;
+  color: white;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.2), 0 2px 8px rgba(239,68,68,0.3);
+  animation: voicePulse 1.5s ease-in-out infinite;
+}
+.axon-voice-indicator {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  z-index: 60;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  animation: voiceIndicatorIn 0.25s ease-out;
+  pointer-events: none;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.axon-voice-indicator.axon-voice-success {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+}
+.axon-voice-indicator.axon-voice-error {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  color: white;
+}
+.axon-voice-indicator.axon-voice-fade-out {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all 0.3s ease;
+}
+@keyframes voicePulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(239,68,68,0.2), 0 2px 8px rgba(239,68,68,0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(239,68,68,0.1), 0 2px 12px rgba(239,68,68,0.4); }
+}
+@keyframes voiceIndicatorIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* RTL support for voice mic */
+html[dir="rtl"] .axon-voice-mic-btn {
+  right: auto;
+  left: 6px;
+}
+html[dir="rtl"] .axon-voice-wrapper > input,
+html[dir="rtl"] .axon-voice-wrapper > textarea {
+  padding-right: 14px !important;
+  padding-left: 38px !important;
+}
+html[dir="rtl"] .axon-voice-indicator {
+  right: auto;
+  left: 0;
+}

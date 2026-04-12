@@ -56,9 +56,10 @@ export default function IpdBillingPrint() {
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
             body { background-color: white !important; }
-            #sidebar, #navbar, nav, header { display: none !important; }
+            #sidebar, .sidebar-enterprise, .sidebar, #navbar, nav, header, aside { display: none !important; }
             #print-area { width: 100% !important; max-width: none !important; margin: 0; padding: 0;}
             .page-break { page-break-after: always; }
+            main { margin-left: 0 !important; margin-right: 0 !important; width: 100% !important; }
         }
       `}} />
 

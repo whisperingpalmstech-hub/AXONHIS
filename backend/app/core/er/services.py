@@ -114,10 +114,11 @@ class ERRegistrationService:
                 ),
                 posted_by=uuid.UUID(int=1),
                 posted_by_name="System",
-                org_id=org_id
+                org_id=org_id or uuid.UUID(int=0)
             )
         except Exception as e:
             print("Failed to post charge:", e)
+            await self.db.rollback()
 
         return encounter
 
@@ -572,3 +573,141 @@ class ERBedSeeder:
             await self.bed_svc.create_bed(code, zone, btype, org_id, is_monitored=monitored, has_ventilator=vent)
             count += 1
         return count
+
+
+class ERDischargeService:
+    """Full discharge workflow: discharge record → auto bed vacate → billing finalization."""
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def discharge_patient(
+        self, data, discharged_by: uuid.UUID, discharged_by_name: str, org_id: uuid.UUID
+    ):
+        from .models import ERDischarge
+
+        enc = (await self.db.execute(
+            select(EREncounter).where(EREncounter.id == data.er_encounter_id, EREncounter.org_id == org_id)
+        )).scalars().first()
+        if not enc:
+            raise ValueError("ER encounter not found")
+
+        discharge = ERDischarge(
+            org_id=org_id,
+            er_encounter_id=data.er_encounter_id,
+            discharge_type=data.discharge_type,
+            discharge_summary=data.discharge_summary,
+            follow_up_instructions=data.follow_up_instructions,
+            follow_up_date=data.follow_up_date,
+            total_amount=data.total_amount,
+            paid_amount=data.paid_amount,
+            payment_mode=data.payment_mode,
+            billing_cleared=bool(data.paid_amount and data.total_amount and float(data.paid_amount) >= float(data.total_amount)),
+            disposition=data.disposition,
+            destination_department=data.destination_department,
+            discharged_by=discharged_by,
+            discharged_by_name=discharged_by_name,
+        )
+        self.db.add(discharge)
+
+        # Update encounter status
+        enc.status = "discharged"
+        enc.disposition = data.disposition or data.discharge_type
+        enc.discharge_time = _now()
+        enc.updated_at = _now()
+
+        # Auto-vacate bed if patient had one assigned
+        bed = (await self.db.execute(
+            select(ERBed).where(
+                ERBed.occupied_by_er_encounter_id == data.er_encounter_id,
+                ERBed.org_id == org_id
+            )
+        )).scalars().first()
+        if bed:
+            bed.status = "cleaning"
+            bed.occupied_by_er_encounter_id = None
+            bed.patient_gender = None
+            bed.occupied_since = None
+            discharge.bed_vacated = True
+            discharge.bed_id = bed.id
+
+        await self.db.commit()
+        await self.db.refresh(discharge)
+        return discharge
+
+    async def list_due_for_discharge(self, org_id: uuid.UUID):
+        return list((await self.db.execute(
+            select(EREncounter).where(
+                EREncounter.org_id == org_id,
+                EREncounter.status.in_(["due_for_discharge", "marked_for_discharge", "ready_for_billing"])
+            ).order_by(EREncounter.arrival_time.asc())
+        )).scalars().all())
+
+
+class ERClinicalNoteService:
+    """Clinical documentation — nursing cover sheet notes, shift notes, SOAP."""
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def create_note(self, data, authored_by: uuid.UUID, authored_by_name: str, authored_by_role: str, org_id: uuid.UUID):
+        from .models import ERClinicalNote
+        note = ERClinicalNote(
+            org_id=org_id,
+            er_encounter_id=data.er_encounter_id,
+            note_type=data.note_type,
+            content=data.content,
+            structured_data=data.structured_data,
+            authored_by=authored_by,
+            authored_by_name=authored_by_name,
+            authored_by_role=authored_by_role,
+        )
+        self.db.add(note)
+        await self.db.commit()
+        await self.db.refresh(note)
+        return note
+
+    async def list_notes(self, er_encounter_id: uuid.UUID, org_id: uuid.UUID, note_type: str = None):
+        from .models import ERClinicalNote
+        stmt = select(ERClinicalNote).where(
+            ERClinicalNote.er_encounter_id == er_encounter_id,
+            ERClinicalNote.org_id == org_id
+        )
+        if note_type:
+            stmt = stmt.where(ERClinicalNote.note_type == note_type)
+        stmt = stmt.order_by(ERClinicalNote.authored_at.desc())
+        return list((await self.db.execute(stmt)).scalars().all())
+
+
+class ERDiagnosisService:
+    """ICD-10 diagnosis recording for ER encounters."""
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def add_diagnosis(self, data, recorded_by: uuid.UUID, recorded_by_name: str, org_id: uuid.UUID):
+        from .models import ERDiagnosis
+        dx = ERDiagnosis(
+            org_id=org_id,
+            er_encounter_id=data.er_encounter_id,
+            icd_code=data.icd_code,
+            diagnosis_description=data.diagnosis_description,
+            diagnosis_type=data.diagnosis_type,
+            is_primary=data.is_primary,
+            recorded_by=recorded_by,
+            recorded_by_name=recorded_by_name,
+        )
+        self.db.add(dx)
+        await self.db.commit()
+        await self.db.refresh(dx)
+        return dx
+
+    async def list_diagnoses(self, er_encounter_id: uuid.UUID, org_id: uuid.UUID):
+        from .models import ERDiagnosis
+        return list((await self.db.execute(
+            select(ERDiagnosis).where(
+                ERDiagnosis.er_encounter_id == er_encounter_id,
+                ERDiagnosis.org_id == org_id
+            ).order_by(ERDiagnosis.recorded_at.desc())
+        )).scalars().all())
+

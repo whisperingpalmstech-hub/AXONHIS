@@ -612,12 +612,15 @@ export default function PatientDashboard() {
             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
               <button 
                 onClick={() => {
-                  const content = `AxonHIS Encounter Summary\n\nDate: ${new Date(selectedEncounter.start_time || Date.now()).toLocaleString()}\nProvider: ${selectedEncounter.doctor?.first_name ? `Dr. ${selectedEncounter.doctor.first_name} ${selectedEncounter.doctor.last_name}` : 'Attending Physician'}\nDepartment: ${selectedEncounter.department || 'General Practice'}\nStatus: ${selectedEncounter.status || 'Completed'}\n\nChief Complaint:\n${selectedEncounter.reason || 'Routine follow-up or checkup.'}\n\nClinical Notes:\n${selectedEncounter.notes || 'No extensive clinical notes recorded for this encounter.'}`;
+                  const safeDate = (!selectedEncounter.start_time || selectedEncounter.start_time === "None") ? new Date() : new Date(selectedEncounter.start_time);
+                  const validDate = isNaN(safeDate.getTime()) ? new Date() : safeDate;
+                  
+                  const content = `AxonHIS Encounter Summary\n\nDate: ${validDate.toLocaleString()}\nProvider: ${selectedEncounter.doctor?.first_name ? `Dr. ${selectedEncounter.doctor.first_name} ${selectedEncounter.doctor.last_name}` : 'Attending Physician'}\nDepartment: ${selectedEncounter.department || 'General Practice'}\nStatus: ${selectedEncounter.status || 'Completed'}\n\nChief Complaint:\n${selectedEncounter.reason || 'Routine follow-up or checkup.'}\n\nClinical Notes:\n${selectedEncounter.notes || 'No extensive clinical notes recorded for this encounter.'}`;
                   const blob = new Blob([content], { type: 'text/plain' });
                   const url = window.URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = `Encounter_Summary_${new Date(selectedEncounter.start_time || Date.now()).toISOString().split('T')[0]}.txt`;
+                  a.download = `Encounter_Summary_${validDate.toISOString().split('T')[0]}.txt`;
                   document.body.appendChild(a);
                   a.click();
                   document.body.removeChild(a);

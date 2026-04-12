@@ -35,7 +35,7 @@ from app.core.ai.router import router as ai_router
 from app.core.analytics.router import router as analytics_router
 
 # Core Infrastructure Observability
-from app.core.system.health_checks.routes import router as system_health_router
+from app.core.system.health_checks.routes import router as system_health_router, public_router as public_health_router
 from app.core.system.logging.routes import router as system_logging_router
 from app.core.system.monitoring.routes import router as system_monitoring_router
 from app.core.cdss.engine.routes import router as cdss_router
@@ -48,6 +48,14 @@ from app.core.ot.router import router as ot_router
 from app.core.communication.routes import communication_router
 from app.core.patient_portal.router import portal_router
 
+from app.core.diagnostics.routes import router as diagnostics_router
+from app.core.advanced_lab.routes import router as new_advanced_lab_router
+from app.core.procurement.routes import router as procurement_router
+from app.core.kiosk.routes import router as kiosk_router
+
+# Diagnostic Procedures Engine
+from app.core.diagnostics.routes import router as diagnostics_router
+
 # Enterprise Scheduling
 from app.core.scheduling.routes import router as scheduling_router
 
@@ -59,6 +67,7 @@ from app.core.smart_queue.routes import router as smart_queue_router
 
 # OPD Nursing Clinical Triage Engine
 from app.core.nursing_triage.routes import router as nursing_triage_router
+from app.core.nursing.routes import router as nursing_router
 
 # AI Doctor Desk & Intelligent EMR Engine
 from app.core.doctor_desk.routes import router as doctor_desk_router
@@ -76,9 +85,21 @@ from app.core.scheduling.models import SlotBooking
 from app.core.lab.models import LabOrder, LabResult
 from app.core.pharmacy.prescriptions.models import Prescription
 from app.core.auth.models import User
+from app.core.diagnostics.models import (
+    DiagnosticTemplate,
+    DiagnosticProcedureOrder,
+    DiagnosticWorkbenchRecord,
+    DiagnosticResultEntry,
+    DiagnosticValidation,
+    DiagnosticReport,
+    DiagnosticReportHandover,
+    DiagnosticAmendmentLog
+)
+from app.core.advanced_lab.models import HistoSpecimen
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+
     """Startup / shutdown lifecycle."""
     yield
     await engine.dispose()
@@ -101,7 +122,7 @@ def create_app() -> FastAPI:
         allowed_origins = [i.strip() for i in allowed_origins.split(",") if i.strip()]
     
     # Add local developer origins for safety
-    for dev_origin in ["http://localhost:3000", "http://localhost:9501", "http://localhost:9502", "http://127.0.0.1:9502"]:
+    for dev_origin in ["http://localhost:3000", "http://localhost:9501", "http://localhost:9502", "http://localhost:9503", "http://127.0.0.1:9502", "http://127.0.0.1:9503"]:
         if dev_origin not in allowed_origins:
             allowed_origins.append(dev_origin)
 
@@ -115,6 +136,10 @@ def create_app() -> FastAPI:
 
     # ── Security Headers Phase 11 ─────────────────────────────────────────
     app.add_middleware(SecurityHeadersMiddleware)
+    
+    # ── Structured Logging with Correlation IDs ─────────────────────────
+    from app.core.structured_logging.middleware import StructuredLoggingMiddleware
+    app.add_middleware(StructuredLoggingMiddleware)
     
     # ── Rate Limiting (HIPAA Point 7) ────────────────────────────────────
     from app.core.system.security.rate_limit import RateLimitMiddleware
@@ -202,9 +227,12 @@ def create_app() -> FastAPI:
     app.include_router(billing_router, prefix=api)
     app.include_router(ai_router, prefix=api)
     app.include_router(analytics_router, prefix=api)
+    app.include_router(nursing_triage_router, prefix=api)
+    app.include_router(nursing_router, prefix=api)
     app.include_router(communication_router, prefix=api)
 
     # Phase 11 - Deployments & Systems
+    app.include_router(public_health_router)                 # exposes /health (no auth required for monitoring)
     app.include_router(system_health_router, prefix=api)     # exposes /api/v1/system/*
     app.include_router(system_logging_router, prefix=api)    # exposes /api/v1/system/logs
     app.include_router(system_monitoring_router, prefix=api) # exposes /api/v1/system/monitoring/*
@@ -226,6 +254,7 @@ def create_app() -> FastAPI:
 
     # Phase 16 - Patient Portal
     app.include_router(portal_router, prefix="/api/v1")
+    app.include_router(diagnostics_router)
 
     # Enterprise Scheduling
     app.include_router(scheduling_router, prefix="/api/v1")
@@ -245,6 +274,10 @@ def create_app() -> FastAPI:
     # Enterprise OPD Billing & Revenue Cycle Engine
     app.include_router(rcm_billing_router, prefix="/api/v1")
     app.include_router(multitenancy_router, prefix="/api/v1/administration")
+
+    # Complete OPD Module — Unified Orchestrator
+    from app.core.opd.routes import router as opd_complete_router
+    app.include_router(opd_complete_router, prefix="/api/v1")
 
     # Sprint 1: Billing Masters & Configuration Engine (FRD Gaps 5-15)
     from app.core.billing_masters.routes import router as billing_masters_router
@@ -299,8 +332,8 @@ def create_app() -> FastAPI:
     app.include_router(reporting_router, prefix="/api/v1")
 
     # LIS Advanced Diagnostic Modules
-    from app.core.lab.advanced_diagnostics.routes import router as advanced_lab_router
-    app.include_router(advanced_lab_router, prefix="/api/v1")
+    # from app.core.lab.advanced_diagnostics.routes import router as advanced_lab_router
+    # app.include_router(advanced_lab_router, prefix="/api/v1")
 
     # LIS Extended Services & Quality Management
     from app.core.lab.extended_services.routes import router as extended_lab_router
@@ -313,6 +346,10 @@ def create_app() -> FastAPI:
     # Phase 23 - Role-Based Patient Interaction Workspace
     from app.core.rpiw.routes import router as rpiw_router
     app.include_router(rpiw_router)
+
+    # Clinical Encounter Flow - AI-Powered Interactive Consultation
+    from app.core.clinical_encounter_flow.routes import router as clinical_encounter_flow_router
+    app.include_router(clinical_encounter_flow_router, prefix="/api/v1")
 
     # Phase 24 - RPIW Patient Summary Engine
     from app.core.rpiw_summary.routes import router as rpiw_summary_router
@@ -339,6 +376,113 @@ def create_app() -> FastAPI:
     from app.core.cssd.router import router as cssd_router
     app.include_router(cssd_router, prefix="/api/v1/cssd", tags=["CSSD"])
 
+    # Phase 27 - Hospital Inventory and Store Management Module
+    from app.core.inventory.router import router as inventory_router
+    app.include_router(inventory_router, prefix="/api/v1/inventory", tags=["Inventory & Stores"])
+    app.include_router(diagnostics_router, prefix="/api/v1/diagnostics", tags=["Diagnostic Procedures"])
+    app.include_router(new_advanced_lab_router, prefix="/api/v1/advanced", tags=["Advanced Diagnostics"])
+    app.include_router(procurement_router, prefix="/api/v1", tags=["Procurement & Supply Chain"])
+    app.include_router(kiosk_router, prefix="/api/v1", tags=["Self-Service Kiosk"])
+
+    # AxonHIS MD — Unified Clinical Practice + Health ATM Platform
+    from app.core.axonhis_md.routes import router as axonhis_md_router
+    app.include_router(axonhis_md_router, prefix="/api/v1", tags=["AxonHIS MD"])
+
+    # MCP Integration for AI Tool Usage
+    from app.core.mcp.routes import router as mcp_router
+    app.include_router(mcp_router, prefix="/api/v1")
+
+    # Health Platform Development Pack - Missing Features
+    from app.core.longitudinal.routes import router as longitudinal_router
+    app.include_router(longitudinal_router, prefix="/api/v1")
+    
+    from app.core.event_bus.routes import router as event_bus_router
+    app.include_router(event_bus_router, prefix="/api/v1")
+    
+    from app.core.clinical_rules.routes import router as clinical_rules_router
+    app.include_router(clinical_rules_router, prefix="/api/v1")
+    
+    from app.core.suggestion_tracker.routes import router as suggestion_tracker_router
+    app.include_router(suggestion_tracker_router, prefix="/api/v1")
+    
+    from app.core.structured_logging.routes import router as structured_logging_router
+    app.include_router(structured_logging_router, prefix="/api/v1")
+    
+    from app.core.device_adapter.routes import router as device_adapter_router
+    app.include_router(device_adapter_router, prefix="/api/v1")
+    
+    from app.core.webhook_publisher.routes import router as webhook_publisher_router
+    app.include_router(webhook_publisher_router, prefix="/api/v1")
+    
+    from app.core.config_service.routes import router as config_service_router
+    app.include_router(config_service_router, prefix="/api/v1")
+    
+    from app.core.approval_gates.routes import router as approval_gates_router
+    app.include_router(approval_gates_router, prefix="/api/v1")
+    
+    from app.core.prompt_mappings.routes import router as prompt_mappings_router
+    app.include_router(prompt_mappings_router, prefix="/api/v1")
+    
+    from app.core.document_template_mappings.routes import router as document_template_mappings_router
+    app.include_router(document_template_mappings_router, prefix="/api/v1")
+    
+    from app.core.doctor_preferences.routes import router as doctor_preferences_router
+    app.include_router(doctor_preferences_router, prefix="/api/v1")
+
+    # Force-load AxonHIS MD models for SQLAlchemy registry
+    from app.core.axonhis_md.models import (
+        MdOrganization, MdFacility, MdSpecialtyProfile, MdClinician,
+        MdPatient, MdPatientIdentifier, MdConsentProfile, MdChannel,
+        MdAppointment, MdEncounter, MdEncounterNote, MdDiagnosis,
+        MdServiceRequest, MdMedicationRequest, MdDevice, MdDeviceResult,
+        MdObservation, MdDocument, MdShareGrant, MdShareAccessLog,
+        MdPayer, MdCoverage, MdBillingInvoice, MdBillingLineItem,
+        MdIntegrationEvent, MdAuditEvent,
+    )
+
+    # Force-load new feature models for SQLAlchemy registry
+    from app.core.longitudinal.models import (
+        MdLongitudinalRecordIndex, MdPatientTimeline, MdRecordSearchCache
+    )
+    
+    from app.core.event_bus.models import (
+        MdEvent, MdEventSubscription, MdEventDelivery, MdEventDeadLetter
+    )
+    
+    from app.core.clinical_rules.models import (
+        MdClinicalRule, MdRuleExecution, MdRuleAlert, MdRuleVariable
+    )
+    
+    from app.core.suggestion_tracker.models import (
+        MdSuggestion, MdSuggestionFeedback, MdSuggestionAnalytics, MdSuggestionPattern
+    )
+    
+    
+    from app.core.prompt_mappings.models import (
+        MdPromptMapping, MdPromptVariable, MdPromptExecution
+    )
+    
+    from app.core.document_template_mappings.models import (
+        MdDocumentTemplateMapping
+    )
+    
+    from app.core.doctor_preferences.models import (
+        MdDoctorPreference
+    )
+    from app.core.device_adapter.models import (
+        MdDeviceAdapter, MdDeviceData, MdAdapterCommand, MdAdapterLog
+    )
+    from app.core.config_service.models import (
+        MdConfigItem, MdConfigHistory, MdConfigGroup, MdConfigGroupMapping
+    )
+    from app.core.approval_gates.models import (
+        MdApprovalGate, MdApprovalRequest, MdApprovalAction
+    )
+    
+    from app.core.webhook_publisher.models import (
+        MdWebhookSubscription, MdWebhookDelivery, MdWebhookLog
+    )
+
     # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])
     async def health_check() -> dict[str, str]:
@@ -347,4 +491,5 @@ def create_app() -> FastAPI:
     return app
 
 
+app = create_app()
 app = create_app()

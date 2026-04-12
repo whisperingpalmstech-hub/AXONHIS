@@ -23,6 +23,7 @@ class DoctorWorklist(Base):
     doctor_id = Column(UUID(as_uuid=True), nullable=False)
     visit_id = Column(UUID(as_uuid=True), nullable=False)
     patient_id = Column(UUID(as_uuid=True), nullable=False)
+    encounter_type = Column(String(50), nullable=True, default="opd")
     
     status = Column(String(30), default=ConsultStatus.waiting)
     priority_indicator = Column(String(30), default="normal") 
@@ -132,3 +133,94 @@ class FollowUpRecord(Base):
     certificate_url = Column(String(255), nullable=True)
     
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+# ── Extension for Universal EMR Subsystems ───────────────────────────
+
+class ClinicalComplaint(Base):
+    """ICPC compliant structured clinical complaint"""
+    __tablename__ = "doctor_clinical_complaints"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    visit_id = Column(UUID(as_uuid=True), nullable=False)
+    patient_id = Column(UUID(as_uuid=True), nullable=False)
+    encounter_type = Column(String(50), nullable=True) # opd, ipd, er
+    
+    icpc_code = Column(String(50), nullable=True)
+    complaint_description = Column(Text, nullable=False)
+    duration = Column(String(50), nullable=True)
+    severity = Column(String(50), nullable=True)
+    associated_observations = Column(Text, nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+class PatientMedicalHistory(Base):
+    """Persistent patient clinical history"""
+    __tablename__ = "doctor_patient_medical_history"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    
+    category = Column(String(100), nullable=False) # surgical, medical, family, allergy, medication, lifestyle, immunization
+    description = Column(Text, nullable=False)
+    status = Column(String(50), default="active") # active, resolved, inactive
+    diagnosed_date = Column(String(50), nullable=True)
+    
+    recorded_by = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+class ExaminationRecord(Base):
+    """Structured systemic examination"""
+    __tablename__ = "doctor_examination_records"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    visit_id = Column(UUID(as_uuid=True), nullable=False)
+    patient_id = Column(UUID(as_uuid=True), nullable=False)
+    
+    general_examination = Column(Text, nullable=True)
+    systemic_examination = Column(JSON, nullable=True) # e.g. {"cvs": "...", "resp": "..."}
+    local_examination = Column(Text, nullable=True)
+    
+    recorded_by = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+class DiagnosisRecord(Base):
+    """Standardized ICD-10 diagnosis record"""
+    __tablename__ = "doctor_diagnosis_records"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    visit_id = Column(UUID(as_uuid=True), nullable=False)
+    patient_id = Column(UUID(as_uuid=True), nullable=False)
+    
+    icd_code = Column(String(50), nullable=True)
+    diagnosis_description = Column(Text, nullable=False)
+    diagnosis_type = Column(String(50), default="provisional") # provisional, final
+    is_primary = Column(Boolean, default=False)
+    
+    recorded_by = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+
+class EMRConsultationVitals(Base):
+    """Vitals captured explicitly for the consultation"""
+    __tablename__ = "doctor_consultation_vitals"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    visit_id = Column(UUID(as_uuid=True), nullable=False)
+    patient_id = Column(UUID(as_uuid=True), nullable=False)
+    
+    temperature = Column(String(20), nullable=True)
+    pulse_rate = Column(String(20), nullable=True)
+    respiratory_rate = Column(String(20), nullable=True)
+    bp_systolic = Column(Integer, nullable=True)
+    bp_diastolic = Column(Integer, nullable=True)
+    spo2 = Column(String(20), nullable=True)
+    height_cm = Column(String(20), nullable=True)
+    weight_kg = Column(String(20), nullable=True)
+    bmi = Column(String(20), nullable=True)
+    
+    recorded_by = Column(UUID(as_uuid=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)

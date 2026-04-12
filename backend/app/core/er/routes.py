@@ -10,12 +10,16 @@ from .schemas import (
     ERRegistrationCreate, EREncounterOut, ERTriageCreate, ERTriageOut,
     ERBedCreate, ERBedOut, ERBedAssignRequest, ERMlcCreate, ERMlcOut,
     ERNursingScoreCreate, ERNursingScoreOut, EROrderCreate, EROrderOut,
-    ERStatusUpdate, ERDashboardStats
+    ERStatusUpdate, ERDashboardStats,
+    ERDischargeCreate, ERDischargeOut,
+    ERClinicalNoteCreate, ERClinicalNoteOut,
+    ERDiagnosisCreate, ERDiagnosisOut
 )
 from .services import (
     ERRegistrationService, ERTriageService, ERBedService,
     ERMlcService, ERScoringService, EROrderService,
-    ERDashboardService, ERBedSeeder
+    ERDashboardService, ERBedSeeder,
+    ERDischargeService, ERClinicalNoteService, ERDiagnosisService
 )
 
 router = APIRouter(prefix="/er", tags=["Emergency Room (ER)"])
@@ -28,7 +32,12 @@ async def get_er_dashboard(user: CurrentUser, db: AsyncSession = Depends(get_db)
 # ── Registration ─────────────────────────────────
 @router.post("/register", response_model=EREncounterOut)
 async def register_er_patient(data: ERRegistrationCreate, user: CurrentUser, db: AsyncSession = Depends(get_db)):
-    return await ERRegistrationService(db).register_patient(data, user.org_id)
+    try:
+        return await ERRegistrationService(db).register_patient(data, user.org_id)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e) + "\n" + traceback.format_exc())
 
 @router.get("/encounters", response_model=List[EREncounterOut])
 async def list_er_encounters(user: CurrentUser, status: Optional[str] = None, zone: Optional[str] = None, db: AsyncSession = Depends(get_db)):
@@ -109,3 +118,34 @@ async def list_er_orders(er_encounter_id: uuid.UUID, user: CurrentUser, db: Asyn
 async def seed_er_beds(user: CurrentUser, db: AsyncSession = Depends(get_db)):
     count = await ERBedSeeder(db).seed_default_beds(user.org_id)
     return {"status": "ok", "beds_seeded": count}
+
+# ── Discharge ────────────────────────────────────
+@router.post("/discharge", response_model=ERDischargeOut)
+async def discharge_er_patient(data: ERDischargeCreate, user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    name = getattr(user, 'full_name', None) or getattr(user, 'email', 'Staff')
+    return await ERDischargeService(db).discharge_patient(data, user.id, str(name), user.org_id)
+
+@router.get("/due-for-discharge", response_model=List[EREncounterOut])
+async def list_due_for_discharge(user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    return await ERDischargeService(db).list_due_for_discharge(user.org_id)
+
+# ── Clinical Notes ───────────────────────────────
+@router.post("/notes", response_model=ERClinicalNoteOut)
+async def create_clinical_note(data: ERClinicalNoteCreate, user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    name = getattr(user, 'full_name', None) or getattr(user, 'email', 'Staff')
+    role = getattr(user, 'role', 'nurse')
+    return await ERClinicalNoteService(db).create_note(data, user.id, str(name), str(role), user.org_id)
+
+@router.get("/notes/{er_encounter_id}", response_model=List[ERClinicalNoteOut])
+async def list_clinical_notes(er_encounter_id: uuid.UUID, note_type: Optional[str] = None, user: CurrentUser = None, db: AsyncSession = Depends(get_db)):
+    return await ERClinicalNoteService(db).list_notes(er_encounter_id, user.org_id, note_type)
+
+# ── Diagnosis ────────────────────────────────────
+@router.post("/diagnoses", response_model=ERDiagnosisOut)
+async def add_er_diagnosis(data: ERDiagnosisCreate, user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    name = getattr(user, 'full_name', None) or getattr(user, 'email', 'Staff')
+    return await ERDiagnosisService(db).add_diagnosis(data, user.id, str(name), user.org_id)
+
+@router.get("/diagnoses/{er_encounter_id}", response_model=List[ERDiagnosisOut])
+async def list_er_diagnoses(er_encounter_id: uuid.UUID, user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    return await ERDiagnosisService(db).list_diagnoses(er_encounter_id, user.org_id)

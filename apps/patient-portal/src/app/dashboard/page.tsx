@@ -341,6 +341,7 @@ export default function PatientDashboard() {
                             setBookingForm({ 
                               doctorId: apt.doctor_id || '', 
                               date: '', 
+                              slotId: '',
                               reason: `Request to reschedule appointment originally on ${new Date(apt.appointment_time).toLocaleString()}` 
                             });
                             setShowBookingModal(true);

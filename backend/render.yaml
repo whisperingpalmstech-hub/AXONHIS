@@ -25,7 +25,7 @@ services:
       - key: APP_ENV
         value: production
       - key: BACKEND_CORS_ORIGINS
-        value: https://axonhis.vercel.app,https://axonhis-patient-portal.vercel.app,https://axonhis-md.vercel.app
+        value: https://axonhis.vercel.app,https://axonhis-patienc.vercel.app,https://axonhis-md.vercel.app
       - key: OPENAI_API_KEY
         sync: false
       - key: LLM_MODEL

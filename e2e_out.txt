@@ -1,0 +1,137 @@
+
+[STEP AUTH] Authenticating to get Bearer Token...
+✅ Authenticated successfully.
+
+[STEP 1] Registering new patient...
+✅ Success! Patient ID: 9304687a-3a79-44ab-9600-a6945d0e335f
+
+[STEP 2] Adding patient to Doctor Worklist...
+✅ Success! Worklist Ticket ID: 2283f4fa-3345-42cd-8a11-32296225c994
+
+[STEP 3] Doctor starts consultation & saves note...
+✅ Success! Note saved.
+
+[STEP 4] Doctor ordering Radiology and Lab tests (Manual vs AI)...
+✅ Success! Orders pushed to dispatch.
+
+[STEP 5] Doctor prescribes Medication...
+✅ Success! Pharmacy notified.
+
+[STEP 6] Doctor recommends admission to IPD with Clinical Notes...
+✅ Success! IPD Request Generated: da5c2c31-f250-4e3a-bb1a-1ab53128fa54
+
+[STEP 6.5] IPD Bed Manager approves Request...
+✅ Success! IPD Request Approved.
+
+[STEP 6.8] Wards Module: Locating available Bed...
+  No available beds found. Creating Ward → Room → Bed...
+  Created new bed: BED-b57d
+✅ Auto-located Bed: BED-b57d
+
+[STEP 7] IPD Nurse allocates Ward Bed...
+✅ Success! Patient Allocated to Bed. Admission #: IPD-ADM-2026-936734
+
+[STEP 8] IPD Billing: Adding clinical service charges...
+  + General Ward - Per Day x3 = ₹4500.0
+  + Complete Blood Count (CBC) x1 = ₹450.0
+  + CT Abdomen w/ Contrast x1 = ₹8500.0
+  + Ketorolac 30mg IV STAT x1 = ₹120.0
+  + IV Normal Saline 1L x2 = ₹170.0
+  + Emergency Consultation Fee x1 = ₹2000.0
+✅ All clinical charges posted to IPD Billing Ledger.
+
+[STEP 9] IPD Billing: Collecting Advance Deposit from Patient...
+✅ Deposit of ₹5,000 collected. Receipt: DEP-46202497
+
+[STEP 10] IPD Billing: Registering Insurance Claim (Star Health)...
+✅ Insurance Claim Registered! Provider: Star Health Insurance, Approved: ₹0.0, Patient Share: ₹0.0
+
+[STEP 10.5] IPD Billing: Simulating TPA Approval for Insurance Claim...
+✅ Insurance Claim Approved! Approved Amount: ₹10000.0, Status: Approved
+
+[STEP 11] Blood Bank: Registering new donor...
+✅ Donor Registered! ID: 664ecaf0-5700-4f0c-a411-3ca1410eaab5
+
+[STEP 12] Blood Bank: Logging blood collection from donor...
+✅ Blood Collection Logged! ID: cacd8a18-5bc5-4c94-9caf-36c13045e617
+
+[STEP 13] Blood Bank: Depositing blood unit into inventory...
+✅ Blood unit deposited! ID: 55402a2b-9d09-431b-b6a6-78c5dd0fb25a
+
+[STEP 14] IPD Nursing: Recording Patient Vitals...
+✅ Vitals Recorded! BMI: 25.5, Alert: False
+
+[STEP 15] IPD Doctor: Adding confirmed diagnosis...
+✅ Diagnosis Recorded! ICD-10: N20.0 — Kidney Stone
+
+[STEP 16] IPD Doctor: Creating treatment plan...
+✅ Treatment Plan Created.
+
+[STEP 17] IPD Billing: Recalculating total bill...
+✅ Bill Recalculated!
+    Total Charges:     ₹15,740.00
+    Total Deposits:    ₹5,000.00
+    Total Discount:    ₹0.00
+    Insurance Payable: ₹10,000.00
+    Patient Payable:   ₹5,740.00
+    Outstanding:       ₹740.00
+
+[STEP 18] IPD Billing: Processing final patient payment...
+✅ Payment Processed! Receipt: PAY-03147302
+
+[STEP 19] IPD Billing: Fetching Final Consolidated Bill...
+═══════════════════════════════════════════════════════
+         FINAL IPD BILL SUMMARY
+═══════════════════════════════════════════════════════
+  Admission #:       IPD-ADM-2026-936734
+  Patient:           E2E AutomatedTest
+  Ward/Bed:          IPD Ward / 2af88c69-9701-4a72-b43d-dcd2df6b9aec
+  ─────────────────────────────────────────
+  Total Charges:     ₹15,740.00
+  (-) Discount:      ₹0.00
+  (+) Tax:           ₹0.00
+  Insurance Covered: ₹10,000.00
+  Patient Payable:   ₹5,740.00
+  ─────────────────────────────────────────
+  Total Deposits:    ₹5,000.00
+  Total Paid:        ₹7,740.00
+  Outstanding:       ₹-7,000.00
+  Status:            Active
+═══════════════════════════════════════════════════════
+
+[STEP 20] IPD Billing: Listing all itemized charges...
+✅ 6 line items on bill:
+    [Procedure] Emergency Consultation Fee x1 = ₹2,000.00
+    [Pharmacy] IV Normal Saline 1L x2 = ₹170.00
+    [Pharmacy] Ketorolac 30mg IV STAT x1 = ₹120.00
+    [Radiology] CT Abdomen w/ Contrast x1 = ₹8,500.00
+    [Laboratory] Complete Blood Count (CBC) x1 = ₹450.00
+    [Bed Charges] General Ward - Per Day x3 = ₹4,500.00
+
+═══════════════════════════════════════════════════════
+🎉 FULL END-TO-END PATIENT JOURNEY PASSED! 🎉
+═══════════════════════════════════════════════════════
+
+Summary of Validated Workflows:
+  ✅ Step 1:   Patient Registration
+  ✅ Step 2:   Doctor Worklist Assignment
+  ✅ Step 3:   Clinical Consultation & Note
+  ✅ Step 4:   Diagnostic Orders (Lab + Radiology)
+  ✅ Step 5:   Pharmacy Prescription
+  ✅ Step 6:   IPD Admission Request + Approval
+  ✅ Step 6.8: Ward → Room → Bed Provisioning
+  ✅ Step 7:   Bed Allocation & Encounter Creation
+  ✅ Step 8:   IPD Billing - Clinical Service Charges
+  ✅ Step 9:   IPD Billing - Advance Deposit
+  ✅ Step 10:  Insurance Claim Registration
+  ✅ Step 11:  Blood Bank - Donor Registration
+  ✅ Step 12:  Blood Bank - Collection Logging
+  ✅ Step 13:  Blood Bank - Inventory Deposit
+  ✅ Step 14:  Nursing - Vitals Recording
+  ✅ Step 15:  Doctor - Diagnosis (ICD-10)
+  ✅ Step 16:  Doctor - Treatment Plan
+  ✅ Step 17:  IPD Billing - Bill Recalculation
+  ✅ Step 18:  IPD Billing - Final Payment
+  ✅ Step 19:  Final Consolidated Bill
+  ✅ Step 20:  Itemized Charge Listing
+

@@ -1,0 +1,19 @@
+Workflow for Trauma patients
+
+Most of the times doctors from multiple specialties treat patient at the same time based on patient’s condition. Like Nero surgeon and Orthopaedic surgeon treats patient at the same time. 
+Current functionality is we can define one Admitting doctor and one treating doctor for a patient. 
+
+Enhancements required are:
+Primary treating doctor will have facility to define team of doctors (may be from same specialty or multiple specialities) for the patient. 
+Doctor defined as “Treating Doctor” at the time of admission to be considered as “Primary Treating Doctor”
+During patient’s stay, Primary treating physician will have facility to add / remove team members as well as change Primary Doctor.
+Doctors defined by primary treating doctor will have access to patient’s medical data. No further transfer of patient will be required when treating team is defined. 
+In case Doctor Visit charges are posted automatically, then in this scenario visit charges for all doctors in the team will be posted in patient’s bill 
+Give facility to initiate medical discharge by Primary treating doctor. In case reason for Discharge is Death, then any member of the team can initiate medical discharge and patient will be medically discharged without waiting for acceptance from other treating doctors. 
+Give tab in cover sheet for other treating doctors to give accept patient discharge.
+After getting acceptance from all treating doctors, patient will be considered as “Medically discharged” and further discharge process can start. 
+Discharge summary will have updates from all treating doctors. The primary treating doctor will finalize Discharge Summary. 
+Discharge summary will have names of all treating doctors name along with their specialty. 
+All treating doctors will have facility to order discharge medications but primary treating doctor will have to add remove medications ordered by other team members. 
+Finalized discharge medications will be go to Pharmacy for dispensing. 
+

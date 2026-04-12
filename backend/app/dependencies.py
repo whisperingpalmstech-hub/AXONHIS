@@ -1,7 +1,10 @@
 """
 Shared FastAPI dependencies.
 
-Centralised here to keep router files clean and avoid circular imports.
+Provides:
+- DBSession: async database session
+- CurrentUser: authenticated user from JWT
+- require_permissions: decorator for permission-based access control
 """
 from typing import Annotated
 
@@ -9,23 +12,29 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth.models import User
 from app.core.auth.services import AuthService
-from app.core.auth.models import User, UserRole
 from app.database import get_db
 
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
 
 DBSession = Annotated[AsyncSession, Depends(get_db)]
 
 
 async def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
     db: DBSession,
 ) -> User:
-    """Validate JWT bearer token and return the authenticated user."""
+    """Validate JWT bearer token and return the authenticated user with roles loaded."""
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     token = credentials.credentials
     user = await AuthService(db).get_user_from_token(token)
-    if user is None or not user.is_active:
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
@@ -34,18 +43,46 @@ async def get_current_user(
     return user
 
 
+async def get_current_user_optional(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    db: DBSession,
+) -> User | None:
+    """Validate JWT bearer token if present; return None if not."""
+    if credentials is None:
+        return None
+    token = credentials.credentials
+    return await AuthService(db).get_user_from_token(token)
+
+
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-def require_roles(*roles: UserRole):
-    """Dependency factory: restrict endpoint to specific roles."""
+def require_permissions(*permission_codes: str):
+    """
+    Dependency factory: restrict endpoint to users with specific permissions.
+
+    Usage:
+        @router.get("/admin", dependencies=[require_permissions("system_admin")])
+        async def admin_endpoint(): ...
+    """
 
     async def _check(current_user: CurrentUser) -> User:
-        if current_user.role not in roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Role '{current_user.role}' is not authorised for this action",
-            )
+        user_perms: list[str] = []
+        for ur in (current_user.user_roles or []):
+            for rp in (ur.role.role_permissions or []):
+                if rp.permission.code not in user_perms:
+                    user_perms.append(rp.permission.code)
+
+        # system_admin bypass — has all permissions
+        if "system_admin" in user_perms:
+            return current_user
+
+        for required in permission_codes:
+            if required not in user_perms:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Permission '{required}' is required for this action",
+                )
         return current_user
 
     return Depends(_check)

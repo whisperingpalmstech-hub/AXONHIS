@@ -10,17 +10,335 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from app.config import settings
 from app.database import Base
 
-# Import all models so Alembic sees them for autogenerate
-from app.core.auth.models import User  # noqa: F401
+# Import ALL models so Alembic sees them for autogenerate
+
+# Phase 1 – Core Platform
+from app.core.auth.models import User, Role, Permission, RolePermission, UserRole, DeviceSession  # noqa: F401
 from app.core.events.models import Event  # noqa: F401
 from app.core.audit.models import AuditLog  # noqa: F401
-from app.core.patients.models import Patient  # noqa: F401
+from app.core.files.models import File  # noqa: F401
+from app.core.notifications.models import Notification  # noqa: F401
+from app.core.config.models import Configuration  # noqa: F401
+from app.core.administration.tenants.models import OrganizationEntity, FacilitySite  # noqa: F401
+
+# Phase 2+ – Clinical
+from app.core.patients.patients.models import Patient  # noqa: F401
+from app.core.patients.identifiers.models import PatientIdentifier  # noqa: F401
+from app.core.patients.contacts.models import PatientContact  # noqa: F401
+from app.core.patients.guardians.models import PatientGuardian  # noqa: F401
+from app.core.patients.insurance.models import PatientInsurance  # noqa: F401
+from app.core.patients.consents.models import PatientConsent  # noqa: F401
+from app.core.patients.appointments.models import Appointment  # noqa: F401
 from app.core.encounters.models import Encounter  # noqa: F401
+from app.core.encounters.diagnoses.models import EncounterDiagnosis  # noqa: F401
+from app.core.encounters.notes.models import EncounterNote  # noqa: F401
+from app.core.encounters.timeline.models import EncounterTimeline  # noqa: F401
+from app.core.encounters.clinical_flags.models import ClinicalFlag  # noqa: F401
 from app.core.orders.models import Order, OrderItem  # noqa: F401
 from app.core.tasks.models import Task  # noqa: F401
-from app.core.billing.models import BillingEntry, Tariff, Invoice, Payment  # noqa: F401
-from app.core.lab.models import LabTest, LabResult  # noqa: F401
-from app.core.pharmacy.models import Medication, Stock, Dispense  # noqa: F401
+from app.core.billing.services.models import BillingService  # noqa: F401
+from app.core.billing.tariffs.models import ServiceTariff  # noqa: F401
+from app.core.billing.billing_entries.models import BillingEntry, BillingReversal, FinancialAuditLog  # noqa: F401
+from app.core.billing.insurance.models import InsuranceProvider, InsurancePackage, InsurancePolicy, PreAuthorization, InsuranceClaim, ClaimItem  # noqa: F401
+from app.core.billing.discounts.models import DiscountRule  # noqa: F401
+from app.core.billing.invoices.models import Invoice  # noqa: F401
+from app.core.billing.payments.models import Payment  # noqa: F401
+from app.core.lab.models import LabTest, LabOrder, LabSample, LabResult, LabValidation, LabProcessing  # noqa: F401
+from app.core.pharmacy.medications.models import (  # noqa: F401
+    Medication, PharmacyGenericMapping, PharmacyDrugInteraction,
+    PharmacyDrugSchedule, PharmacyDosageRule, PharmacyRolePermission,
+    PharmacyDrugMasterAudit
+)
+from app.core.pharmacy.prescriptions.models import Prescription, PrescriptionItem  # noqa: F401
+from app.core.pharmacy.dispensing.models import DispensingRecord  # noqa: F401
+from app.core.pharmacy.inventory.models import InventoryItem, ControlledDrugLog  # noqa: F401
+from app.core.pharmacy.batches.models import DrugBatch  # noqa: F401
+from app.core.pharmacy.sales.models import (  # noqa: F401
+    PharmacyWalkInSale, PharmacySaleItem, PharmacySalePayment,
+    PharmacyPrescriptionUpload, PharmacySalesAuditLog
+)
+from app.core.pharmacy.sales_worklist.models import (  # noqa: F401
+    PharmacySalesWorklist, PharmacyPrescription, PharmacyDispensingRecord,
+    PharmacyDispenseBatch, PharmacyDispenseLog
+)
+from app.core.pharmacy.sales_returns.models import (  # noqa: F401
+    PharmacySalesReturn, PharmacyReturnItem, PharmacyReturnReason,
+    PharmacyReturnRefund, PharmacyReturnLog
+)
+from app.core.pharmacy.ip_issues.models import (  # noqa: F401
+    PharmacyIPPendingIssue, PharmacyIPDispenseRecord, PharmacyIPDispenseBatch,
+    PharmacyIPBillingRecord, PharmacyIPOrderLog
+)
+from app.core.pharmacy.ip_returns.models import (  # noqa: F401
+    PharmacyIPReturn, PharmacyIPReturnItem, 
+    PharmacyIPBillingAdjustment, PharmacyIPReturnLog
+)
+from app.core.pharmacy.narcotics.models import (  # noqa: F401
+    PharmacyNarcoticsOrder, PharmacyNarcoticsDispense,
+    PharmacyNarcoticsAmpouleReturn, PharmacyNarcoticsInventory, PharmacyNarcoticsAuditLog
+)
+from app.core.pharmacy.inventory_intelligence.models import ( # noqa: F401
+    PharmacyInventoryBatch, PharmacyStockMovement, PharmacyItemKit,
+    PharmacyInventoryAlert, PharmacyInventoryAnalysis, PharmacyInventoryLog
+)
+from app.core.pharmacy.billing_compliance.models import PharmacyBillingRecord, PharmacyDiscountRecord, PharmacyPaymentTransaction, PharmacyRefundRecord, PharmacyFinancialReport, PharmacyBillingAuditLog
+# from app.core.pharmacy.drug_interactions.models import DrugInteraction  # noqa: F401
+from app.core.orders.templates.models import OrderTemplate, OrderTemplateItem, OrderSet, OrderSetItem  # noqa: F401
+
+# Phase 9 – AI Platform
+from app.core.ai.models import AISummary, ClinicalInsight, RiskAlert, VoiceCommand, AIAgentTask  # noqa: F401
+
+# Phase 10 - Analytics
+from app.core.analytics.clinical_metrics.models import DailyClinicalMetric  # noqa: F401
+from app.core.analytics.financial_metrics.models import DailyFinancialMetric  # noqa: F401
+from app.core.analytics.operational_metrics.models import DailyOperationalMetric  # noqa: F401
+
+# Phase 11 - System
+from app.core.system.logging.models import SystemLog  # noqa: F401
+from app.core.system.monitoring.models import TrackedError, PerformanceMetric  # noqa: F401
+from app.core.analytics.predictive_models.models import HospitalPrediction  # noqa: F401
+
+# Hospital Intelligence & Analytics Engine
+from app.core.hospital_intelligence.models import (
+    AnalyticsPatientFlow,
+    AnalyticsDoctorProductivity,
+    AnalyticsRevenue,
+    AnalyticsClinicalStatistics,
+    AnalyticsCrowdPrediction
+)
+
+# LIS Test Order Management Engine
+from app.core.lab.test_order_engine.models import (
+    LISTestOrder, LISTestOrderItem, LISTestPanel, LISTestPanelItem,
+    LISBarcodeRegistry, LISOrderDocument, LISOrderAuditTrail
+)
+
+# LIS Phlebotomy & Sample Collection Engine
+from app.core.lab.phlebotomy_engine.models import (
+    PhlebotomyWorklist, SampleCollection, ConsentDocument,
+    RepeatSampleSchedule, SampleTransport, PhlebotomyAudit
+)
+
+# LIS Central Receiving & Specimen Tracking Engine
+from app.core.lab.central_receiving.models import (
+    CRReceipt, CRVerification, CRRejection, CRRouting,
+    CRStorage, CRChainOfCustody, CRAlert, CRAudit
+)
+
+# LIS Laboratory Processing & Result Entry Engine
+from app.core.lab.processing_engine.models import (
+    ProcessingWorklist, ResultEntry, ResultFlag, DeltaCheck,
+    QCResult, ResultComment, ProcessingAudit
+)
+
+# LIS Analyzer & Device Integration Engine
+from app.core.lab.analyzer_engine.models import (
+    AnalyzerDevice, AnalyzerWorklist, AnalyzerResult, ReagentUsage,
+    DeviceError, DeviceAudit
+)
+
+# LIS Result Validation & Approval Engine
+from app.core.lab.result_validation_engine.models import (
+    ValidationWorklist, ValidationRecord, ValidationFlag, ValidationRejection, ValidationAudit
+)
+
+# LIS Smart Reporting Engine
+from app.core.lab.reporting_engine.models import (
+    LabReport, ReportRelease, ReportVersion, ReportAuditLog, ReportCommentTemplate, ReportTemplate
+)
+
+# LIS Advanced Diagnostic Modules
+from app.core.lab.advanced_diagnostics.models import (
+    HistopathologySpecimen, HistopathologyBlock, HistopathologySlide,
+    MicrobiologyCulture, AntibioticSensitivity, CSSDSterilityTest, BloodBankInventory
+)
+
+# LIS Extended Services & Quality Management 
+from app.core.lab.extended_services.models import (
+    LisHomeCollectionRequest, LisPhlebotomistSchedule,
+    LisOutsourceLabMaster, LisExternalResult, LisQualityControl, LisEquipmentMaintenance
+)
+
+# IPD Admission & Bed Management Engine
+from app.core.ipd.models import (
+    IpdAdmissionRequest, IpdAdmissionRecord, IpdAdmissionAuditLog,
+    IpdCostEstimation, IpdAdmissionChecklist, IpdInsuranceDetails,
+    IpdProjectedBill, IpdDepositRecord, IpdPatientTransport, IpdAdmissionDocument,
+    IpdNursingWorklist, IpdNursingCoversheet, IpdPatientStatusMonitor,
+    IpdNursingNote, IpdCareAssignment, IpdNursingAuditLog,
+    IpdVitalsRecord, IpdNursingAssessment, IpdRiskAssessment,
+    IpdPainScore, IpdNutritionAssessment, IpdNursingObservation,
+    IpdDoctorWorklist, IpdDoctorCoversheet, IpdDiagnosis,
+    IpdTreatmentPlan, IpdProgressNote, IpdClinicalProcedure,
+    IpdConsultationRequest, IpdOrdersMaster, IpdLabOrder,
+    IpdRadiologyOrder, IpdMedicationOrder, IpdProcedureOrder,
+    IpdOrderStatusLog, IpdTransferRequest, IpdTransferRecord,
+    IpdBedMovement, IpdTransferHandover, IpdTransferNotification,
+    IpdTransferAuditLog, IpdDischargePlan, IpdDischargeChecklist,
+    IpdDischargeSummary, IpdDischargeNote, IpdDischargeNotification,
+    IpdDischargeAuditLog, IpdBillingMaster, IpdBillingService,
+    IpdBillingDeposit, IpdInsuranceClaim, IpdPaymentTransaction,
+    IpdRefundRecord, IpdBillingAuditLog, IpdVisitor, IpdVisitorPass,
+    IpdVisitorLog, IpdMlcCase, IpdMlcDocument, IpdSecurityNotification
+)
+
+# Phase 23 - RPIW (Role-Based Patient Interaction Workspace)
+from app.core.rpiw.models import (
+    RpiwUserRole, RpiwRolePermission, RpiwRoleWorkflow,
+    RpiwRoleSession, RpiwRoleComponent, RpiwRoleActivityLog
+)
+
+# Phase 24 - RPIW Patient Summary Engine
+from app.core.rpiw_summary.models import (
+    RpiwPatientSummary, RpiwSummarySource, RpiwSummaryAlert,
+    RpiwSummaryTask, RpiwSummaryVital, RpiwSummaryMedication
+)
+
+# Phase 25 - RPIW Clinical Action Engine
+from app.core.rpiw_actions.models import (
+    RpiwAction, RpiwClinicalNote, RpiwOrder,
+    RpiwPrescription, RpiwTask, RpiwActionLog
+)
+
+# Phase 26 - RPIW Role-Based AI Assistant Engine
+from app.core.rpiw_ai_assistant.models import (
+    RpiwAiContext, RpiwAiSuggestion, RpiwAiAlert,
+    RpiwAiFeedback, RpiwAiActivityLog
+)
+
+
+# Phase 12 - CDSS
+from app.core.cdss.drug_interactions.models import DrugInteraction  # noqa: F401
+from app.core.cdss.allergy_checks.models import DrugAllergyMapping  # noqa: F401
+from app.core.cdss.dose_validation.models import DrugDosageGuideline  # noqa: F401
+from app.core.cdss.duplicate_therapy.models import DrugClass  # noqa: F401
+from app.core.cdss.contraindications.models import DrugContraindication  # noqa: F401
+from app.core.cdss.engine.models import CDSSAlert  # noqa: F401
+
+# Phase 13 - Blood Bank
+from app.core.blood_bank.blood_components.models import BloodComponent  # noqa: F401
+from app.core.blood_bank.blood_inventory.models import BloodStorageUnit  # noqa: F401
+from app.core.blood_bank.donors.models import BloodDonor, BloodCollection  # noqa: F401
+from app.core.blood_bank.blood_units.models import BloodUnit  # noqa: F401
+from app.core.blood_bank.transfusion_orders.models import TransfusionOrder, BloodAllocation  # noqa: F401
+from app.core.blood_bank.compatibility_tests.models import CrossmatchTest  # noqa: F401
+from app.core.blood_bank.transfusions.models import Transfusion  # noqa: F401
+from app.core.blood_bank.transfusion_reactions.models import TransfusionReaction  # noqa: F401
+from app.core.communication.messages.models import Message  # noqa: F401
+from app.core.communication.channels.models import Channel, ChannelMember, ChannelMessage  # noqa: F401
+from app.core.communication.alerts.models import ClinicalAlert  # noqa: F401
+from app.core.communication.notifications.models import CommunicationNotification  # noqa: F401
+from app.core.communication.escalations.models import TaskEscalation  # noqa: F401
+from app.core.communication.patient_threads.models import PatientThread  # noqa: F401
+
+# Phase 10 - Ward & Bed Management
+from app.core.wards.models import Ward, Room, Bed, BedAssignment, BedTransfer, BedCleaningTask  # noqa: F401
+
+# Phase 11 - Radiology & Imaging Management
+from app.core.radiology.imaging_orders.models import ImagingOrder  # noqa: F401
+from app.core.radiology.imaging_studies.models import ImagingStudy  # noqa: F401
+from app.core.radiology.imaging_schedule.models import ImagingSchedule  # noqa: F401
+from app.core.radiology.dicom_metadata.models import DICOMMetadata  # noqa: F401
+from app.core.radiology.radiology_reports.models import RadiologyReport  # noqa: F401
+from app.core.radiology.radiology_results.models import RadiologyResult  # noqa: F401
+
+# Phase 14 - Operating Theatre
+from app.core.ot.operating_rooms.models import OperatingRoom  # noqa: F401
+from app.core.ot.surgical_procedures.models import SurgicalProcedure  # noqa: F401
+from app.core.ot.surgery_schedule.models import SurgerySchedule  # noqa: F401
+from app.core.ot.surgical_teams.models import SurgicalTeam  # noqa: F401
+from app.core.ot.anesthesia_records.models import AnesthesiaRecord  # noqa: F401
+from app.core.ot.surgery_events.models import SurgeryEvent  # noqa: F401
+from app.core.ot.surgery_notes.models import SurgeryNote  # noqa: F401
+from app.core.ot.postoperative_events.models import PostoperativeEvent  # noqa: F401
+
+# Phase 16 - Patient Portal
+from app.core.patient_portal.patient_accounts.models import PatientAccount  # noqa: F401
+from app.core.patient_portal.appointments.models import PortalAppointment, DoctorAvailability  # noqa: F401
+from app.core.patient_portal.teleconsultations.models import Teleconsultation  # noqa: F401
+from app.core.patient_portal.medical_records.models import PatientDocument  # noqa: F401
+from app.core.patient_portal.patient_payments.models import PatientPayment  # noqa: F401
+
+# Enterprise Registration (OPD FRD)
+from app.core.patients.registration.models import (  # noqa: F401
+    RegistrationSession,
+    IDScanRecord,
+    FaceEmbedding,
+    HealthCard,
+    RegistrationDocument,
+    RegistrationNotification,
+    AddressDirectory,
+)
+
+# Enterprise Scheduling
+from app.core.scheduling.models import (  # noqa: F401
+    DoctorCalendar,
+    CalendarSlot,
+    SlotBooking,
+    OverbookingConfig,
+    CyclicSchedule,
+    ModalityResource,
+    ModalitySlot,
+    AppointmentReminder,
+    FollowUpRule,
+    SchedulingAnalytics,
+)
+
+# OPD Visit Intelligence Engine
+from app.core.opd_visits.models import (  # noqa: F401
+    VisitMaster,
+    VisitComplaint,
+    VisitClassification,
+    VisitDoctorRecommendation,
+    VisitQuestionnaireTemplate,
+    VisitQuestionnaireResponse,
+    VisitContextSnapshot,
+    MultiVisitRule,
+    VisitAnalyticsSnapshot,
+)
+
+# OPD Smart Queue & Flow Orchestration Engine
+from app.core.smart_queue.models import (  # noqa: F401
+    QueueMaster,
+    QueuePatientPosition,
+    QueueEvent,
+    QueueNotification,
+    WayfindingNode,
+    RoomWayfindingMapping,
+    CrowdPredictionSnapshot,
+)
+
+# OPD Nursing Clinical Triage Engine
+from app.core.nursing_triage.models import (  # noqa: F401
+    NursingWorklist,
+    NursingVitals,
+    NursingAssessment,
+    NursingTemplate,
+    NursingDocumentUpload,
+    TriagePriorityUpdate,
+)
+
+# AI Doctor Desk & Intelligent EMR Engine
+from app.core.doctor_desk.models import (  # noqa: F401
+    DoctorWorklist,
+    ConsultationNote,
+    DoctorClinicalTemplate,
+    DoctorPrescription,
+    DoctorDiagnosticOrder,
+    DoctorClinicalSummary,
+    FollowUpRecord,
+)
+
+# Enterprise OPD Billing & Revenue Cycle Engine
+from app.core.rcm_billing.models import (  # noqa: F401
+    BillingMaster,
+    BillingService,
+    BillingPayment,
+    BillingDiscount,
+    BillingRefund,
+    BillingPayer,
+    BillingTariff,
+)
 
 config = context.config
 if config.config_file_name is not None:

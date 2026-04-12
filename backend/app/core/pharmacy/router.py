@@ -1,69 +1,35 @@
-"""Pharmacy router – dispense medication and query stock."""
-import uuid
-
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from sqlalchemy import select
-
-from app.core.events.models import EventType
-from app.core.events.services import EventService
-from app.core.pharmacy.models import Dispense, Medication, Stock
-from app.dependencies import CurrentUser, DBSession
+from fastapi import APIRouter
+from app.core.pharmacy.medications.routes import router as medications_router
+from app.core.pharmacy.prescriptions.routes import router as prescriptions_router
+from app.core.pharmacy.dispensing.routes import router as dispensing_router
+from app.core.pharmacy.inventory.routes import router as inventory_router
+from app.core.pharmacy.batches.routes import router as batches_router
 
 router = APIRouter(prefix="/pharmacy", tags=["pharmacy"])
 
+router.include_router(medications_router, tags=["Medications"])
+router.include_router(inventory_router, tags=["Pharmacy Inventory"])
+router.include_router(prescriptions_router, tags=["Prescriptions"])
+router.include_router(dispensing_router, tags=["Pharmacy Dispensing"])
+router.include_router(batches_router, tags=["Drug Batches"])
 
-class DispenseCreate(BaseModel):
-    order_id: uuid.UUID
-    medication_id: uuid.UUID
-    patient_id: uuid.UUID
-    quantity: int
-    notes: str | None = None
+from app.core.pharmacy.sales_worklist.routes import router as sales_worklist_router
+router.include_router(sales_worklist_router)
 
+from app.core.pharmacy.sales_returns.routes import router as sales_returns_router
+router.include_router(sales_returns_router)
 
-class DispenseOut(BaseModel):
-    id: uuid.UUID
-    order_id: uuid.UUID
-    medication_id: uuid.UUID
-    patient_id: uuid.UUID
-    quantity: int
-    dispensed_at: str
-    notes: str | None
+from app.core.pharmacy.ip_issues.routes import router as ip_issues_router
+router.include_router(ip_issues_router)
 
-    model_config = {"from_attributes": True}
+from app.core.pharmacy.ip_returns.routes import router as ip_returns_router
+from app.core.pharmacy.narcotics.routes import router as narcotics_router
+from app.core.pharmacy.inventory_intelligence.routes import router as inventory_intelligence_router
 
+router.include_router(ip_issues_router, prefix="/ip-issues", tags=["IP Pharmacy"])
+router.include_router(ip_returns_router, prefix="/ip-returns", tags=["IP Pharmacy"])
+router.include_router(narcotics_router, prefix="/narcotics", tags=["Narcotics Store Mgmt"])
+router.include_router(inventory_intelligence_router, prefix="/inventory-intelligence", tags=["Inventory Intelligence"])
 
-class MedicationOut(BaseModel):
-    id: uuid.UUID
-    code: str
-    name: str
-    generic_name: str | None
-    category: str
-    form: str
-    strength: str | None
-    unit_price: float
-
-    model_config = {"from_attributes": True}
-
-
-@router.get("/medications", response_model=list[MedicationOut])
-async def list_medications(db: DBSession, _: CurrentUser) -> list[MedicationOut]:
-    result = await db.execute(select(Medication).where(Medication.is_active == True))
-    return [MedicationOut.model_validate(m) for m in result.scalars().all()]
-
-
-@router.post("/dispense", response_model=DispenseOut, status_code=201)
-async def dispense_medication(
-    data: DispenseCreate, db: DBSession, user: CurrentUser
-) -> DispenseOut:
-    dispense = Dispense(**data.model_dump(), dispensed_by=user.id)
-    db.add(dispense)
-    await db.flush()
-    await EventService(db).emit(
-        EventType.MEDICATION_DISPENSED,
-        summary="Medication dispensed",
-        patient_id=data.patient_id,
-        actor_id=user.id,
-        payload={"dispense_id": str(dispense.id), "order_id": str(data.order_id)},
-    )
-    return DispenseOut.model_validate(dispense)
+from app.core.pharmacy.billing_compliance.routes import router as billing_compliance_router
+router.include_router(billing_compliance_router, prefix="/billing-compliance", tags=["Pharmacy Billing & Compliance"])

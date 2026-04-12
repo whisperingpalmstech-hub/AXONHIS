@@ -1,17 +1,29 @@
 """
-AXONHIS Backend – Application Entry Point.
+AXONHIS Backend – Enterprise Application Entry Point.
 
 All configuration, middleware, and routers are registered here.
 """
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+import time
 
 from app.config import settings
-from app.database import engine
+from app.database import engine, get_db
+from app.core.system.monitoring.services import MonitoringService
+from app.core.system.security.middleware import SecurityHeadersMiddleware
+
+# Core System & Auth Engine
 from app.core.auth.router import router as auth_router
+from app.core.audit.router import router as audit_router
+from app.core.files.router import router as files_router
+from app.core.notifications.router import router as notifications_router
+from app.core.config.router import router as config_router
+
+# Clinical Entities & Medical Records
 from app.core.patients.router import router as patients_router
 from app.core.encounters.router import router as encounters_router
 from app.core.orders.router import router as orders_router
@@ -20,14 +32,55 @@ from app.core.lab.router import router as lab_router
 from app.core.pharmacy.router import router as pharmacy_router
 from app.core.billing.router import router as billing_router
 from app.core.ai.router import router as ai_router
+from app.core.analytics.router import router as analytics_router
 
+# Core Infrastructure Observability
+from app.core.system.health_checks.routes import router as system_health_router
+from app.core.system.logging.routes import router as system_logging_router
+from app.core.system.monitoring.routes import router as system_monitoring_router
+from app.core.cdss.engine.routes import router as cdss_router
+
+# Hospital Departments
+from app.core.blood_bank.router import router as blood_bank_router
+from app.core.wards.router import router as wards_router
+from app.core.radiology.router import router as radiology_router
+from app.core.ot.router import router as ot_router
+from app.core.communication.routes import communication_router
+from app.core.patient_portal.router import portal_router
+
+# Enterprise Scheduling
+from app.core.scheduling.routes import router as scheduling_router
+
+# OPD Visit Intelligence Engine
+from app.core.opd_visits.routes import router as opd_visits_router
+
+# OPD Smart Queue & Flow Orchestration Engine
+from app.core.smart_queue.routes import router as smart_queue_router
+
+# OPD Nursing Clinical Triage Engine
+from app.core.nursing_triage.routes import router as nursing_triage_router
+
+# AI Doctor Desk & Intelligent EMR Engine
+from app.core.doctor_desk.routes import router as doctor_desk_router
+
+# Enterprise OPD Billing & Revenue Cycle Engine
+from app.core.rcm_billing.routes import router as rcm_billing_router
+
+# Multi-Tenancy & Masters Engine
+from app.core.administration.tenants.routes import router as multitenancy_router
+
+# Force load all models for SQLAlchemy registry
+from app.core.patients.patients.models import Patient
+from app.core.patient_portal.patient_accounts.models import PatientAccount
+from app.core.scheduling.models import SlotBooking
+from app.core.lab.models import LabOrder, LabResult
+from app.core.pharmacy.prescriptions.models import Prescription
+from app.core.auth.models import User
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Startup / shutdown lifecycle."""
-    # Startup
     yield
-    # Shutdown
     await engine.dispose()
 
 
@@ -35,7 +88,7 @@ def create_app() -> FastAPI:
     """Application factory."""
     app = FastAPI(
         title="AXONHIS API",
-        description="AI-First Hospital Information System",
+        description="AI-First Hospital Information System — Enterprise Backend",
         version="0.1.0",
         docs_url="/docs",
         redoc_url="/redoc",
@@ -43,29 +96,253 @@ def create_app() -> FastAPI:
     )
 
     # ── CORS ──────────────────────────────────────────────────────────────
+    allowed_origins = settings.backend_cors_origins
+    if isinstance(allowed_origins, str):
+        allowed_origins = [i.strip() for i in allowed_origins.split(",") if i.strip()]
+    
+    # Add local developer origins for safety
+    for dev_origin in ["http://localhost:3000", "http://localhost:9501", "http://localhost:9502", "http://127.0.0.1:9502"]:
+        if dev_origin not in allowed_origins:
+            allowed_origins.append(dev_origin)
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.backend_cors_origins,
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-    # ── Routers ───────────────────────────────────────────────────────────
-    api_prefix = "/api/v1"
-    app.include_router(auth_router, prefix=api_prefix)
-    app.include_router(patients_router, prefix=api_prefix)
-    app.include_router(encounters_router, prefix=api_prefix)
-    app.include_router(orders_router, prefix=api_prefix)
-    app.include_router(tasks_router, prefix=api_prefix)
-    app.include_router(lab_router, prefix=api_prefix)
-    app.include_router(pharmacy_router, prefix=api_prefix)
-    app.include_router(billing_router, prefix=api_prefix)
-    app.include_router(ai_router, prefix=api_prefix)
+    # ── Security Headers Phase 11 ─────────────────────────────────────────
+    app.add_middleware(SecurityHeadersMiddleware)
+    
+    # ── Rate Limiting (HIPAA Point 7) ────────────────────────────────────
+    from app.core.system.security.rate_limit import RateLimitMiddleware
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=200)
 
+    # ── Exception Handler Phase 11 & i18n ────────────────────────────────────────
+    from fastapi.exceptions import RequestValidationError
+    from app.core.i18n import get_locale_from_header, t
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        locale = request.headers.get("X-Locale") or get_locale_from_header(request.headers.get("Accept-Language"))
+        errors = []
+        for error in exc.errors():
+            msg = error.get("msg", "invalid")
+            # Basic map for generic pydantic errors
+            if "required" in msg:
+                msg = t("validation.required", locale=locale)
+            elif "not a valid email" in msg:
+                msg = t("validation.invalid_email", locale=locale)
+            elif "not a valid number" in msg:
+                msg = t("validation.positive_number", locale=locale)
+            errors.append({"loc": error.get("loc"), "msg": msg, "type": error.get("type")})
+        return JSONResponse(status_code=422, content={"detail": errors})
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        print(f"DEBUG GLOBAL EXCEPTION: {exc}")
+        import traceback
+        traceback.print_exc()
+        try:
+            async for db in get_db():
+                monitoring = MonitoringService(db)
+                req_payload = None
+                try:
+                    req_payload = await request.json()
+                except Exception:
+                    pass
+                
+                await monitoring.log_error(
+                    error_type="api",
+                    message=str(exc),
+                    exc=exc,
+                    user_context=getattr(request, "user", None), # Basic contextual tracking
+                    request_payload=req_payload
+                )
+                break # Just run once
+        except Exception:
+            pass # Failsafe if DB logging fails
+            
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal Server Error"},
+        )
+
+    # ── Performance Monitoring Phase 11 ───────────────────────────────────
+    @app.middleware("http")
+    async def add_process_time_header(request: Request, call_next):
+        start_time = time.time()
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        response.headers["X-Process-Time"] = str(process_time)
+        return response
+
+    # ── API Routers ───────────────────────────────────────────────────────
+    api = "/api/v1"
+
+    # Phase 1 – Core Platform
+    from app.core.abdm.router import router as abdm_router
+    app.include_router(abdm_router, prefix=api)
+    
+    app.include_router(auth_router, prefix=api)
+    app.include_router(audit_router, prefix=api)
+    app.include_router(files_router, prefix=api)
+    app.include_router(notifications_router, prefix=api)
+    app.include_router(config_router, prefix=api)
+
+    # Phase 2+ – Clinical modules
+    app.include_router(patients_router, prefix=api)
+    app.include_router(encounters_router, prefix=api)
+    app.include_router(orders_router, prefix=api)
+    app.include_router(tasks_router, prefix=api)
+    app.include_router(lab_router, prefix=api)
+    app.include_router(pharmacy_router, prefix=api)
+    app.include_router(billing_router, prefix=api)
+    app.include_router(ai_router, prefix=api)
+    app.include_router(analytics_router, prefix=api)
+    app.include_router(communication_router, prefix=api)
+
+    # Phase 11 - Deployments & Systems
+    app.include_router(system_health_router, prefix=api)     # exposes /api/v1/system/*
+    app.include_router(system_logging_router, prefix=api)    # exposes /api/v1/system/logs
+    app.include_router(system_monitoring_router, prefix=api) # exposes /api/v1/system/monitoring/*
+
+    # Phase 12 - CDSS
+    app.include_router(cdss_router, prefix="/api/v1/cdss/engine", tags=["Clinical Decision Support"])
+
+    # Phase 13 - Blood Bank
+    app.include_router(blood_bank_router, prefix="/api/v1")
+
+    # Phase 10 - Ward & Bed Management
+    app.include_router(wards_router, prefix="/api/v1")
+
+    # Phase 11 - Radiology & Imaging Management
+    app.include_router(radiology_router, prefix="/api/v1")
+
+    # Phase 14 - Operating Theatre Management
+    app.include_router(ot_router, prefix="/api/v1")
+
+    # Phase 16 - Patient Portal
+    app.include_router(portal_router, prefix="/api/v1")
+
+    # Enterprise Scheduling
+    app.include_router(scheduling_router, prefix="/api/v1")
+
+    # OPD Visit Intelligence Engine
+    app.include_router(opd_visits_router, prefix="/api/v1")
+
+    # OPD Smart Queue & Flow Orchestration Engine
+    app.include_router(smart_queue_router, prefix="/api/v1")
+
+    # OPD Nursing Clinical Triage Engine
+    app.include_router(nursing_triage_router, prefix="/api/v1")
+
+    # AI Doctor Desk & Intelligent EMR Engine
+    app.include_router(doctor_desk_router, prefix="/api/v1")
+
+    # Enterprise OPD Billing & Revenue Cycle Engine
+    app.include_router(rcm_billing_router, prefix="/api/v1")
+    app.include_router(multitenancy_router, prefix="/api/v1/administration")
+
+    # Sprint 1: Billing Masters & Configuration Engine (FRD Gaps 5-15)
+    from app.core.billing_masters.routes import router as billing_masters_router
+    app.include_router(billing_masters_router, prefix="/api/v1")
+
+    # Sprint 2: Emergency Room (ER) Module (FRD Gap 1)
+    from app.core.er.routes import router as er_router
+    app.include_router(er_router, prefix="/api/v1")
+
+    # Sprint 3: IPD Enhancements (FRD Gaps 2-4)
+    from app.core.ipd.ipd_enhancements.routes import router as ipd_enhanced_router
+    app.include_router(ipd_enhanced_router, prefix="/api/v1")
+
+    # Sprint 4: Cross-Module Integration Bridge
+    from app.core.integration.routes import router as integration_router
+    app.include_router(integration_router, prefix="/api/v1")
+
+    # Sprint 5: Operating Theatre (OT) Module — Enhanced
+    from app.core.ot.routes import router as ot_enhanced_router
+    app.include_router(ot_enhanced_router, prefix="/api/v1")
+
+    # Hospital Intelligence & Analytics Engine
+    from app.core.hospital_intelligence.routes import router as bi_router
+    app.include_router(bi_router, prefix="/api/v1")
+
+    # LIS Test Order Management Engine
+    from app.core.lab.test_order_engine.routes import router as lis_order_router
+    app.include_router(lis_order_router, prefix="/api/v1")
+
+    # LIS Phlebotomy & Sample Collection Engine
+    from app.core.lab.phlebotomy_engine.routes import router as phlebotomy_router
+    app.include_router(phlebotomy_router, prefix="/api/v1")
+
+    # LIS Central Receiving & Specimen Tracking Engine
+    from app.core.lab.central_receiving.routes import router as cr_router
+    app.include_router(cr_router, prefix="/api/v1")
+
+    # LIS Laboratory Processing & Result Entry Engine
+    from app.core.lab.processing_engine.routes import router as proc_router
+    app.include_router(proc_router, prefix="/api/v1")
+
+    # LIS Analyzer & Device Integration Engine
+    from app.core.lab.analyzer_engine.routes import router as analyzer_router
+    app.include_router(analyzer_router, prefix="/api/v1")
+
+    # LIS Result Validation & Approval Engine
+    from app.core.lab.result_validation_engine.routes import router as validation_router
+    app.include_router(validation_router, prefix="/api/v1")
+
+    # LIS Smart Reporting & Report Release Engine
+    from app.core.lab.reporting_engine.routes import router as reporting_router
+    app.include_router(reporting_router, prefix="/api/v1")
+
+    # LIS Advanced Diagnostic Modules
+    from app.core.lab.advanced_diagnostics.routes import router as advanced_lab_router
+    app.include_router(advanced_lab_router, prefix="/api/v1")
+
+    # LIS Extended Services & Quality Management
+    from app.core.lab.extended_services.routes import router as extended_lab_router
+    app.include_router(extended_lab_router, prefix="/api/v1")
+
+    # IPD Admission & Bed Management Engine
+    from app.core.ipd.routes import router as ipd_router
+    app.include_router(ipd_router, prefix="/api/v1")
+
+    # Phase 23 - Role-Based Patient Interaction Workspace
+    from app.core.rpiw.routes import router as rpiw_router
+    app.include_router(rpiw_router)
+
+    # Phase 24 - RPIW Patient Summary Engine
+    from app.core.rpiw_summary.routes import router as rpiw_summary_router
+    app.include_router(rpiw_summary_router)
+
+    # Phase 25 - RPIW Clinical Action Engine
+    from app.core.rpiw_actions.routes import router as rpiw_actions_router
+    app.include_router(rpiw_actions_router)
+
+    # Phase 26 - RPIW Role-Based AI Assistant Engine
+    from app.core.rpiw_ai_assistant.routes import router as rpiw_ai_router
+    app.include_router(rpiw_ai_router)
+
+    from app.core.pharmacy.sales.routes import router as pharmacy_sales_router
+    app.include_router(pharmacy_sales_router, prefix="/api/v1")
+
+    # Virtual Avatar Interaction Layer
+    from app.core.avatar.routes import router as avatar_router
+    app.include_router(avatar_router, prefix="/api/v1")
+
+    from app.core.linen.router import router as linen_router
+    app.include_router(linen_router, prefix="/api/v1/linen", tags=["Linen & Laundry"])
+
+    from app.core.cssd.router import router as cssd_router
+    app.include_router(cssd_router, prefix="/api/v1/cssd", tags=["CSSD"])
+
+    # ── Health Check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["health"])
     async def health_check() -> dict[str, str]:
-        return {"status": "ok", "service": "axonhis-backend"}
+        return {"status": "ok", "service": "axonhis-backend", "version": "0.1.0"}
 
     return app
 

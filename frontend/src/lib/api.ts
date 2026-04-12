@@ -4,7 +4,7 @@
  * All API calls go through this module for consistency and auth handling.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
 const API_PREFIX = "/api/v1";
 
 class ApiError extends Error {
@@ -26,11 +26,15 @@ async function request<T>(
     ...options.headers,
   };
 
-  // Get token from localStorage (client-side only)
+  // Get token and locale from localStorage (client-side only)
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("access_token");
     if (token) {
       (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+    }
+    const locale = localStorage.getItem("axonhis_locale");
+    if (locale) {
+      (headers as Record<string, string>)["X-Locale"] = locale;
     }
   }
 
@@ -38,7 +42,9 @@ async function request<T>(
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new ApiError(body.detail || response.statusText, response.status);
+    let msg = body.detail || response.statusText;
+    if (typeof msg === "object") msg = JSON.stringify(msg, null, 2);
+    throw new ApiError(msg, response.status);
   }
 
   if (response.status === 204) return {} as T;

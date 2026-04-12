@@ -1,0 +1,749 @@
+ Functional Requirements Document (FRD)
+In-Patient Department (IPD) Module
+Hospital Information System (HIS)
+
+1. Document Control
+Document Title 
+Functional Requirements Document - IPD Module 
+Module Name 
+Inpatient Department (IPD) Module 
+Parent System 
+Hospital Information System (HIS) 
+Version 
+Document Version  
+Date 
+Feb 17, 2026
+Status 
+Draft 
+
+Document Conventions
+HIS: Hospital Information System
+IPD: In-Patient Department
+OPD: Out-Patient Department
+EHR: Electronic Health Record
+LIS: Laboratory Information System
+RIS: Radiology Information System
+OTIMS: Operation Theatre Information Management System
+MLC: Medico-Legal Case
+RBAC: Role-Based Access Control
+ICD-10: International Classification of Diseases, 10th Revision
+ICPC: International Classification of Primary Care
+DOA: Date of Admission
+DOD: Date of Discharge
+PDD: Planned Discharge Date
+UHID: Unique Hospital Identification Number
+
+2. Introduction
+2.1 Purpose
+This Functional Requirements Document (FRD) defines the functional and non-functional requirements for the In-Patient Department (IPD) Module of the Hospital Information System (HIS). The IPD module is designed to manage the complete lifecycle of inpatient care, from admission through discharge, including bed management, nursing care, clinical documentation, patient transfers, and billing integration.
+2.2 Scope / Enhancement 
+The IPD Module encompasses the following key areas:
+Admission: 1. IPD Admission Screen- AI-Based Admission Cost Estimation Assistant (Based on previous data calculation)Add an AI assistant on the admission screen that shows an estimated hospital treatment cost in real time, based on past billing data and the details selected during admission.A “Cost Estimation” AI-widget shall be added to the IPD Admission screen.On selection, the system shall calculate and display an estimated IPD cost based on the admission context.The estimation shall consider:-Reason for admission-Admission source (referring doctor, emergency, OPD, external referral, etc.)-Selected Billing bed category (General, Semi-Private, Private, ICU, etc.)-Planned clinical services (procedures, investigations, surgeries)-Planned non-clinical services (room charges, nursing care, consumables)-Tariff (from other services & application)2.Projected Bill Visibility Across Stages Display the Projected Bill at every key stage of the IPD workflow (admission, transfer, service ordering, and pre-discharge) to provide real-time cost transparency. In case of planned surgery (Calculate projected bill –As per cancellation & bed management as per bed charges)  Data-Driven Revised Cost Calculation 
+The system shall generate a revised projected bill by dynamically incorporating: 
+Billed services 
+Unbilled services (services already rendered but not yet posted to billing, such as procedures, consumables, nursing care, investigations) 
+3. Integration with housekeeping module 
+Enable integration between the IPD Bed Management module and the Housekeeping module.The system should provide visibility of beds that are under housekeeping status, ensuring that vacated beds are not allocated until cleaning and disinfection are completed. So those bed which are under housekeeping status, can be easily accessible for bed management i,e nursing staff can get idea about bed will going to be available 
+For ICU management, introduce a Step-Down category with configurable flags in the Bed Master to support patient downgrading workflows. 
+Define separate categories for PICU and NICU, with clearly configured age-based criteria to ensure appropriate patient allocation.  (Flag configurable)
+4.Admission Checklist (For administrative purpose) 
+Patient Registration Completed (UHID generated)
+ Identity Proof Verified
+ Insurance / Corporate Details Captured
+ Pre-Authorization Initiated (if applicable)
+ Admission Form Signed
+ Consent for Admission Taken
+ Next of Kin Details Recorded
+ Contact Information Verified
+ Deposit Collected (if required)
+ MLC Marked (if medico-legal case)
+ 5.Smart Admission Workflow / Integration with Insurance Portal
+Admission checklist (Insurance, Consent, ID verification) In case of insurance admissions, provide a facility to upload and attach the insurance policy document during admission.
+Capture policy details such as:
+Per-day bed charge eligibility
+Total sum assured
+Permissible percentage of sum assured applicable for bed charges
+Based on the configured policy limits, the system should suggest the eligible bed category to the user.
+If a higher bed category is selected beyond the eligible limit, the differential amount should be automatically calculated and marked as patient payable.
+6.Admission Module -> Transportation facility (Stretcher, wheelchair) ->Give Fliter
+Discharge- Smart Discharge Planning In case of planned admission, as per PDD-> Smart PDD (as per prior data analysis) ( eg, Planned surgeries-> Packages)-> defined or AI analyzed 
+Pre-Discharge Checklist Auto discharge summary draft (AI-assisted)Provide the capability to assign multiple treating physicians to a single IPD admission, allowing multiple doctors (e.g., Trauma Surgery team) to access and document in the patient coversheet.
+Enable doctors from other specialties to view and access relevant IPD coversheet details for coordinated, multidisciplinary care, as per role-based access control.
+If patient is admitted against multiple treating physicians-> clearance should be get from all physicians (Approval from all) 
+Give PDD alert to all respective doctors or extend (check impact on bed management)
+Check for discharge summary template (as per dept –gynac) Fetch relevant data as per requirement 
+Given PDD alert to all respective doctors or extend (check impact on bed management) 
+Trasfer -> 
+During transfer to ward, implement an ISBAR-based handover workflow where the nurse reviews, opens, verifies, and formally accepts the patient transfer in the system.
+For ward-to-ward transfers (bed-to-bed transfer): 
+Initiate a bed transfer request to the Front Office.
+Validate bed availability.
+Allocate the new bed.
+Mandatorily complete a configurable ISBAR handover form before finalizing the transfer.
+Provide a configurable system flag to define and control the transfer workflow (mandatory ISBAR, approval requirement, etc.).
+The transfer count should be reflected on the administration dashboard, enabling monitoring of bed utilization trends and associated billing impacts. 
+Trasfer -> Closed ICU (Under care of Intensivist) -> Check for flags (Configurable) Open ICU (Treating Physicians) -> Check for flags Gap Requirement - If the service is appointable then check for available slot modality (CT brain -> check for available slots) Define IPD & OPD patients (time)
+Appointment Scheduling by modality (Check for slots for OPD & IPD)  
+Map of bed -> service is due (give  alert -> transfer to CT modality for investigation ) Give ICON on map of bed Day Care -> Time ( Admission & Closed time ) transfer to IPD ( Check for time ) Check for particular time of any dept ( IPD ) & pathology -> check for premium charges ( official working hours ) -> check for rendering depts ( check for prices – give flags ) 
+
+
+Patient admission process and bed allocation
+Nursing coversheet and clinical documentation
+Doctor coversheet and medical documentation
+Patient transfer and bed management
+Vital signs monitoring and nursing assessments
+Order management (diagnostics, medications, procedures)
+Discharge planning and execution
+Integration with billing, pharmacy, laboratory, and radiology modules
+Visitor pass management
+MLC (Medico-Legal Case) handling
+Deposit collection and management
+Patient acceptance workflows
+Ready for billing process
+2.3 Module Context within HIMS
+The IPD Module is a core component of the HIS platform and serves as the central hub for inpatient care management. It integrates seamlessly with multiple HIS modules to provide comprehensive patient care:
+Front Office: Patient registration, admission requests, and visitor management
+Billing: IPD charges, final billing, deposit management, and payment settlement
+Pharmacy: Medication orders, dispensing, and administration tracking
+Laboratory (LIS): Lab test orders, sample collection, and result integration
+Radiology (RIS): Imaging orders, scheduling, and report integration
+Doctor Desk: Clinical documentation, diagnosis, treatment planning
+Nursing Station: Nursing assessments, care plans, vital monitoring
+OTIMS: Surgical admissions and OT scheduling integration
+Inventory/Store: Material consumption and stock management
+Back Office: Administrative processing and documentation
+Finance: Revenue tracking and financial reporting
+EHR: Electronic health records and patient history
+
+3. System Architecture and Integration
+3.1 Module Architecture
+The IPD Module follows a multi-tier architecture integrated within the HIS platform:
+Presentation Layer: Web-based user interface accessible via browsers
+Application Layer: Business logic for admission, nursing, clinical workflows
+Integration Layer: APIs for seamless communication with other HIS modules
+Data Layer: Centralized HIS database with IPD-specific tables
+Security Layer: HIS SSO and RBAC for access control
+
+3.2 Integration Points with HIS Modules
+HIS Module
+Integration Type
+Data Exchange
+Front Office
+Bi-directional
+Patient registration, admission requests, visitor passes
+Billing
+Bi-directional
+Service charges, deposits, final bills, payment settlement
+Pharmacy
+Bi-directional
+Medication orders, dispensing status, administration records
+Laboratory (LIS)
+Bi-directional
+Lab orders, sample collection, test results
+Radiology (RIS)
+Bi-directional
+Imaging orders, scheduling, diagnostic reports
+Doctor Desk
+Bi-directional
+Clinical notes, diagnosis, treatment plans, orders
+Nursing Station
+Bi-directional
+Nursing assessments, vital signs, care documentation
+OTIMS
+Bi-directional
+Surgical admissions, OT reservations, procedure details
+Inventory/Store
+Outbound
+Material consumption, stock requisitions
+Back Office
+Bi-directional
+Administrative documentation, discharge summaries
+Finance
+Outbound
+Revenue data, billing transactions, payment records
+EHR
+Bi-directional
+Complete patient medical history, clinical documentation
+Procurement
+Inbound
+Medical supplies availability for patient care
+3.3 Data Flow
+Key data flows within the IPD Module and HIS ecosystem:
+Admission Request → Bed Allocation → Patient Registration → Nursing Acceptance
+Nursing Assessment → Doctor Review → Clinical Orders → Service Execution
+Service Orders → Laboratory/Radiology/Pharmacy → Results → Clinical Documentation
+Clinical Documentation → EHR → Patient History Repository
+Service Consumption → Billing → Payment Settlement → Discharge
+Discharge Request → Ready for Billing → Final Bill → Bed Vacation
+Patient Transfer → Bed Reallocation → Nursing Acceptance → Updated Location
+Vital Signs → Trending → Clinical Alerts → Care Interventions
+
+4. User Roles and Permissions
+The IPD Module utilizes HIS Role-Based Access Control (RBAC) to manage user permissions. The following roles are defined for the IPD Module:
+Role
+Responsibilities
+Key Permissions
+Front Office Executive
+Patient registration, admission requests, visitor passes
+Create admission requests, register patients, generate visitor passes
+Admission Desk Executive
+Bed allocation, admission processing
+Allocate beds, process admissions, collect deposits
+Nursing Staff
+Nursing assessments, vital monitoring, patient care
+Create nursing coversheet, record vitals, accept admissions/transfers
+Ward Nurse
+Ward-level patient care and monitoring
+View patient list, record observations, administer medications
+Head Nurse
+Nursing supervision and coordination
+All nursing permissions, approve nursing actions, manage ward operations
+Doctor/Physician
+Clinical diagnosis, treatment planning, orders
+Create doctor coversheet, add diagnosis, order services, discharge planning
+Resident Medical Officer
+Medical support and documentation
+View patient records, assist in documentation, emergency care
+Billing Executive
+IPD billing, payment collection
+Generate bills, collect payments, process refunds, settle accounts
+Lab Assistant
+Sample collection, test processing
+View lab orders, collect samples, update collection status
+Lab Technician
+Test execution, result entry
+Process samples, enter results, validate findings
+Radiology Technician
+Imaging procedures, report generation
+View imaging orders, perform procedures, upload images
+Pharmacist
+Medication dispensing, inventory management
+View medication orders, dispense medicines, update stock
+OT Nurse
+Surgical patient care, OT coordination
+View surgical admissions, prepare patients, assist in procedures
+Back Office Staff
+Administrative processing, documentation
+Process discharge summaries, manage records, generate reports
+
+Note: All roles are managed through the centralized HIS RBAC system, ensuring consistent access control across all modules.
+
+5. Functional Requirements
+5.1 Admission Management
+5.1.1 Admission Request
+Description: Initiate admission request for a patient requiring inpatient care.
+Functional Requirements:
+System shall allow Front Office staff to create admission requests
+ System shall capture patient demographics (name, gender, DOB, mobile, blood group)
+Allow selection of admitting doctor specialty and treating doctor
+FR-IPD-004: System shall capture admission category (emergency, planned, day care)
+Allow entry of reason for admission
+Capture date of admission and bed category preference
+Generate unique admission request ID upon save
+Route admission request to pending admission queue
+5.1.2 Pending Admission Processing
+Description: Review and process pending admission requests.
+Functional Requirements:
+Display all pending admission requests in a worklist
+Allow Admission Desk staff to select and process requests
+Display patient details, doctor details, and bed requirements
+Show real-time bed availability status
+Allow approval or rejection of admission requests
+Shall generate confirmation message upon processing
+5.1.3 Bed Reservation and Allocation
+Description: Reserve and allocate beds for admitted patients.
+Functional Requirements:
+Allow bed reservation before admission
+Shall display available beds by category, ward, and floor
+System shall allow selection of bed based on patient category
+System shall support bed allocation for different billing categories
+Capture payment entitlement (self, insurance, corporate)
+System shall allow entry of planned discharge date (PDD)
+Reserve bed and update bed status to "Occupied"
+Prevent double booking of beds
+5.1.4 Bill Estimation
+Description: Provide cost estimation for inpatient stay.
+Functional Requirements:
+System shall allow creation of bill estimation at admission
+Allow addition of services (bed charges, procedures, tests)
+Calculate total estimated cost based on services
+System shall allow application of discounts as per hospital policy
+Generate printable bill estimation document
+System shall display service-wise cost breakdown
+5.1.5 Patient Registration and Admission
+Description: Complete patient registration and admission process.
+Functional Requirements:
+System shall convert admission request to full registration
+Capture identification details (type, number)
+Capture race, occupation, and other demographics
+Allow entry of patient meal preferences
+Shall allow entry of attendant meal preferences
+Capture patient class and category
+Allow entry of admission remarks
+Capture treating doctor details
+Allow entry of referral details (type, source)
+Support next of kin information capture
+Allow deposit collection at admission
+Support provisional and final diagnosis entry (ICD-10)
+Display order sets mapped to diagnosis
+Allow visitor pass generation
+Allow reference number creation
+Support MLC case marking with priority
+System shall capture MLC details (police station, FIR, buckle number)
+System shall generate unique UHID if patient is new
+System shall generate admission number upon completion
+System shall generate "Registration Cum Admission" form
+
+5.2 Nursing Coversheet Management
+5.2.1 Patient Acceptance
+Description: Nursing staff accepts admitted patients for care.
+Functional Requirements:
+System shall display pending patient acceptances in nursing workstation
+Allow nursing staff to accept or reject admissions
+Require entry of acceptance notes
+Update patient status to "Accepted" upon confirmation
+System shall add patient to admitted patient list
+System shall support color-coded patient identification (Critical-Red, VIP-Blue, Review-Green, General-White)
+5.2.2 Complaints Management
+Description: Document patient complaints and presenting symptoms.
+Functional Requirements:
+System shall allow nursing staff to add patient complaints
+System shall support ICPC (International Classification of Primary Care) coding
+Capture complaint description and duration
+Allow entry of history of present complaint
+Display active complaints separately
+Display past complaints with resolved remarks
+5.2.3 History and Allergies
+Description: Capture comprehensive patient medical history and allergies.
+Functional Requirements:
+Allow entry of medical history with ICD-10 coding
+Allow entry of surgical history
+Capture lifestyle history (smoking, alcohol, diet)
+Document allergy and deficiency information
+Capture medication history
+Document treatment and investigation history
+System shall allow entry of family history
+System shall capture personal history
+System shall document vaccination history
+ System shall capture travel history
+System shall support "No Significant History" checkbox
+System shall allow marking of resolved conditions with dates
+System shall capture allergy type, allergen, and severity
+Document nature of allergic reaction
+Shall support "No Known Allergies" checkbox
+System shall display allergy alerts prominently in patient header
+5.2.4 Examination and Vitals
+Description: Record patient vital signs and physical examination findings.
+Functional Requirements:
+System shall allow entry of vital signs (temperature, height, weight, BMI)
+Capture HbA1c, waist size, oxygen saturation
+System shall record pulse rate, respiration, blood pressure
+Auto-calculate BMI based on height and weight
+Support oxygen saturation on room air and supplemental O2
+Display vital trends in tabular and graphical formats
+Support growth chart visualization
+Timestamp all vital sign entries
+Capture recorder name for each vital entry
+5.2.5 Initial Assessment
+Description: Conduct comprehensive initial nursing assessment.
+Functional Requirements:
+System shall capture assessment start and end time
+Document patient arrival mode
+System shall assess communication and cognition status
+Document invasive lines, catheters, tubes, drains
+Assess psychosocial status (calm, lethargic, aggressive)
+Identify signs of psychosocial or family distress
+System shall conduct pain assessment (present/absent)
+Assess rest and sleep patterns
+Conduct nutrition assessment
+Perform fall risk assessment
+Document system-wise examination (neurological, cardiovascular, respiratory, GI, integumentary, musculoskeletal, genitourinary)
+5.2.6 Orders Management
+Description: Manage clinical orders for diagnostics, medications, and procedures.
+Functional Requirements:
+Allow nursing staff to add diagnostic orders (lab, radiology)
+System shall allow addition of procedure orders
+System shall allow medication orders as per doctor advice
+ Support package orders (bundled services)
+Support cyclic orders (recurring visits)
+Allow doctor-wise and service-wise cyclic orders
+Display order status (pending, collected, completed)
+Capture order date, specialty, and service details
+Track execution date and collector information
+Support in-panel and out-of-panel service marking
+Integrate orders with LIS, RIS, and Pharmacy modules
+5.2.7 Certificates and Documentation
+Description: Generate and manage patient certificates and letters.
+Functional Requirements:
+System shall allow addition of medical certificates
+System shall support various certificate types (fitness, sick leave, etc.)
+ System shall generate printable certificate documents
+5.2.8 Observations and Nursing Notes
+Description: Document nursing observations and care notes.
+Functional Requirements:
+System shall allow nursing staff to add observations
+System shall allow entry of nursing notes
+Timestamp all observations and notes
+Associate notes with nurse name
+5.2.9 Progress Notes
+Description: Consolidated view of all patient documentation.
+Functional Requirements:
+ System shall display consolidated progress notes
+System shall include complaints, history, examination, orders, certificates, observations, and nursing notes
+System shall display entries in chronological order
+System shall show entry type, timestamp, and author
+
+5.3 Doctor Coversheet Management
+5.3.1 IPD Patient Access
+Description: Doctors access IPD patient records for clinical documentation.
+Functional Requirements:
+System shall provide doctor login through EHR module
+Display IPD patient list for treating doctor
+Allow search and selection of IPD patients
+Open doctor coversheet upon patient selection
+Display all nursing coversheet data to doctors
+5.3.2 Clinical Documentation
+Description: Doctors document clinical findings, diagnosis, and treatment plans.
+Functional Requirements:
+System shall allow doctors to add/modify complaints
+Allow doctors to add/modify history
+Allow doctors to add/modify examination findings
+Allow doctors to add diagnosis (provisional and final)
+Restrict diagnosis entry to doctors only
+Support ICD-10 coding for diagnosis
+Allow doctors to add orders (diagnostics, medications, procedures)
+Doctors to add certificates
+Allow doctors to add observations
+Allow doctors to add physician notes
+Display past visit history
+Integrate all documentation into EHR
+
+5.4 Patient Transfer Management
+5.4.1 Bed Transfer
+Description: Transfer patients between wards and beds.
+Functional Requirements:
+System shall allow nursing staff to initiate bed transfers
+Display current ward and bed information
+Allow selection of destination ward and bed
+Require reason for transfer
+Allow entry of transfer notes
+Validate bed availability before transfer
+Generate patient transfer slip upon save
+System shall update bed status (vacate source, occupy destination)
+System shall route transfer request to destination nursing station
+5.4.2 Transfer Acceptance
+Description: Destination nursing staff accepts transferred patients.
+Functional Requirements:
+System shall display pending transfer acceptances
+System shall show transfer details (from ward, to ward, reason)
+Allow acceptance or rejection of transfers
+Require entry of acceptance notes
+Update patient location upon acceptance
+Generate updated transfer slip with new location
+Notify source ward of acceptance status
+
+5.5 Discharge Management
+5.5.1 Discharge Initiation
+Description: Initiate discharge process for patients ready to leave.
+Functional Requirements:
+System shall allow nursing staff to initiate discharge
+Require selection of discharge type (normal, LAMA, death, transfer)
+Require entry of discharge notes
+Generate discharge request
+Route discharge request to billing
+5.5.2 Ready for Billing
+Description: Verify all services are rendered before final billing.
+Functional Requirements:
+System shall display ready for billing worklist
+System shall show service status by category (lab, radiology, pharmacy, etc.)
+System shall use color coding (Green-Rendered, Yellow-Not Requested, Red-Pending)
+Prevent billing submission if services are pending
+Allow submission to billing once all services are rendered
+Validate medication discharge status
+Validate hospital discharge documentation
+5.5.3 IPD Billing
+Description: Generate and settle final IPD bill.
+Functional Requirements:
+System shall display all consumed services during admission
+System shall show service-wise charges (lab, radiology, bed, medication, procedures)
+System shall support groupwise service display
+System shall display package-wise charges
+Show transfer/move history
+System shall display cancelled services separately
+System shall show clinical service details
+Calculate periodicity charges (hourly services like ventilator, O2)
+System shall support intermediate billing (partial payments)
+System shall allow multiple intermediate bills
+Display medication charges
+Show payer information (self, insurance, corporate)
+Display deposit amount
+Allow recalculation of charges
+Support bill-wise and group-wise discounts
+System shall support percentage and amount-wise discounts
+Calculate doctor share
+Generate final bill upon save
+System shall route bill to payment settlement
+5.5.4 Payment Settlement
+Description: Collect payment and settle IPD bill.
+Functional Requirements:
+System shall display bill list with pending payments
+ System shall show total bill amount, net payable, and balance
+System shall allow use of active deposits
+System shall support multiple payment modes (cash, cheque, card, e-transfer, payment gateway)
+Capture payment details (bank, cheque/card/transaction number)
+Calculate total paid amount and due amount
+System shall allow partial payments
+System shall settle bill upon full payment
+System shall generate final bill receipt
+System shall update payment status to "Settled"
+System shall route to final discharge process
+5.5.5 Final Discharge and Bed Vacation
+Description: Complete discharge process and vacate bed.
+Functional Requirements:
+System shall display patients ready for final discharge
+System shall show discharge clinical information
+System shall allow nursing staff to vacate bed
+Update bed status to "Available"
+Update patient status to "Discharged"
+Generate discharge summary
+Archive patient admission record
+Update EHR with complete admission documentation
+
+5.6 Visitor Management
+Description: Manage visitor passes for patient relatives.
+Functional Requirements:
+System shall allow generation of visitor passes
+Capture visitor name and relationship
+Capture visitor contact information
+System shall generate unique visitor pass ID
+ System shall print visitor pass with patient and ward details
+System shall support multiple visitor passes per patient
+
+5.7 MLC (Medico-Legal Case) Management
+Description: Handle medico-legal cases with special documentation.
+Functional Requirements:
+System shall allow marking of admission as MLC
+System shall support priority selection (high, medium, low)
+Capture accompanied by details
+Capture relation and contact number
+Capture police station name
+Capture police buckle number
+Capture FIR number
+Allow entry of MLC remarks
+System shall flag MLC cases prominently in patient list
+System shall generate MLC documentation as per legal requirements
+
+5.8 Deposit Management
+Description: Collect and manage patient deposits.
+Functional Requirements:
+System shall allow deposit collection at admission
+System shall allow deposit collection during stay
+Capture deposit amount and payment mode
+Generate deposit receipt
+Track total deposit balance
+Allow use of deposit against final bill
+Calculate remaining deposit after bill settlement
+Support deposit refund process
+
+6. Process Workflows
+6.1 Complete IPD Admission Workflow
+1. Front Office creates admission request
+2. Admission Desk processes pending admission
+3. Admission Desk allocates bed
+4. Admission Desk completes patient registration
+5. System generates admission number and UHID
+6. Nursing staff accepts admission in workstation
+7. Nursing staff creates nursing coversheet
+8. Nursing staff documents complaints, history, allergies
+9. Nursing staff records vitals and initial assessment
+10. Nursing staff adds orders as per doctor advice
+11. Doctor logs in and accesses IPD patient
+12. Doctor reviews nursing documentation
+13. Doctor adds diagnosis and treatment plan
+14. Doctor adds clinical orders
+15. Orders routed to respective departments (Lab, Radiology, Pharmacy)
+16. Services executed and results updated
+17. Ongoing nursing care and monitoring
+18. Progress notes updated continuously
+6.2 Patient Transfer Workflow
+1. Nursing staff initiates bed transfer
+2. System validates destination bed availability
+3. Nursing staff enters transfer reason and notes
+4. System generates transfer slip
+5. System updates bed status (vacate source, occupy destination)
+6. Transfer request routed to destination nursing station
+7. Destination nursing staff reviews transfer request
+8. Destination nursing staff accepts or rejects transfer
+9. System updates patient location
+10. System generates updated transfer slip
+11. Patient physically moved to new location
+12. Destination nursing staff continues care
+6.3 Discharge Workflow
+1. Doctor determines patient is ready for discharge
+2. Nursing staff initiates discharge request
+3. System validates all services are rendered
+4. Nursing staff submits ready for billing
+5. Billing staff generates final bill
+6. System calculates all charges (services, medications, bed, procedures)
+7. System applies discounts and uses deposits
+8. Billing staff presents bill to patient/family
+9. Patient makes payment (full or partial)
+10. Billing staff settles bill in system
+11. System generates final bill receipt
+12. Nursing staff performs final discharge
+13. Nursing staff vacates bed
+14. System updates bed status to "Available"
+15. System generates discharge summary
+16. Patient leaves hospital with discharge documents
+6.4 Workflow Integration Points
+The IPD Module workflows integrate with HIMS workflow engine at key points:
+Admission approval workflow with multi-level authorization
+Bed allocation workflow with availability checks
+Clinical order workflow routing to LIS, RIS, Pharmacy
+Transfer approval workflow with nursing acceptance
+Discharge approval workflow with billing validation
+Payment settlement workflow with finance integration
+MLC documentation workflow with legal compliance
+Deposit refund workflow with finance approval
+
+7. Data Synchronization
+Data synchronization requirements:
+Real-time synchronization for critical data (admissions, vitals, orders)
+Near real-time synchronization for billing and charges (< 5 minutes)
+Batch synchronization for reporting and analytics (daily)
+Conflict resolution mechanism for concurrent updates
+Data consistency checks across modules
+Audit trail for all data exchanges
+
+8. Reporting Requirements
+8.1 Operational Reports
+Daily Admission Report
+Daily Discharge Report
+Admitted Patient List by Ward/Bed
+Bed Occupancy Report
+Bed Availability Report
+Patient Transfer Report
+Pending Admission Requests
+Pending Discharge Requests
+Ready for Billing Report
+MLC Case Report
+Visitor Pass Report
+Service Consumption Report
+Vital Signs Monitoring Report
+Medication Administration Report
+8.2 Financial Reports
+IPD Revenue Report
+Department-wise Revenue Report
+Doctor-wise Revenue Report
+Bed Charges Report
+Service-wise Revenue Report
+Discount and Concession Report
+Deposit Collection Report
+Outstanding Bills Report
+Payment Mode Analysis
+Insurance/Corporate Billing Report
+8.3 Clinical Reports
+Diagnosis-wise Admission Report (ICD-10)
+Average Length of Stay (ALOS) Report
+Readmission Rate Report
+Mortality Report
+Discharge Summary Report
+Clinical Outcome Report
+Complication Report
+Infection Control Report
+8.4 Management Reports
+Bed Utilization Report
+Ward Performance Report
+Doctor Performance Report
+Patient Satisfaction Report
+Turnaround Time Report
+Resource Utilization Report
+Trend Analysis Report
+Executive Dashboard
+8.5 Compliance Reports
+MLC Compliance Report
+Regulatory Reporting (Government)
+Audit Trail Report
+Data Access Log Report
+Quality Indicator Report
+Accreditation Report
+8.6 Report Features
+Export to PDF, Excel, CSV formats
+Scheduled report generation and email delivery
+Customizable date ranges and filters
+Drill-down capability for detailed analysis
+Graphical visualization (charts, graphs)
+Print-friendly formatting
+Role-based report access control
+
+9. Security Requirements
+9.1 Authentication and Authorization
+System shall use HIS Single Sign-On (SSO) for authentication
+System shall enforce strong password policies
+Implement HIS Role-Based Access Control (RBAC)
+Support multi-factor authentication for sensitive operations
+Automatically log out inactive sessions after 15 minutes
+Prevent concurrent logins from same user account
+Maintain user session security with encrypted tokens
+9.2 Data Security
+System shall encrypt sensitive patient data at rest
+System shall encrypt all data in transit using TLS 1.2+
+System shall mask sensitive information in logs
+System shall implement database-level access controls
+Support data anonymization for reporting
+Prevent SQL injection and XSS attacks
+System shall implement input validation and sanitization
+9.3 Patient Privacy
+System shall implement patient consent management
+Support patient data access restrictions
+Provide patient data export capability
+Support right to be forgotten (data deletion)
+System shall display privacy notices and terms
+Implement break-glass access for emergencies
+System shall alert on unauthorized access attempts
+
+10. Assumptions and Dependencies
+10.1 Assumptions
+HIS platform infrastructure is available and operational
+Network connectivity is reliable with adequate bandwidth
+Users have received appropriate training on the system
+Master data (doctors, wards, beds, services) is configured
+Integration modules (LIS, RIS, Pharmacy) are functional
+Payment gateway integration is established
+Backup and disaster recovery systems are in place
+Hospital policies and workflows are documented
+10.2 Dependencies
+HIS Core Platform: Authentication, authorization, and common services
+Front Office Module: Patient registration and demographic data
+Billing Module: Charge posting and payment processing
+Pharmacy Module: Medication order fulfillment
+Laboratory Module: Test order processing and results
+Radiology Module: Imaging order processing and reports
+Doctor Desk Module: Clinical documentation and orders
+EHR Module: Patient history and longitudinal records
+Master Data Management: Doctors, wards, beds, services, tariffs
+Workflow Engine: Approval workflows and notifications
+Reporting Engine: Report generation and distribution
+External Systems: Payment gateway, SMS gateway, email system
+
+11. Document Approval
+This document requires approval from the following stakeholders: 
+Role 
+Name 
+Signature 
+Date 
+Product Owner 
+ 
+ 
+ 
+CTO 
+ 
+ 
+ 
+Director  
+ 
+ 
+ 
+ 
+
+--- End of Document ---

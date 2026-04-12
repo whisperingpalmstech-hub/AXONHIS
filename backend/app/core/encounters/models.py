@@ -25,6 +25,7 @@ class EncounterStatus(StrEnum):
 
 class Encounter(Base):
     __tablename__ = "encounters"
+    __table_args__ = {'extend_existing': True}
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_id: Mapped[uuid.UUID] = mapped_column(
@@ -32,20 +33,22 @@ class Encounter(Base):
     )
     encounter_type: Mapped[str] = mapped_column(String(10), nullable=False)
     status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default=EncounterStatus.ACTIVE
+        String(50), nullable=True, default=EncounterStatus.ACTIVE
     )
     doctor_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    chief_complaint: Mapped[str | None] = mapped_column(Text, nullable=True)
-    ward: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    room: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    bed: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    admitted_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+    encounter_uuid: Mapped[str | None] = mapped_column(String(50), unique=True, index=True, nullable=True)
+    department: Mapped[str] = mapped_column(String(100), nullable=False, default="GENERAL")
+    
+    start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), onupdate=lambda: datetime.now(timezone.utc), nullable=True
     )
-    discharged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=True
     )
+    org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+

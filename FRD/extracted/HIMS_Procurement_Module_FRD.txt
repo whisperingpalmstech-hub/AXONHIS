@@ -1,0 +1,827 @@
+ Functional Requirements Document (FRD)
+Procurement Module
+Hospital Information System (HIS) 
+
+1. Document Control
+Document Title
+Functional Requirements Document – Procurement Module
+Module Name
+Procurement Module
+Parent System
+Hospital Information System (HIS)
+Version
+Document Version 
+Date
+20 Feb, 2025
+Status
+Draft
+
+ Document Conventions
+HIS: Hospital Information System
+PR: Purchase Request
+LPR: Local Purchase Request
+PO: Purchase Order
+GRN: Goods Receipt Note
+QR: Quotation Request
+VQR: Vendor Quotation Request
+UOM: Unit of Measure
+COP: Cost of Purchase
+MRP: Maximum Retail Price
+RBAC: Role-Based Access Control
+Saas: Software as a Service
+API : Application Programming Interface
+
+1. Introduction
+1.1 Purpose
+This Functional Requirements Document (FRD) defines the functional specifications for the Procurement Module of the Hospital Information System (HIS) developed by Axonic Health Pvt Ltd. This document serves as a comprehensive guide for developers, testers, and stakeholders to understand the system's capabilities, workflows, and requirements within the broader HIS.
+ Enhancements
+The Procurement Module within HIS encompasses the complete procurement lifecycle, including (Fixed & Consumables)
+
+     1. Purchase: 
+Purchase Request: If stock is Minimum in other store then there should be minimum request pop-up should be given (Minimum level of item pop-up should be given)
+For the Main Store, when stock reaches the defined minimum quantity level, the system should generate an alert prompting the user to initiate a replenishment request.
+At the end of the day, a consolidated report of items below minimum stock level should be generated and displayed on the Store Dashboard.
+ From the dashboard, the user should be able to select the item and directly raise a request to add quantity.
+ If the Main Store stock falls below the minimum level, the alert should automatically convert into a Purchase Request (PR) to the Procurement department.
+If the shortage occurs at a Sub-Store level, the system should automatically generate an Indent to the Main Store. (PR for Main Store, Indent for Sub-Store)
+Co-relate all the indent quantity of item to generate PR from main store 
+When the item reaches to minimum balance automate creation of PR, and pick UOM of last purchase. ( UOM ->should be pick of last purchase)
+
+
+Quotation: 
+Send quotation requests to multiple vendors, generate the quotation enquiry, receive quotations from vendors, and perform a comparative analysis.( Consumables -> Payment terms / ratings, For Fixed Assets-> Technical evaluation )Provision to view -rate ( L1, L2, L3 level) able to define->Provision to split quantity ( L1, L2)eg-> staggered delivery( able to define delivery schedule with quantity ( 6000- stock, first stock -3000, 2nd stock -2000, 3 rd stock -1000)Rate Contract Management for Consumables
+• Establish a Rate Contract for consumable items based on previous yearly consumption data.Analyze historical usage trends using graphical analytics (e.g., disease-wise consumption such as non-communicable diseases or seasonal demand like cough syrup) to accurately determine annual quantity requirements.
+• Generate a formal Rate Contract Document specifying:
+Manufacturer details
+Approved supplier
+Contract rate
+Defined annual quantity
+Delivery terms
+         - Define Delivery Stock Planning:
+Estimate required quantity based on consumption analytics
+Map delivery schedule against rate contract
+Ensure supply aligns with projected demand
+- Invoice Validation:
+Match invoice rate with approved rate contract
+Validate quantity against contracted balance
+Allow carry-forward of pending quantity within contract validity
+-Quantity Management:
+Define expected annual quantity
+Match purchase against contracted quantity
+Provide cancellation option (if required)
+Allow creation of Supplementary Rate Contract in exceptional situations (e.g., pandemic surge)
+- Vendor Comparison Provision:
+View and rank vendors (L1, L2, L3 levels)
+Allow quantity split between vendors (e.g., L1 & L2 sharing supply)
+- Staggered Delivery Planning:
+Define scheduled delivery quantities
+Example:
+Total Contract Quantity: 6000 units
+1st Delivery: 3000 units
+2nd Delivery: 2000 units
+3rd Delivery: 1000 units
+
+Quotation Fill In: Voice to text functionality (AI audio pop-up-> particular field goes to respective sections): (Check respective support terms - warranty period, expected support terms, payments terms, expected technical specification) Give common audio button on 'Support Terms' pop-up so the data will go to respected fields (AI) after audio is recorded (same functionality as used in Coversheet common audio button).
+After getting quotation from vendor-> read -> upload
+Give voice to text functionality for all itemsScan quotation instead of avoiding typing On Quotation fill in screen provide Scan option, so the quotation will be scanned and data will goes to respective fields 
+Technical Approval:Technical approval for fixed assets: (Components requirement may have may not have, define specifications)Comparison between (what are requirements & what is quotation needs) -> Accept / Reject -> Price negotiation (should add in consumable process as well) Technical approval for consumables 
+After submitting the quotation request, all parameters marked in green should be automatically accepted and the remaining parameters automatically rejected. This approval action should be system-driven (automated).PO Creation: 
+ Smart PO Creation:
+Auto-fetch vendor details from approved VQR/PR.
+Auto-populate UOM, last purchase rate 
+Show last 3 purchase prices for comparison.
+Budget availability validation before SAVE.
+Prevent duplicate PO for same PR item. (Provide facility to read document & view)
+Material Inward from entry (expected material from vendor, date, type of material)-> Create Inward entry GRN: Upload doc-> read-> Populate data Email & Whats app Trigger: 
+Enquiry sent to vendor -> Add automated email functionality (by default email has to sent to vendor with quantity and details) 
+After receiving quotation from vendor-> read & provision to upload it Email trigger on Enquiry send to vendor wit quantity.
+Email triggers for PO, Enquiry, Quotation and Vendor selection.
+Manufacturer Barcode should be scanned in the system via machine integration [ Note for fixed assets & consumables flow will remains same, In case of consumables on screen UOM & UOM Unit will be in addition]
+Futuristic Enhancement Procurement Workflow 1. CONSUMABLE ITEMS (With UOM & UOM Unit)
+Purchase
+• Minimum stock pop-up alert when item reaches defined level.• End-of-day consolidated minimum stock report on Store Dashboard.• Auto-generate PR for Main Store when below minimum level.• Auto-generate Indent for Sub-Store shortages.• Correlate all Sub-Store indents to generate consolidated PR from Main Store.• Auto-create PR when minimum level reached.• UOM & UOM Unit should auto-pick from last purchase.
+
+
+
+Quotation
+• Send enquiry to multiple vendors and perform comparative analysis.• Evaluate payment terms and vendor ratings.• View vendor ranking (L1, L2, L3).• Provision to split quantity between L1 & L2 vendors.• Support staggered delivery schedule (e.g., 6000 units: 3000 + 2000 + 1000).
+
+Rate Contract (Consumables Only)
+• Define annual rate contract based on previous consumption analytics.• Analyze usage trends using graphical dashboards (seasonal/disease-wise).• Define:
+-Manufacturer
+-Supplier
+-Contract Rate
+-Annual Quantity
+-Delivery Terms
+• Match invoice rate with approved rate contract.• Track contracted balance quantity.• Allow carry-forward of pending quantity.• Provide supplementary rate contract option (e.g., pandemic surge).
+
+Quotation Fill-In Enhancements
+• Voice-to-text (AI audio pop-up) for:
+-Support Terms
+-Payment Terms
+-Technical Specs
+• Scan quotation to auto-populate fields (OCR-based).• Upload and auto-read vendor quotation document.
+
+Technical Approval (Consumables)
+• After quotation submission:
+-Green parameters auto-accepted
+-Remaining parameters auto-rejected• System-driven automated approval logic.• Price negotiation provision before PO creation.
+
+PO Creation (Consumables)
+• Auto-fetch vendor from approved VQR.• Auto-populate UOM, last purchase rate.• Show last 3 purchase prices.• Budget validation before save.• Prevent duplicate PO.• Document upload & view provision.
+
+GRN (Consumables)
+• Upload invoice → Auto-read & populate data.• Scan manufacturer barcode via machine integration.• Auto stock update after GRN approval.
+
+2. FIXED ASSETS (Hospital Assets)
+
+Purchase
+• Minimum alert mechanism (if asset-based reorder logic applicable).• PR auto-trigger from Main Store if required.• No UOM/UOM Unit mandatory like consumables (except quantity).
+
+Quotation
+• Send enquiry to multiple vendors.• Perform detailed technical evaluation.• Compare:
+-Required specifications
+-Vendor offered specifications
+• View L1, L2, L3 comparison.• Price negotiation before final approval.
+
+Technical Approval (Fixed Assets)
+• Manual technical comparison required.• Define component requirements (if applicable).• Accept / Reject based on specification match.• Technical committee approval workflow.
+
+PO Creation (Fixed Assets)
+• Auto-fetch approved vendor details.• Budget validation mandatory • Show previous purchase history (if similar asset).• Attachment of technical comparison sheet mandatory.
+
+Material Inward Entry (Fixed Assets)
+• Create inward entry before GRN:
+-Expected delivery date
+-Material type
+-Vendor details
+• Upload documents → Auto-read.
+
+Common Enhancements (Both Consumables & Fixed Assets)
+• Automated Email & WhatsApp triggers for:
+-Enquiry
+-Quotation
+-Vendor Selection
+-PO Generation
+• OCR-based document reading.• Voice-to-text integration (similar to Coversheet audio button).• Complete audit trail.• Budget control & approval matrix.
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+Existing Workflow: 
+Item Request and Approval Workflow (Fixed Asset & Consumable)
+Item Master Creation (Fixed Asset Master / Item Master)
+Purchase Request (PR) Creation and Approval
+Local Purchase Request (LPR) 
+Quotation Enquiry and Vendor Quotation Management
+Vendor Negotiation and Vendor Selection
+Purchase Order (PO) Creation, Review, and Approval
+Goods Receipt Note (GRN) Creation, Approval, and Settlement
+Returnable Gatepass Management
+Work Order Management
+Integration with HIS Store/Inventory, Finance, Pharmacy, OTIMS, and Vendor Master modules
+1.3 System Overview
+Advance HIS is a Software as a Service (SAAS) platform developed by Axonic Health Pvt Ltd that provides hospitals with network-based access to comprehensive healthcare management tools. The system leverages big data and analytics for improved healthcare delivery, integrating administrative, operational, and clinical management functions. The Procurement Module is a critical component that ensures efficient supply chain management, cost control, and regulatory compliance within the HIS ecosystem.
+1.4 Module Context within HIS
+The Procurement Module is a core operational module within HIS. It interfaces directly with:
+Store & Inventory Module – for stock replenishment and real-time stock updates
+Pharmacy Module – for medicine procurement and expiry tracking
+OTIMS Module – for surgical consumables and equipment procurement
+Vendor Master – for approved vendor management and performance tracking
+Fixed Asset Master – for fixed asset creation post-GRN approval
+HIS RBAC – for role-based access control and approval authority management
+ 
+
+
+
+2. System Architecture
+2.1 Platform Type
+SAAS (Software as a Service) – Cloud-hosted solution integrated within the HIS platform.
+2.2 Deployment Model
+Cloud-hosted with network-based access over the Internet via HIS SSO
+Multi-tier architecture: web-based presentation layer, business logic layer, and centralised HIS database
+Seamless software updates and scalability without downtime
+API integration capabilities with HIS internal modules and third-party applications
+Flexible data storage options (local, cloud, or hybrid) based on SLA
+Real-time digital platform connectivity across all HIS modules
+2.3 Integration Points with HIS Modules 
+HIS Module
+Integration Type
+Data Exchanged
+Store & Inventory
+Bi-directional
+Stock levels, indent requests, GRN stock updates, item master sync  
+Pharmacy
+Bi-directional
+Medicine procurement requests, stock replenishment, expiry tracking 
+Finance / Accounts
+Bi-directional
+PO value, GRN settlement, invoice matching, budget validation 
+OTIMS
+Inbound
+Surgical consumable and equipment procurement requests 
+Vendor Master
+Bi-directional
+Approved vendor list, vendor details, vendor performance data 
+Fixed Asset Master
+Outbound
+Fixed asset creation post-GRN approval 
+Item Master
+Bi-directional
+Item creation, item category, UOM, tax codes
+Back Office
+Outbound
+Financial postings, payment vouchers, ledger entries
+Front Office
+Inbound
+Consumable requests for patient services
+HIMS RBAC
+Inbound
+User roles, permissions, approval authority levels
+
+3. User Roles and Permissions
+All user roles within the Procurement Module are managed through the HIS Role-Based Access Control (RBAC) framework. Access is granted based on role, department, and hospital location. 
+Role
+Responsibilities
+Access Level
+Procurement Officer
+Raise item requests, PRs, quotation enquiries, POs, GRNs
+Create / Edit
+Procurement Manager
+Review and approve PRs, POs, GRNs; manage vendor selection
+Approve / Reject
+Store In-charge
+Raise store indents, receive GRN, manage stock updates
+Create / Receive
+Finance Executive
+GRN settlement, invoice matching, payment processing
+Settle / View
+Finance Manager
+Budget validation, financial approval of high-value POs
+Approve / View
+Vendor Manager
+Manage vendor master, vendor quotations, vendor performance
+Create / Edit
+Department Head / HOD
+Approve departmental purchase requests and work orders
+Approve / View
+Hospital Administrator
+System-wide procurement oversight and policy configuration
+Full Access
+Auditor
+Read-only access to all procurement records and audit logs
+View Only
+IT Administrator
+System configuration, RBAC management, integration monitoring
+System Admin
+
+4. Functional Requirements 
+For Consumable Items Workflow
+4.1 Item Request Management (Consumables Items)
+4.1.1 Item Request (FR-IR-001)
+Functional Description:
+The system shall allow authorised users to create item requests for new items ( Consumable) to be added to the HIS Item Master.
+Input Requirements: 
+Item Name (Mandatory)  
+Manufacturer (Mandatory)
+Vendor (Mandatory)  
+Expected Price (Mandatory)
+Reason for Item Creation (Mandatory) 
+Item Type:  Consumable (Mandatory)  
+Processing Rules:
+User can add multiple items in a single request
+All mandatory fields must be filled before saving
+System generates unique request number upon saving
+Request date is auto-captured as current system date
+Requester information is auto-captured from HIS logged-in user
+Output/Actions:
+Item request saved with status "Pending"
+Request routed to approver via HIS workflow engine
+Requestor notified via HIS notification engine upon approval/rejection
+4.1.2 Item Approval (FR-IR-002)
+Functional Description:
+The system shall provide an approval interface for authorised personnel to review and approve/reject item requests via the HIS 
+Processing Rules:
+Only users with approval authority (as per HIS RBAC) can access this function
+Approver can view complete item request details
+Approver must select items to approve or reject with mandatory remarks on rejection
+Status changes to "Approved" or "Rejected" based on action
+Approved items move to Item Creation Pending List
+4.1.3 Item Creation Pending List (FR-IR-003)
+Functional Description:
+The system shall display all approved item requests pending creation in the HIS Item Master.
+Processing Rules:
+Display only approved item requests
+System auto-routes to Item Master if Consumable
+User completes additional mandatory fields: Item Category, Product Category, Formulation Type, Brand Name, Generic Name, Batch Required, Is Consumable, UOM, Purchase Type, Stock Type, Dispensing Type, IP/OP/Store UOM
+Upon saving, item is created in HIMS Item Master 
+Item removed from pending listItem Master :  Check for Item type ( consumable ), Item category, Product category, formulation type, item code, product code, Brand Name/Item Name, pharmacological classification, manufacturer, purchase tax, sale tax, Check for flags -> Item Reusable, Is Vaccine, Batch Required, High Risk, Is Kit, Is Infusion, Hospital Formulary, Is Consumable, Is Injection, Dose calculation applicable, Is OTC, Is Emergency Drug, Is LASACheck for Purchase type UOM unit, stock type UOM Unit, IP UOM, OP UOMProvision to add items -> After creating items -> purchase request create against that item
+4.2 Purchase Request Management
+4.2.1 Purchase Request Creation (FR-PR-001)
+Functional Description: 
+The system shall allow users to create purchase requests for items that need to be procured, either as Direct Requests or Against Indent. 
+Input Requirements: 
+Request Type: Consumable (Mandatory) 
+PR Type: Direct Request or Against Indent (Mandatory)
+Requesting Store (Mandatory)
+Delivery Store (Mandatory)
+Priority Level (Mandatory)
+Item Selection from HIMS Item Master (Mandatory)
+UOM, UOM Unit (Mandatory) 
+Purchase Quantity (Mandatory)
+Specifications (Optional)
+Remarks (Optional)
+Processing Rules:
+User clicks "Add Item" to open item selection from HIMS Item Master
+System displays current stock and pending quantity for selected items
+System validates that all mandatory fields are filled
+Upon saving, PR is created with status "Pending" and unique PR number
+System validates PR quantity against budget limits configured in HIS Finance Module
+Output/Actions:
+PR saved and routed to designated approver via HIS 
+PR status displayed at all times:  Pending Approval / Approved 
+4.2.2 Purchase Request Approval (FR-PR-002)
+Functional Description:
+The system shall provide a multi-level approval workflow for purchase requests via the HIS 
+Processing Rules:
+Only authorised approvers (as per HIS RBAC) can access this function
+Approver views PR details including items, quantities, and specifications
+Approver can Accept or Return the PR for correction with mandatory remarks
+Approved quantity can be modified by approver
+Upon approval, PR status changes to "Approved" and linked to Quotation Enquiry
+4.2.3 Local Purchase Request (FR-PR-003)
+Functional Description:
+The system shall support creation of Local Purchase Requests (LPR) for urgent or local procurement, following the same PR and approval workflow.
+Input Requirements:
+Requesting Store (Mandatory)
+Delivery Store (Mandatory)
+Priority (Mandatory)
+Type: Consumable (Mandatory)
+Request Type: Direct or Against Indent (Mandatory)
+Item Selection (Mandatory)
+UOM, UOM Unit (Mandatory)
+Purchase Quantity (Mandatory)
+Cost of Purchase (COP) (Mandatory)
+Specifications (Optional)
+Remarks (Optional)
+4.2.4 Local Purchase Request Approval (FR-PR-004)
+Functional Description:
+The system shall provide approval workflow for local purchase requests with the same functionality as standard purchase request approval, governed by HIS RBAC.
+4.3 Quotation Management
+4.3.1 Quotation Enquiry (FR-QT-001)
+Functional Description:
+The system shall allow users to create quotation enquiries Against PR or as Direct Enquiry, to be sent to potential suppliers.
+Input Requirements:
+Store (Mandatory)
+Category (Mandatory)
+Type: Consumable (Mandatory)
+Against: PR or Direct (Mandatory)
+Item Selection (Mandatory)
+UOM, UOM Unit (Mandatory)
+Quantity (Mandatory)
+Expected Terms: Warranty Period, Support Terms, Payment Terms, Technical Specifications
+Remarks (Optional)
+Processing Rules:
+User selects items from approved PRs or creates direct quotation
+System allows entry of expected terms and specifications
+Upon saving, quotation request created with unique QR number
+Status set to "New/Pending" until sent to vendors
+4.3.2 Enquiry Sent to Vendor (FR-QT-002)
+Functional Description:
+The system shall facilitate sending quotation requests to selected vendors from the HIS Vendor Master.
+Processing Rules:
+User clicks "Add Enquiry" and selects store, type, and vendor(s) from HIS Vendor Master
+User clicks "Get QR" to retrieve quotation requests
+System generates Vendor Quotation Request (VQR) number for each vendor
+VQR sent to vendor with due date
+Status updated to "Sent to Vendor"
+4.3.3 Quotation Fill In (FR-QT-003)
+Functional Description:
+The system shall provide an interface for entering vendor quotation details received from suppliers.
+Input Requirements:
+Store (Mandatory)
+Type (Mandatory)
+Vendor (Mandatory)
+Reference Number (Mandatory)
+VQR Selection (Mandatory)
+Vendor COP (Mandatory)
+Accessories Details (Optional)
+Support Terms, Warranty Period, Technical Specifications (Optional)
+Remarks (Optional)
+Processing Rules:
+User clicks "Get VQR" to retrieve vendor quotation requests
+User enters vendor pricing and terms for each item
+User can select All and click SAVE to save all vendor quotations
+Quotation status changes to "Filled" and moves to vendor negotiation stage
+4.3.4 Vendor Negotiation (FR-QT-004)
+Functional Description:
+The system shall provide an interface for negotiating terms with vendors based on received quotations, with side-by-side comparison of user requirements vs vendor offered details.
+Processing Rules:
+System displays comparison: COP, Warranty Period, Support Terms, Technical Specifications, Payment Terms
+User can enter negotiated details for each term
+User selects action: Accept, Reject, or On Hold for each line
+For acceptance, user clicks "Send For Vendor Selection"
+Status changes to "Completed" upon vendor selection
+4.3.5 Vendor Selection (FR-QT-005)
+Functional Description:
+The system shall allow final vendor selection after the negotiation process, with a vendor comparison view.
+Processing Rules:
+User reviews negotiated quotations using Info icon for vendor comparison matrix
+User selects "Accept" for chosen vendor and clicks "Send For PO Creation"
+Status changes to "Closed"
+Selected quotation routed to Purchase Order creation workflow
+4.4 Purchase Order (PO) Management
+4.4.1 Purchase Order Creation (FR-PO-001)
+Functional Description:
+The system shall enable creation of purchase orders based on approved quotations (Against VQR), direct PO, or Against PR.
+Input Requirements:
+Delivery Store (Mandatory)
+Requesting Store (Mandatory)
+Vendor (Mandatory)
+PO Type: Consumable or Fixed Asset (Mandatory)
+Source: Against Approved VQR / Direct PO / Against PR (Mandatory)
+Item Details, Quantity, UOM, COP, MRP (Mandatory)
+Discount, Other Charges (Optional)
+Tax Details (Mandatory)
+Processing Rules:
+User selects source and adds items via ADD QR / ADD PR functionality
+System calculates: Total Amount, Total Discount, Total Tax Amount, Total Other Charges, Round Off, Net Amount
+Upon saving, PO created with unique PO number and status "Pending Review"
+4.4.2 PO Review (FR-PO-002)
+Functional Description:
+The system shall provide an interface for reviewing and modifying purchase orders before final approval.
+Processing Rules:
+Reviewer can modify: Quantity, COP, MRP, Discount, Other Charges
+Reviewer can print or cancel PO
+Upon saving changes, PO moves to approval stage with status "Under Review"
+4.4.3 PO Approval (FR-PO-003)
+Functional Description:
+The system shall provide multi-level approval workflow for purchase orders via the HIMS workflow engine.
+Processing Rules:
+Only authorised approvers (as per HIMS RBAC) can access this function
+Approver can Accept or Reject PO with mandatory remarks on rejection
+Upon acceptance, PO status changes to "Approved"
+System generates PO document with: PO Number and Date, Vendor Details, Item Details with HSN Code, Quantities, Pricing, Discount and GST details, Net Amount, Terms & Conditions, Authorised Signatures
+Approved PO linked to GRN module and ready for GRN processing
+4.5 Goods Receipt Note (GRN) Management
+4.5.1 GRN Creation (FR-GR-001)
+Functional Description:
+The system shall enable creation of Goods Receipt Notes when materials are received from vendors, either Against PO or as Direct GRN.
+Input Requirements:
+Requesting Store (Mandatory)
+Delivering Store (Mandatory)
+Type: Consumable or Fixed Asset (Mandatory)
+GRN Type: Against PO or Direct GRN (Mandatory)
+Vendor (Mandatory)
+Vendor Invoice Number (Mandatory)
+Inward Number (Mandatory)
+DC (Delivery Challan) Number (Mandatory)
+PO Selection (for Against PO GRN) (Mandatory)
+Batch Number (Mandatory)
+Expiry Date (Mandatory for pharmaceuticals)
+Received Quantity (Mandatory)
+Bonus Quantity (Optional)
+COP, MRP, Tax Details (Mandatory)
+Discount, Specifications, Remarks (Optional)
+Processing Rules:
+User selects GRN type and adds PO items via ADD PO functionality
+System validates received quantity against PO quantity
+System calculates: Total Amount, Total Discount, Total Tax Amount, Credit Note (if applicable), Round Off, Net Amount
+Upon saving, GRN created with unique GRN number and status "Pending Approval"
+4.5.2 GRN Approval (FR-GR-002)
+Functional Description:
+The system shall provide approval workflow for Goods Receipt Notes with barcode generation and physical inspection support.
+Processing Rules:
+Approver can view, print, edit, and approve or reject GRN
+System supports Barcode Print and Edit functionality from GRN Approval screen
+System supports optional Physical Inspection Flag on GRN Approval
+Approver can accept or reject items with mandatory reason for rejection (Cancel, In Stock, Wrong Item)
+Upon approval, GRN status changes to "Approved"
+System generates final GRN receipt with all details including Tax Breakdown (CGST, SGST)
+4.5.3 GRN Settlement (FR-GR-003)
+Functional Description:
+The system shall facilitate payment settlement for approved GRNs with automatic stock and financial updates in HIS.
+Input Requirements:
+GRN Selection (Mandatory)
+Payment Mode: Cash, Cheque, or E-Transfer (Mandatory)
+Payment Amount (Mandatory)
+Bank Details (for Cheque/E-Transfer) (Mandatory)
+Transaction Number (for E-Transfer) (Mandatory)
+Cheque Number (for Cheque) (Mandatory)
+Processing Rules:
+User marks approval checkbox ON and clicks Settle
+System automatically updates stock levels in HIMS Store & Inventory Module in real time
+System automatically posts financial entries to HIMS Finance Module (invoice matching and ledger update)
+Settled GRN moves to Settled List Tab
+Audit trail entry created in HIS centralised audit trail
+4.5.4 Physical Inspection (FR-GR-004)
+Functional Description:
+The system shall provide an interface for physical inspection of received goods.
+Processing Rules:
+Quality inspector accesses closed GRNs
+Inspector verifies: Damage, Quality issues, Quantity discrepancies, Expiry dates
+Inspector records inspection results
+If issues found, inspector can initiate return process
+Inspection status updated in HIMS
+
+
+
+
+
+
+
+
+
+4. Functional RequirementsFor Fixed Asset: 4.1.1 Item Request (FR-IR-001)
+Functional Description:
+The system shall allow authorised users to create item requests for new items (Fixed Asset) Fixed Asset Master. 
+Input Requirements: 
+Item Name (Mandatory)  
+Manufacturer (Mandatory)
+Vendor (Mandatory)  
+Expected Price (Mandatory)
+Reason for Item Creation (Mandatory) 
+Item Type: Fixed Asset  
+Processing Rules:
+User can add multiple items in a single request
+All mandatory fields must be filled before saving
+System generates unique request number upon saving
+Request date is auto-captured as current system date
+Requester information is auto-captured from HIS logged-in user
+Output/Actions:
+Item request saved with status "Pending"
+Request routed to approver via HIS workflow engine
+Requestor notified via HIS notification engine upon approval/rejection
+4.1.2 Item Approval (FR-IR-002)
+Functional Description:
+The system shall provide an approval interface for authorised personnel to review and approve/reject item requests via the HIS workflow engine.
+Processing Rules:
+Only users with approval authority (as per HIS RBAC) can access this function
+Approver can view complete item request details
+Approver must select items to approve or reject with mandatory remarks on rejection
+Status changes to "Approved" or "Rejected" based on action
+Approved items move to Item Creation Pending List
+4.1.3 Item Creation Pending List (FR-IR-003)
+Functional Description:
+The system shall display all approved item requests pending creation in the HIS Fixed Asset Master.
+Processing Rules:
+Display only approved item requests
+System auto-routes to Fixed Asset Master if item type is Fixed Asset
+Upon saving, item is created in HIMS  Fixed Asset Master
+Item removed from pending list
+Fixed Asset Master : Includes details such as asset type, category, product category, item code, product code, asset name, manufacturerCheck for flags ( Is Critical, Is CSSD, Is Modality, Is chargable Equipment, Is accessories, Is spares, Is dialyzer ,Provision to add fixed asset -> After creating fixed asset -> purchase request create against that item 4.2.1 Purchase Request Creation (FR-PR-001)
+Functional Description: 
+The system shall allow users to create purchase requests for items that need to be procured, either as Direct Requests or Against Indent. 
+Input Requirements: 
+Request Type: Fixed Asset (Mandatory) 
+PR Type: Direct Request or Against Indent (Mandatory)
+Requesting Store (Mandatory)
+Delivery Store (Mandatory)
+Priority Level (Mandatory)
+Item Selection from HIS Fixed Asset Master (Mandatory)
+Purchase Quantity (Mandatory)
+Specifications (Optional)
+Remarks (Optional)
+Processing Rules:
+User clicks "Add Item" to open item selection from HIS Fixed Asset Master
+System displays current stock and pending quantity for selected items
+System validates that all mandatory fields are filled
+Upon saving, PR is created with status "Pending" and unique PR number
+System validates PR quantity against budget limits configured in HIS Finance Module
+Output/Actions:
+PR saved and routed to designated approver via HIS workflow engine
+PR status displayed at all times:  Pending Approval / Approved 
+4.2.2 Purchase Request Approval (FR-PR-002)
+Functional Description:
+The system shall provide a multi-level approval workflow for purchase requests 
+Processing Rules:
+Only authorised approvers (as per HIS RBAC) can access this function
+Approver views PR details including items, quantities, and specifications
+Approver can Accept or Return the PR for correction with mandatory remarks
+Approved quantity can be modified by approver
+Upon approval, PR status changes to "Approved" and linked to Quotation Enquiry
+4.2.3 Local Purchase Request (FR-PR-003)
+Functional Description:
+The system shall support creation of Local Purchase Requests (LPR) for urgent or local procurement, following the same PR and approval workflow.
+Input Requirements:
+Requesting Store (Mandatory)
+Delivery Store (Mandatory)
+Priority (Mandatory)
+Type: Fixed Asset (Mandatory)
+Request Type: Direct or Against Indent (Mandatory)
+Item Selection (Mandatory)
+Purchase Quantity (Mandatory)
+Cost of Purchase (COP) (Mandatory)
+Specifications (Optional)
+Remarks (Optional)
+4.2.4 Local Purchase Request Approval (FR-PR-004)
+Functional Description:
+The system shall provide approval workflow for local purchase requests with the same functionality as standard purchase request approval, by HIS RBAC.[NOTE : Further workflow for fixed asset remains same as consumables- For Quotation Enquiry & Enquiry send to vendor select type as a fixed ]
+
+
+4.6 Work Order Management
+4.6.1 Work Order Creation (FR-WO-001)
+Functional Description:
+The system shall enable creation of work orders for services, comprehensive AMC, and labour related to fixed assets.
+Input Requirements:
+Store (Mandatory)
+Vendor (Mandatory)
+Bill Type: Cash or Credit (Mandatory)
+Order Type: Service, AMC, or Labour (Mandatory)
+Source: Direct Request, Against WOQR, or Against WR (Mandatory)
+Asset Selection (Mandatory)
+Quantity, Rate (Mandatory)
+Discount, Tax Code (Mandatory)
+Guarantee/Warranty Terms, Payment Terms (Optional)
+Other Charges, Specifications, Remarks (Optional)
+Processing Rules:
+User clicks "Add Asset" to select fixed assets from HIMS Fixed Asset Master
+System calculates: Total Amount, Tax Amount, Round Off, Net Amount
+Upon saving, work order created with unique WO number and status "Pending Approval"
+4.6.2 Work Order Approval (FR-WO-002)
+Functional Description:
+The system shall provide approval workflow for work orders via the HIMS workflow engine.
+Processing Rules:
+Approver reviews: Asset details, Service specifications, Pricing and terms, Vendor information
+Approver can accept or reject work order
+Upon approval: Status changes to "Approved", Work order sent to vendor
+4.6.3 Work Order Completion (FR-WO-003)
+Functional Description:
+The system shall track completion of work orders and invoice generation.
+Processing Rules:
+User accesses approved work orders and selects for completion
+System allows viewing of generated invoices
+Upon completion: Status changes to "Completed", Invoice details recorded, Work order moves to settlement stage
+4.7.4 Work Order Settlement (FR-WO-004)
+Functional Description:
+The system shall facilitate payment settlement for completed work orders.
+Processing Rules:
+User selects completed work order and clicks "Settle"
+User selects payment mode: Cash, Cheque, Card, or E-Transfer
+System validates payment information
+Upon settlement: Payment recorded, Work order moved to settled list, Vendor account updated, Status changes to "Settled"
+User can print work order receipt
+
+5. Process Workflows
+5.1 Procurement Workflow- For Consumables 
+1. Item Request → Item Approval → Item Creation in HIS Item Master 
+2. Purchase Request (Consumables)→ Purchase Request Approval (via HIS Workflow Engine)
+3. Local Purchase Request (Consumables)→ Local Purchase Request Approval
+4. Quotation Enquiry (Consumables) → Enquiry Sent to Vendor (from HIS Vendor Master)
+5. Quotation Fill In → Vendor Negotiation → Vendor Selection
+6. Purchase Order Creation (Consumable)→ PO Review → PO Approval (Budget Validation via Finance Module)
+7. GRN Creation (Consumable) → GRN Approval → Physical Inspection → GRN Settlement
+8. GRN Settlement → Stock Update (Store & Inventory) + Financial Posting (Finance Module)
+9. Loan In Out -> Select Store-> Vendor -> Type (Consumable) -> Add Item & SAVE 
+-For Fixed Assets1. Item Request → Item Approval → Item Creation in HIS Fixed Asset Master
+2. Purchase Request (Fixed) → Purchase Request Approval (via HIMS Workflow Engine)
+3. Local Purchase Request (Fixed) → Local Purchase Request Approval
+4. Quotation Enquiry (Fixed) → Enquiry Sent to Vendor (from HIMS Vendor Master)
+5. Quotation Fill In → Vendor Negotiation → Vendor Selection
+6. Purchase Order Creation (Fixed) → PO Review → PO Approval (Budget Validation via Finance Module)
+7. GRN Creation (Fixed)→ GRN Approval → Physical Inspection → GRN Settlement
+8. GRN Settlement → Stock Update (Store & Inventory) + Financial Posting (Finance Module)
+9. Loan In Out -> Select Store-> Vendor -> Type (Fixed) -> Add Item & SAVE
+
+5.2 Work Order Workflow
+1. Work Order Creation
+2. Work Order Approval (via HIS Workflow Engine)
+3. Work Order Completion
+4. Work Order Settlement
+5.3 Workflow Integration Points
+Workflow Stage
+HIS Module Triggered
+Action
+Item Master Creation
+Item Master / Fixed Asset Master
+New item record created in HIS master data
+PR Approval
+HIS Workflow Engine
+Multi-level approval routing and notification
+Quotation Sent to Vendor
+Vendor Master / Notification Engine
+QR dispatched to vendor contacts
+PO Approval
+Finance Module
+Budget validation and PO value check
+GRN Settlement
+Store & Inventory Module
+Automatic real-time stock level update
+GRN Settlement
+Finance / Accounts Module
+Automatic financial posting and invoice matching
+Barcode Generation
+Store & Inventory Module
+Barcode linked to item batch for tracking
+Returnable Gatepass Approval
+Store & Inventory Module
+Stock adjustment for returned items
+
+6. Reporting Requirements
+6.1 Operational Reports
+Purchase Request Status Report (by department, store, date range)
+Pending PR Approval Report
+Quotation Comparison Report (multi-vendor)
+Purchase Order Status Report (by vendor, store, date range)
+Pending PO Approval Report
+GRN Status Report (by vendor, store, date range)
+Pending GRN Approval Report
+GRN Settlement Report
+Returnable Gatepass Status Report
+Work Order Status Report
+Expiry Report (from GRN batch data)
+Non-Moving Items Report
+6.2 Financial Reports
+PO Value Report (by vendor, department, period)
+GRN Invoice Matching Report
+Procurement Spend Analysis (by category, vendor, department)
+Budget vs Actual Procurement Report
+Outstanding PO Report
+Vendor Payment Due Report
+Payment Settlement Report
+6.3 Compliance and Audit Reports
+Procurement Audit Trail Report
+Approval History Report (PR, PO, GRN)
+Vendor Performance Report
+Item Expiry Tracking Report
+Regulatory Compliance Procurement Report
+6.4 Report Features
+Date range, store, department, vendor, and item category filters
+Export to PDF, Excel, and CSV formats
+Role-based report access via HIMS RBAC
+Scheduled report generation and email distribution
+Drill-down from summary to transaction-level detail
+Dashboard with key performance indicators (KPIs)
+
+7. Security Requirements
+7.1 Authentication and Authorisation
+All users shall authenticate via HIMS Single Sign-On (SSO)
+Access to procurement functions shall be governed by HIMS RBAC with role and department-level control
+Approval authority limits (e.g., PO value thresholds) shall be configurable per role in HIMS RBAC
+Sensitive procurement data (vendor pricing, PO values) shall be accessible only to authorised roles
+System shall enforce session timeout as per HIMS security policy
+Multi-factor authentication support (optional, configurable)
+7.2 Data Security
+All procurement data shall be encrypted in transit (TLS 1.2+) and at rest
+Vendor pricing and quotation data shall be treated as confidential and access-restricted
+System shall prevent unauthorised modification of approved POs and settled GRNs
+Amend functionality for approved records shall be restricted to authorised roles only
+Secure API communication using HTTPS for all HIMS integrations
+Regular security audits and vulnerability assessments
+7.3 Audit and Compliance
+System shall log all procurement actions (create, edit, approve, reject, settle) with user ID, timestamp, and IP address
+Audit logs shall be immutable and accessible only to authorised auditors
+System shall support regulatory compliance reporting for procurement activities
+All procurement records shall be retained for a minimum of 7 years as per hospital policy
+Compliance with hospital procurement policies and regulatory standards for medical equipment procurement
+GST compliance for all financial transactions
+
+8. Assumptions and Constraints
+8.1 Assumptions
+The HIS platform (Advance HIS by Axonic Health Pvt Ltd) is deployed and operational as the parent system
+HIS RBAC is configured with all required procurement roles and approval hierarchies prior to go-live
+Vendor Master, Item Master, and Fixed Asset Master are pre-populated with baseline data before procurement module activation
+The Finance Module is integrated and configured for budget validation and financial posting
+The Store & Inventory Module is integrated for real-time stock updates upon GRN settlement
+All users have valid HIS SSO credentials and appropriate role assignments
+Network connectivity is available for all procurement users to access the HIS cloud platform
+Hospital procurement policies (approval limits, vendor selection criteria) are documented and configured in HIS
+Vendors can provide quotations in the required format
+8.2 Constraints
+The Procurement Module must operate within the HIS SaaS architecture and cannot be deployed as a standalone system
+All integrations must use HIS-approved APIs; direct database access is not permitted
+Approval workflows are configurable but must follow the HIS workflow engine framework
+Report formats must conform to HIS standard reporting templates
+Data retention policies are governed by hospital regulatory requirements and HIS platform capabilities
+System performance depends on internet bandwidth
+Mobile access may have limited functionality
+Third-party integration dependent on API availability
+9. Document Approval
+This document requires approval from the following stakeholders:
+Role
+Name
+Signature
+Date
+Product Owner
+
+
+
+CTO
+
+
+
+Director 
+
+
+
+
+End of Document

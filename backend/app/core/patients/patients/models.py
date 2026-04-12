@@ -1,0 +1,48 @@
+import uuid
+from datetime import datetime
+from sqlalchemy import Column, String, DateTime, Enum, Date, Boolean
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+
+from app.database import Base
+
+
+class Patient(Base):
+    __tablename__ = "patients"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_uuid = Column(String(50), unique=True, index=True, nullable=False)
+    mrn = Column(String(50), unique=True, index=True, nullable=True) # For backward compatibility
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    date_of_birth = Column(Date, nullable=False)
+    gender = Column(String(20), nullable=False)
+    primary_phone = Column(String(50), nullable=True)
+    email = Column(String(100), nullable=True)
+    status = Column(String(50), default="active", nullable=False)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    
+    # ABDM M2: Ayushman Bharat Health Account (ABHA)
+    abha_number_encrypted = Column(String(500), nullable=True, unique=True)
+    abha_address_encrypted = Column(String(500), nullable=True, unique=True)
+    abha_linked = Column(Boolean, default=False)
+    # Fields from old model
+    address = Column(String(255), nullable=True)
+    blood_group = Column(String(10), nullable=True)
+    allergies = Column(String(500), nullable=True)
+    emergency_contact_name = Column(String(100), nullable=True)
+    emergency_contact_phone = Column(String(20), nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships mapped later via string references or imported
+    identifiers = relationship("PatientIdentifier", back_populates="patient", cascade="all, delete-orphan")
+    contacts = relationship("PatientContact", back_populates="patient", cascade="all, delete-orphan")
+    guardians = relationship("PatientGuardian", back_populates="patient", cascade="all, delete-orphan")
+    insurance = relationship("PatientInsurance", back_populates="patient", cascade="all, delete-orphan")
+    consents = relationship("PatientConsent", back_populates="patient", cascade="all, delete-orphan")
+    appointments = relationship("Appointment", back_populates="patient", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<Patient(patient_uuid='{self.patient_uuid}', name='{self.first_name} {self.last_name}')>"

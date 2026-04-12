@@ -1,0 +1,916 @@
+    Functional Requirements Document (FRD)
+Store and Inventory Module
+Hospital Information System (HIS)
+1. Document Control
+Document Title 
+Functional Requirements Document – Store & Inventory Module 
+Module Name 
+Store & Inventory Module 
+Parent System 
+Hospital Information System (HIS) 
+Version 
+Document Version  
+Date 
+ Feb 27, 2025 
+Status 
+Draft 
+ Document Conventions
+HIS: Hospital Information System
+FRD: Functional Requirements Document
+GRN: Goods Receipt Note
+MRP: Maximum Retail Price
+FIFO: First In First Out
+FEFO: First Expiry First Out
+RBAC: Role-Based Access Control
+SSO: Single Sign-On
+API: Application Programming Interface
+UI: User Interface
+CSSD: Central Sterile Supply Department
+2. Introduction
+2.1 Purpose
+This Functional Requirements Document (FRD) defines the functional for the Store and Inventory Management module of the Hospital Information System (HIS). The Store and Inventory module is a critical component that manages the complete lifecycle of hospital inventory including procurement, storage, distribution, tracking, consumption, stock adjustments, and disposal. This document serves as a comprehensive guide for developers, testers, and stakeholders involved in the implementation and maintenance of the module.
+2.2 Scope/ Enhancement:    
+The Store and Inventory module encompasses the following key areas:1. Opening Balance Management & initial stock entry: Batch & Expiry (Pharmaceutical Mandatory)
+Manufacturing date capture 
+Alert if near expiry at time of OB entry
+Give Bulk Upload option (excel sheet -> download -> fill -> upload) 
+Include a bulk upload option for Fixed Asset opening balances.
+Provide an upload option for Implant and Consignment items opening balance entry.
+
+Store Creation & Master Enhancements
+During Store Creation, include an option to identify Consignment Store (Yes/No).Check for Is Consignment store 
+In Main Store Master:
+Add Nursing Station dropdown mapping. 
+Provide Excel upload option for bulk store creation with proper validations.
+System should validate duplicate store names, location mapping, and mandatory fields.
+Provision to create stores floor-wise and ward-wise 
+Example: Pharmacy divided floor-wise and as per nursing stations.
+Ensure scalability support:
+Flexible configuration based on number of floors, wards, and departments.
+No limitation on number of sub-stores.
+Enable creation of specialized stores:
+Linen/Laundry Store 
+Fixed Asset Store
+CSSD Store
+Add Cash-Cart Flag option in store configuration (for billing-linked stores).
+Provide functionality for Fixed Asset transfer from ward to ward with proper 
+Store Creations: Create store in store type master i,e define store type During Store Creation, include an option to identify Consignment Store (Yes/No).Check for Is Consignment storeMain Store Details : 1. Give selection filter (Dropdown) for Select Store: Define Store Type in ‘Store Type Master’ Types of store: Main Store (Central medical supply warehouse)                            Floor Store (Store per hospital floor)                           Nursing Station (Ward-level store)                           Pharmacy (Medicine distribution)                            Sub-store (Department-specific stock)2. Give a box to enter description / selection filter (dropdown)for/ Keep Checkboxes for Select Sub-Store: 3. Select Product Type 4. Give a search bar for Product Search (Mandatory)  5. Give Product Restriction Filter (Product allowed only in specific store): Pharmaceutical ConsumablesEquipmentFlat Product Only Restricted Product(Master Table Required: Restriction Master (Product Restriction Rules)Example: Narcotics can be store in store and inventory If Product TypeProduct Type = Narcotics
+             Allowed Stores: Pharmacy Store, Narcotics Store
+             Not Allowed: General stores, Department stores
+
+Store
+Store Type
+Allowed Items
+Main Store
+General Store
+All Products
+Pharmacy Store
+Pharmacy
+Drugs
+Narcotics Store
+Restricted Pharmacy
+Narcotics Only
+Example:
+Field
+Value
+Item Category
+Drug
+Sub Category
+Controlled Drug
+Product Type
+Narcotics
+Storage Requirement
+Restricted
+Prescription Required
+Yes
+ Mapping Needed: Create all stores in store type master (Main store or sub-store) 1. Select Store-> Select Sub-store-> Product Category -> Product Search -> Product Restrictions ( Narcotics ) Check for storeStore Hierarchy: 1.General ->Pharmacy-> Narcotics->Linen2.Main Store -> Floor Store-Block A-> Nursing Station ICU -> Pharmacy Store A, Linen Sub-Store ICU3.Nursing Station OT-> Pharmacy Sub-store OT 4.Floor Store -Block B -> Nursing Station Ward 7 -> Narcotics Store ( Two Step Authentication should require ) Each store, sub-store have total product, low stock , critical, restricted item alert 
+
+1. Store creation & min/max configuration
+Min & max value definition
+Each product in each store (main store or sub-store) is configured with a minimum level and a maximum level. These thresholds drive all automated alerts and indent generation. Values are set per store per item — ICU, pharmacy, ward stores can each have distinct min/max thresholds for the same product.
+Auto alert / indent visibility on reaching min level (Automated)
+When stock of any item touches or drops below the configured minimum, the system automatically generates an alert and a pending indent. This indent is immediately visible to the store manager on their dashboard — no manual scan needed.
+            2. VED classification & automatic indent dispatch
+VED-based indent routing
+                     Products are classified as Vital (V), Essential (E), or Desirable (D).
+                      Vital — indent auto-dispatched immediately
+                       Essential — indent raised, manager review
+                        Desirable — standard indent queue
+For Vital items: as soon as the quantity hits the minimum level, the purchase indent is automatically sent without any manual trigger. No intervention required.
+             3. Order restriction & vital auto-indent logic
+Order restriction rule
+Orders (indents) can be restricted to ensure they are only raised when stock is at or below the defined minimum. Prevents over-ordering and maintains max-level discipline.
+Vital indent — fully automatic dispatch
+Vital category items require no manual action. The moment stock touches the min value, the indent is auto-generated and auto-dispatched to the relevant store or purchase department.
+              4. All indents visible on a single screen
+The store manager sees all pending, auto-generated, and approved indents on one consolidated screen — filterable by store, VED class, status, and date.Example: 
+Paracetamol 500mg    Vital           Qty: 200Auto-dispatched
+IV Fluid NS    500ml     Essential    Qty: 50Pending approval
+Surgical Gloves L          Desirable   Qty: 100In queue
+               5. Override indent & auto approval
+Override facility for store manager (Configurable)
+The store manager is given the ability to override a system-generated indent — change quantity, defer, or escalate — within defined authorization bounds. An override is logged with reason and user ID for audit.
+Auto approval — single-level only
+The system supports auto-approval for indents within pre-configured quantity and value bands (e.g., quantity between 50–100 units). These require only one level of approval — no multi-tier routing. No manual intervention is required for routine, within-range indents.
+
+
+6. Auto Indent Value -Main Store & Sub-store Flow 
+The system distinguishes between main store and sub-stores in indent generation:
+Sub-store stock ↓ min → Sub-store sends indent to Main store→
+Main store issues to sub-store
+Main store stock ↓ min →Main store raises Purchase Request →
+Purchase dept. processes
+Sub-stores can only send indents to the main store — they cannot directly raise purchase requests. Only the main store can initiate external procurement.
+
+7. Dynamic max value change (ICU / emergency / poisoning)
+
+Provision to change max value on-the-flag (Emergency use)
+In exceptional clinical scenarios — such as ICU surge, mass poisoning, or outbreak — the system allows authorised users to temporarily increase the max level of a product. This bypasses the standard max-limit restriction so that emergency indents for higher quantities are permitted. Change is logged with timestamp, reason, and authoriser for compliance. 8. Check date & quantity band (50–100 range, no manual step)
+System-driven check date assignment (Automated)
+The system auto-assigns a check date based on consumption rate and min/max configuration. Quantity bands — e.g., 50 to 100 units — are pre-defined per product. When an indent falls within the configured band, it is processed automatically with no manual entry required. Only one approval level is needed before dispatch.
+
+9. Browse product — check availability
+Product browse & availability check (Search)
+Allows any authorised user to search for a product by name, code, or category and instantly view:
+Current stock level, Store-wise availability, Min / max thresholds, VED classification, Expiry / batch info (Integration with store stock dashboard screen)10. Transaction ledger — issue, receive, transfer, waste
+Full transaction history is available per product per store, with four transaction types trackable on one screen:
+Issue ->↑ Out-> Dispensed to dept / patient
+Receive-> ↓ In->From supplier / main store
+Transfer⇄ Move->Between stores / wards
+Waste✕ Loss->Expired, broken, discarded
+
+
+
+Scenario: Injection Vials — Main Store to 10 Sub-Stores
+The hospital has 10 sub-stores (wards, ICU, OT, OPD, etc.), each configured with a minimum and maximum level for a particular injection vial.
+When stock in each sub-store touches its minimum, the HIS auto-generates an indent. Each sub-store requires 10 vials to reach its max level. With 10 sub-stores, the total consolidated indent demand coming to the main store is 100 vials.
+At the same time, the main store's own stock is sitting at 50 vials — below its configured minimum — which triggers a purchase request to the supplier. The supplier is asked to supply 100 vials to replenish the main store.
+The HIS now applies the following logic automatically:
+Main store stock on hand: 50 vials
+Incoming supply from supplier: 100 vials
+Total available at main store: 150 vials
+Sub-store indent demand: 100 vials
+After fulfilling all sub-stores: main store retains 50 vials as its own buffer stock
+So the purchase request quantity of 100 is calculated by the system to satisfy both the sub-store indents and restore the main store back to its minimum level — the system ensures 50 (existing) + 100 (supplied) = 150, of which 100 goes out to sub-stores and 50 stays in the main store. No manual calculation is required. The HIS auto-computes the purchase request quantity to achieve the complete desired stock position across the entire hierarchy in a single procurement cycle.
+ Item Master:  
+
+Item Master: 1. Item Reusable: 
+Item is not consumed on single use — e.g. surgical instruments, BP cuffs. HIS tracks it as an asset, not consumed stock. No deduction on issue; returned after use.
+Impact: no stock deduction on issue; return transaction required; asset register updated
+
+2. Is Vaccine: Use for to create schedule 
+Impact: cold chain fields at GRN; linked to immunisation schedule3. Batch Required: (Traceability)
+Mandates batch number and expiry date capture at every transaction — goods receipt, issue, dispensing. Enables full batch traceability and recall management.
+Impact: batch/expiry field mandatory; FEFO (first expiry first out) logic enabled4. High Risk: (Safety)
+Marks the item as a high-alert medication (e.g. potassium chloride, insulin, heparin). Triggers double-verification or pharmacist check before dispensing.
+Impact: extra approval step at dispensing; warning shown to nurse/pharmacist5. Is Kit: (Composite)
+Item is a bundle/kit composed of multiple sub-items (e.g. dressing kit, IV set kit). When issued, HIS auto-deducts all constituent items from their individual stock balances. Also, it contains for example - The AKT-4 Kit is a prescription pharmaceutical combination of four antibiotics—Rifampicin, Isoniazid, Pyrazinamide, and Ethambutol—used primarily for the treatment and prevention of tuberculosis (TB)
+Impact: kit BOM defined; component-level deduction on single kit issue6. Is Infusion: 
+Specifically marks IV infusion fluids (NS, RL, Dextrose). Enables infusion rate/duration entry in prescription. 
+Impact: infusion rate field enabled at order entry; drip chart recording
+7.Is Narcotics: 
+Item falls under Narcotic Drugs & Psychotropic Substances Act. Enables strict controlled register, separate indent, and mandatory witness recording at issue.
+Impact: separate narcotic register; special approval chain; double-lock store logic
+8.Hospital Formulary: Hospital Formulary (in Item Master) means a standard, approved list of medicines that a hospital allows to be used, prescribed, stocked, and dispensed.9.Is Consumable: (Stock type)
+Item is consumed on use and deducted from inventory permanently. Standard behaviour for drugs, gloves, syringes. Contrasts with reusable/asset items.
+Impact: stock decremented on every issue; no return transaction required
+
+10. Is Injection: 
+Marks the formulation as injectable. Governs route-of-administration validation in prescription and triggers nursing administration recording (IV/IM/SC).
+Impact: administration record enabled; route validation at order entry11. Dose Calculation Applicable: (Clinical)
+Enables weight-based or body-surface-area dose calculation in the prescription module. Used for paediatric drugs, chemotherapy, or renal-dose adjusted drugs.
+Impact: prescription screen prompts for patient weight; dose auto-calculatedChemotherapy doses in mg/m2 are calculated by multiplying the prescribed dose (mg/m2 ) by the patient's body surface area (BSA in m2).BSA is most commonly determined using Mosteller formula: BSA ( m2) = √( (Height in cm *Weight in kg)/3600)Final Dose is, Total mg= BSA (m2)* Dose(mg/m2)12. Is OTC: 
+Over-the-counter item. Can be dispensed at retail pharmacy without a valid prescription. Bypasses prescription validation check in the billing/dispensing module.
+Impact: no prescription required at POS; direct sale allowed13. Is Emergency Drug: 
+Drug must always be available in emergency tray/crash cart. HIS flags it for priority replenishment and alerts if stock drops to zero.
+Impact: zero-stock alert overrides normal min level; crash cart checklist inclusion
+14. Is LASA:
+Look-Alike Sound-Alike drug. E.g. Metformin vs Metronidazole. HIS displays a visual alert at dispensing to prevent wrong-drug errors.
+Impact: alert popup at dispensing screen; LASA pair shown for cross-check
+
+
+
+
+
+
+
+
+
+
+
+
+2. Indent Creation – ABC & VED Integrated Controls
+System should perform auto stock validation during indent creation based on Min–Max levels. 
+If stock falls below minimum level: 
+Alert should appear on the indent screen.  
+For Crash Cart stores, indent should be auto-prioritized and displayed at the top for immediate processing. 
+For non-crash cart stores, a separate end-of-day low stock alert screen should be generated based on Min–Max values for approval action. 
+System should auto-suggest items based on: 
+Consumption history
+AMC (Average Monthly Consumption)
+Configured Min–Max levels
+Indent screen should display:
+Current available stock
+Minimum stock level
+Pending indent quantity
+Items restricted for a specific period should not be displayed (with proper validation logic).
+Provide Priority Tagging:
+Normal
+Urgent (ICU / ER / OT)
+ ABC–VED Analysis Matrix control rules:
+
+
+V (Vital)
+E (Essential)
+D (Desirable)
+A (High Cost)
+AV
+AE
+AD
+B (Medium Cost)
+BV
+BE
+BD
+C (Low Cost)
+CV
+CE
+CD
+
+Vital (V) items → Mandatory priority issue (Order immediately) 
+High-value A category items → Restrict over-issuing (Immediate indent)
+Bulk indent for A category →  2nd level approval required 
+CD category items → Standard issue workflow 
+
+3. Indent Approval Workflow
+Configure auto-approval rules for low-value items (no second-level approval required). 
+Alert approver if a Vital item’s stock is already low before approving indent.
+A category items → Supervisor approval mandatory for bulk quantities.
+Real-time stock validation must be performed before final approval.
+System should prevent approval if stock is insufficient (unless emergency override is enabled).As per ABC & VED Matric (stock adjustment-Periodicity of physical stock checking & alert should come for every store, I,e stock check is required,) 
+
+4.Material Issue Management 
+ Pending Issue Handling
+FEFO-based issuance (especially for batch and expiry-controlled items). 
+Highlight near-expiry stock during issue.
+Enable partial issue tracking with visibility of remaining balance quantity.
+Auto-reminder alerts for long-pending indents.Barcode scanning required 
+Patient billing (if linked to issue) is calculated based on FIFO cost.
+Department consumption cost is accurately recorded.Under FIFO (First In, First Out):
+Oldest purchase cost is used first during issue.
+Closing stock value is based on latest purchase cost.
+Check for call back flag (for restricted items-particular batch no./ generic) ( Product category for FEFO & FIFO) 
+
+ Direct Issue Control 
+Restrict direct issue functionality to authorized roles only.
+Auto-alert to Store Manager for emergency direct issues. (CSSD-Kit) 
+Maintain audit log for all direct issue transactions.
+
+5. Material Issue Rejection
+Re-validate stock before reprocessing.  
+Notify requesting department automatically. (Check for stock in transit) 
+
+6. Store Stock Dashboard – ABC & VED Monitoring
+ Smart Stock Visibility (Color Coding for ABC & VED MATRIX)
+
+V (Vital)
+E (Essential)
+D (Desirable)
+A (High Cost)
+AV
+AE
+AD
+B (Medium Cost)
+BV
+BE
+BD
+C (Low Cost)
+CV
+CE
+CD
+Category I (Very Strict Control) (DEFINE STOCK TAKING -> GIVE ALERT FOR DUE-IF STOCK TAKING NOT GINING THEN 
+AV, AE, BV, CV
+High cost OR life-saving items
+Frequent monitoring
+Category II (Moderate Control)
+BE, CE, AD
+Normal monitoring
+Controlled stocking
+Category III (Basic Control)
+BD, CD
+Low cost & non-critical
+ Simple stock control
+
+7. Expiry & Batch Monitoring
+Expiry column (Days remaining).
+Auto-alert for items nearing expiry.
+Batch-wise expiry view.
+FEFO indicator.
+ABC–VED-Specific Controls:
+Strict expiry monitoring for AV items.
+Faster consumption push for AE items nearing expiry.
+Auto-transfer suggestions for slow-moving A category items.
+Check for variance Approval & Stock Adjustment: (Check for 2nd level approval)-> Check for stock taking) Variance = Physical Stock - System Stock in HIS Add quantity column and hide during stock entry (for accuracy)  C. Batch-wise checking 
+Click on item → show batch details
+Batch no., expiry, rate, inward date 
+Prevents wrong batch adjustment 
+Attachment Upload Option
+Upload physical verification sheet
+Upload approval noteEnhancement Workflow for Variance flow Physical Count →Blind Entry →Auto Variance →Threshold Check (Stock Adjustment) →Approval →
+8.  Expired Medication / Consumables Handling Process in HIS Store:  Identification of Expired Items
+System checks for expired and near-expiry medicines/consumables. (Give a flag in item master ‘Is expiry’), Separate near-expiry and already expired stock based on configuration.( Able to define expiry alert - eg. Antibiotics (pharmacological classification to near expiry items (for 1 month before) 
+Validate expiry date before allowing issue/sale.
+Configure “Expired Store” in master Give validation ‘’Ner expiry’’ (Provision to display near expiry items only
+Add Stores: 
+Store 1: Dumped Expired Consumables
+Store 2: Fixed Assets (Create scrap store-unrepairable ) 
+Documentation & Disposal
+Maintain proper documentation for expired items.
+Record disposal details (quantity, batch, reason).
+Ensure compliance with biomedical waste policies.
+Biomedical Waste (BMW) Integration
+Add integration with BMW module.
+Track disposal method, vendor, date
+9. SLOW MOVING ITEMS & DEAD STOCK: Build MIS report integration for ‘Slow Moving’ & ‘Dead Stock’ Items If Consumption of item within below range IF Days ≤ 30 → FastIF 31–90 → SlowIF >180 → DeadUse Fields: 
+Item ID
+Last Issue Date 
+Current Date
+Calculate Days Since Last Movement
+Days = Current Date – Last Issue Date
+
+Days Since Last Issue
+Status
+≤ 30 days
+Fast Moving
+31–90 days
+Slow Moving
+> 180 days
+Dead Stock
+ Report Output: System tags the item as Fast / Slow / Dead and shows it in the FSN Inventory Report.
+( Fast-moving, Slow-moving, and Non-moving inventory analysis)
+
+ 10. Check for storage location: In Item Master, define storage condition:
+Shelf (Room temperature)-Tablets 
+Refrigerator (2–8°C)-Vaccines
+Freezer (–15°C to –25°C, if required)-Vaccines Define these columns in pending for shelf allocation screen 
+Storage Location Workflow:  As per cold chain  Vendor Supplies medicines -> Make GRN -> Physical Inspection (Check batch/ expiry/ damage/temperature for storage) -> Allocation of items Define Store (eg. Pharmacy) -> Define Zone (as per temperature required for item i,e Temperature type (Normal / Cold / Frozen / Controlled)1. For Normal (Room Temperature) Store (Update store location wise)-> Zone (Normal)-> Rack Master -> Add Shelf ->Provision to add Bin 
+2. For Cold Chain Consumables (2–8°C)-eg. Vaccines, insulin, certain injectionsStore -> Cold Zone ->Refrigerator No. -> Shelf 3. For Frozen (-20°C)-eg. Certain plasma products, reagentsStore -> Zone (Deep Freezer) -> Auto temperature Monitoring 
+4. If Narcotics Store -> Locked Cupboard (Restricted Access + Daily) 
+5. OT / Sterile Consumables (CSSD)Store -> Closed cabinets, Sterile storage roomStorage Based On: FEFO method: Items with the earliest expiry date are issued first, not based on purchase date.✔ Batch-wise segregation: ✔ Clear labelling ✔ Barcode tagging ✔ Quarantine area for damaged/expired items ✔ Periodic physical verification
+11. Returnable Gatepass (For Damaged Material):  After GRN: Damage identified during inspection after material receipt.
+Physical Inspection: Verify received quantity and identify damaged items.
+Match Quantity: Compare damaged quantity with purchase order/invoice 
+Returnable Gatepass Creation: Generate gatepass to send damaged goods back to vendor.
+Credit Note (Procurement): Supplier issues credit note to adjust payment liability for damaged goods.
+FIFO → System sells stock based on oldest GRN date.
+FEFO → System sells stock based on earliest expiry date.
+
+
+
+
+
+Top of Form
+Bottom of Form
+Existing HIS Workflow
+Opening balance management and initial stock entry 
+Store indent creation, approval, and management
+Material issue and acceptance workflows
+Material return and acceptance processes
+Department consumption tracking and reporting
+Real-time store stock dashboard with visibility of available, zero, and expiring stock
+Stock adjustment management for expiry, damage, and recalls
+Batch/MRP/Expiry date change management with approval workflow
+Scrap request and approval for unusable items 
+Consumable disposal management with witness verification
+Integration with HIS modules including Procurement, Pharmacy, OTIMS, IPD, OPD, Laboratory, Billing, and Finance
+Comprehensive reporting and analytics for inventory management
+Role-based access control aligned with HIS security framework
+2.3 Module Context within HIS
+The Store and Inventory module is an integral part of the Hospital Information System (HIS) and serves as the central hub for managing all hospital inventory across departments. It interfaces with:
+Procurement Module: Receives purchased items through GRN and manages stock replenishment
+Pharmacy Module: Supplies pharmaceutical items and tracks pharmacy inventory
+OTIMS (Operation Theatre): Provides surgical supplies and tracks OT consumption
+IPD/OPD Modules: Supplies consumables and tracks patient-related consumption
+Laboratory Module: Provides lab consumables and reagents
+Billing Module: Integrates consumption data for patient billing
+Finance Module: Provides inventory valuation and cost tracking
+CSSD, Housekeeping, IT Department: Supplies department-specific items
+3. System Architecture and Integration
+3.1 Module Architecture
+The Store and Inventory module is built as a core component of the HIS platform with the following architectural layers:
+Presentation Layer: Web-based responsive UI accessible through HIS portal
+Business Logic Layer: Inventory management rules, workflow engine, approval mechanisms
+Data Access Layer: Centralized HIS database with inventory-specific schemas
+Integration Layer: APIs for seamless integration with other HIS modules
+Reporting Layer: Real-time dashboards and comprehensive reports
+3.2 Integration Points with HIS Modules
+HIS Module
+Integration Type
+Data Exchange
+Procurement
+Bidirectional
+GRN data, Purchase orders, Item masters, Stock receipts
+Pharmacy
+Bidirectional
+Drug inventory, Material issues, Consumption data, Stock transfers
+OTIMS
+Bidirectional
+Surgical supplies, OT consumption, Implant tracking, Stock requests
+IPD Module
+Bidirectional
+Patient consumables, Ward supplies, Consumption tracking
+OPD Module
+Bidirectional
+OPD consumables, Clinic supplies, Material requests
+Laboratory
+Bidirectional
+Lab consumables, Reagents, Test kits, Consumption data
+Billing
+Unidirectional
+Consumption data for patient billing, Item pricing
+Finance
+Unidirectional
+Inventory valuation, Cost data, Stock movement reports
+Back Office
+Bidirectional
+Administrative supplies, Office consumables
+Front Office
+Bidirectional
+Reception supplies, Patient care items
+CSSD
+Bidirectional
+Sterilization supplies, Instrument tracking
+Housekeeping
+Bidirectional
+Cleaning supplies, Maintenance items
+3.3 Data Flow within HIS
+The Store and Inventory module follows these data flow patterns:
+Stock Receipt: Procurement → Store and Inventory (GRN-based stock entry)
+Stock Distribution: Store and Inventory → Departments (Material issue workflow)
+Consumption Tracking: Departments → Store and Inventory → Billing/Finance
+Stock Adjustments: Store and Inventory → Finance (Valuation updates)
+Disposal: Store and Inventory → Finance/Audit (Scrap and disposal records)
+Reporting: Store and Inventory → Management Dashboard (Real-time analytics)
+
+4. User Roles and Permissions
+The Store and Inventory module implements role-based access control (RBAC) managed through the HIS centralized user management system. The following roles are defined:
+Role
+Responsibilities
+Key Permissions
+Store In-charge
+Overall store management, stock oversight
+Full access to all store functions, approval authority, reporting
+Store Manager
+Daily store operations, inventory management
+Material issue, stock adjustments, indent management, dashboard access
+Store Executive
+Stock handling, data entry
+Opening balance entry, material issue, stock updates, basic reporting
+Department Head
+Department inventory oversight
+Indent creation, approval, consumption review, department reports
+Pharmacy Staff
+Pharmacy inventory management
+Pharmacy indent, material acceptance, consumption tracking
+OT Staff
+OT inventory management
+OT indent, surgical supplies, consumption tracking
+Nursing Staff
+Ward inventory management
+Ward indent, material acceptance, patient consumption
+Lab Staff
+Laboratory inventory management
+Lab indent, reagent management, consumption tracking
+Inventory Manager
+Strategic inventory planning
+Stock analysis, reorder management, vendor coordination, analytics
+Finance Staff
+Inventory valuation, cost tracking
+View inventory reports, valuation data, cost analysis
+
+Note: All roles are managed through HIS RBAC system with Single Sign-On (SSO) authentication. Permissions can be customized based on hospital-specific requirements.
+5. Functional Requirements
+5.1 Opening Balance Management
+FR-INV-001: Initial Stock Entry
+The system shall allow authorized users to enter opening balance for new stock items.
+Select store -> Add New -> Upload Document (Status should change from new to closed)
+Select item from HIS item master
+Enter batch number, MRP, COP, and expiry date
+Specify quantity and unit of measurement
+Enter supplier information (if available)
+Record storage location within the store
+Capture date of stock entry
+Add remarks or notes
+System validates data completeness and accuracy
+Generate opening balance report
+5.2 Store Indent Management
+FR-INV-002: Store Indent Creation
+The system shall enable create store indents for requesting materials.Configuration required: 1. User Store Mapper 2. Department Store Mapper
+Select requesting store & issuing store (for new indent) which is redirecting from HIS department store mapper master
+Add items from which is redirecting from HIS item master with required quantities
+Specify priority level (Normal, Urgent, Emergency)
+Check for stock available, UOM, UOM Unit 
+Enter remark for indent 
+Submit indent for approval
+System generates unique indent number
+Send notification to approver
+Track indent status (Pending, Approved, Rejected, Partially Fulfilled, Completed)
+
+FR-INV-003: Store Indent Approval
+The system shall provide workflow for indent approval by authorized personnel.
+Display pending indents in approval worklist 
+View indent details including items, quantities
+Check stock availability 
+Approve, reject, or partially approve indent  
+Enter approval remarks
+System sends notification to requester and store
+Update indent status
+
+FR-INV-004: Material Picker: Configuration Requirement -> Inventory Issuance Material Picker Required toggle button should be ON Batch selection should be given along with picker quantity & picker name Able to enter remark respective status should have to reflect on screen after saving material picker Pending Store Indent: Screen should have to display status / entries of all pending store indent 
+5.3 Material Issue Management
+FR-INV-005: Material Issue1.Pending Issuance2.Issuance List 
+The system shall facilitate issuing approved materials from store to requesting store.
+View approved indents in Material Issue Screen (Under Pending Issuance Tab-select same stores for indent which has been already selected) 
+Select items to be issued 
+Choose batch based on FIFO/FEFO logic 
+Verify expiry dates before issue 
+Enter issued quantity 
+Capture carrier/receiver details 
+Print material issue slip 
+Update stock levels automatically
+Track issue status (Issued, Accepted, Rejected, Partially Completed)Completed status entry of material issue should reflect under ‘Issuance List’ tab OR 
+Under Issuance List -> system should show provision for ‘Direct Issue’ of material and for that type should be direct
+Under Issuance tab-> Entries from store indent should reflect as a manual type
+
+
+FR-INV-006: Material Issue Acceptance
+The system shall allow receiving departments to accept or reject issued materials.
+View issued materials in ‘Material Issue Acceptance’ screen
+Verify received items against issue slip
+Accept full quantity, partial quantity, or reject
+Enter acceptance remarks
+System updates department inventory
+Send confirmation to issuing store
+Handle discrepancies and rejections
+5.4 Material Return Management 
+FR-INV-007: Material Return 
+The system shall enable departments to return unused or excess materials to the store.
+Select items to be returned from department inventory( For direct issue of material to be returned click on add new-> select requesting store, accepting store-> click on GET ISSUE)
+Enter return quantity
+Specify reason for return (Excess, Unused, Damaged, Expired)
+Capture carrier details
+Submit return request
+Print material return slip
+Send notification to receiving store
+Track return status
+Generate Material Return Number
+
+
+FR-INV-008: Material Return Acceptance
+The system shall allow stores to accept or reject returned materials.
+View return requests in acceptance worklist 
+Verify returned items against return slip
+Inspect item condition
+Accept full quantity, partial quantity, or reject
+Enter acceptance remarks
+Update store stock levels
+Handle damaged or expired returns appropriately
+FR-INV-009: Rejected Material Acceptance: The system shall show and give provision to accept rejected material Enter accept quantity, 
+View rejected material list
+Enter reason, enter remark Check for status 
+
+5.5 Department Consumption Tracking
+FR-INV-010: Consumption Recording
+The system shall track material consumption by departments for billing and analytics.
+Record consumption against patient (for billable items), Enter consumed quantity 
+Record consumption for department use (non-billable) 
+Capture consumption date and time
+Update department inventory levels
+Send consumption data to Billing module
+5.6 Returnable Gatepass Management 
+ FR-INV-011:  Returnable Gatepass Creation (FR-RG-001) 
+Functional Description: 
+The system shall track returnable gatepass for fixed asset & consumable
+The system shall enable creation of returnable gatepasses for returning materials to vendors or sending items for repair. 
+Input Requirements: 
+Vendor 
+Return Reason: Against Expiry / Against Non-Moving / Rejected Against GRN / Against GRN 
+Reference Number 
+Item Selection 
+Return Quantity 
+Batch Number, Expiry Date 
+COP, Discount, Tax Details (Auto-populated) 
+Expected Return Date 
+Authorised Signatory 
+Remarks (Optional) 
+Processing Rules: 
+Based on return reason, system displays relevant items (expired, non-moving, or GRN items) 
+Return quantity cannot exceed available quantity 
+System calculates return value based on COP, discount, and tax 
+Upon saving, returnable gatepass created with unique RG number and status "Pending Approval" 
+Stock levels updated in HIMS Store & Inventory upon item dispatch and return 
+
+FR-INV-012:  Returnable Gatepass Approval (FR-RG-002) 
+Functional Description: 
+The system shall provide approval workflow for returnable gatepasses. 
+Processing Rules: 
+Approver views item details, return quantities, return reason, and financial impact 
+Approver can approve or reject gatepass 
+Upon approval: Status changes to "Approved", Inventory adjusted, Vendor account updated, Status changes to "Closed" 
+System tracks status of returnable items and alerts on overdue returns 
+Approved gatepass can be printed for vendor 
+
+
+Pending for Shelf Allocation: 
+ Configuration RequiredGlobal ->Storage Unit Master Unit->Pharmacy ->Rack Master 
+System shall display allocated items & pending for allocation items There should be selection of store, asset category, product category - system should display action taken column, Item Code, Item Name, Batch 
+No, Date of Expiry, Available Quantity, Rack, Shelf-After allocation of shelf under pending for allocation tab, system should have to reflect same entry under allocated item screen  
+
+5.8 Store Stock Dashboard
+FR-INV-013: Real-time Stock Visibility
+The system shall provide a comprehensive dashboard for real-time stock monitoring.
+Display available stock with quantities 
+Highlight zero stock items 
+Show expiring stock (within configurable days) by applying filter
+Display stock in transit 
+View item details (batch, MRP, expiry, location)  
+Filter by category, or item
+Set up stock alerts and notifications
+5.9 Stock Adjustment Management
+FR-INV-014: Stock Adjustment
+Check for item and batch for adjustment 
+Enter adjustment quantity (positive or negative), able to upload quantity 
+Provide detailed reason for adjustment
+Submit for approval
+Track adjustment status 
+
+FR-INV-015: Stock Adjustment Approval
+The system shall provide approval workflow for stock adjustments.
+View pending adjustments in approval worklist
+Approve or reject adjustment 
+Enter approval remarks
+System updates stock levels upon approval 
+5.10 Batch/MRP/Expiry Date Change Management
+FR-INV-016: Batch/MRP/Expiry Date Change 
+The system shall allow correction of batch number, MRP, or expiry date errors.
+Select item and current batch details
+Enter corrected batch number, MRP, or expiry date
+Specify reason for change, print provision should be there 
+Submit for approval
+System generates change request
+Track change request status
+
+FR-INV-017: Batch/MRP/Expiry Date Change Approval
+The system shall provide approval workflow for batch/MRP/expiry date changes.
+View pending change requests in approval worklist
+Approve or reject change request
+Enter approval remarks
+System updates item details upon approvalMaterial Inward & Material Inward Approval:  After generating GRN entry have to display on material inward screen for replacement System should allow provision to select store, vendor, Add Item & saving it After material inward saving it should have to go for approval screen 
+5.11 Scrap Management
+FR-INV-018: Scrap Request
+The system shall enable creation of scrap requests for unusable items.
+Select items for scrapping 
+Specify scrap reason (Expired, Damaged, Obsolete, Recalled)
+Enter scrap quantity 
+Capture item condition details  
+Specify disposal method (Destroy, Auction, Return to Vendor)
+Attach photos or supporting documents 
+Submit for approval 
+System generates scrap request number 
+Send notification to approver 
+Track scrap request status 
+FR-INV-019: Scrap Request Approval 
+The system shall provide approval workflow for scrap requests.
+View pending scrap requests in approval worklist
+Review scrap details and supporting documents
+Approve or reject scrap request
+Enter approval remarks
+System moves approved items to disposal worklist
+Send notification to requester and disposal team
+5.10 Consumable Disposal Management
+FR-INV-020: Consumable Disposal
+The system shall manage the actual disposal of approved scrap items with witness verification.
+View approved scrap items in disposal worklist
+Record disposal date and time
+Capture disposal method executed
+Enter disposal location/facility
+Record disposal personnel details
+Assign witness for verification
+Capture photos/videos of disposal (if required)
+Submit for witness approval
+System generates disposal certificate
+Update stock levels
+Send notification to witness and finance
+
+
+FR-INV-021: Witness Approval
+The system shall enable witness verification and approval of disposal activities.
+View pending disposal activities in witness worklist
+Review disposal details and supporting documents 
+Verify disposal execution
+Approve or reject disposal
+Enter witness remarks
+Capture witness signature/acknowledgment
+System finalizes disposal upon approval
+Update inventory valuation
+Send confirmation to all stakeholders
+
+
+6. Process Workflows
+6.1 Store Indent Workflow
+1. Department creates store indent
+2. System validates indent and generates indent number
+3. Indent routed to Department Head for approval
+4. Department Head approves/rejects indent
+5. Approved indent appears in Store issue worklist
+6. Store checks stock availability
+7. Store issues materials based on FIFO/FEFO
+8. System updates stock levels
+9. Receiving department accepts/rejects materials
+10. System updates department inventory
+11. Indent marked as completed 
+6.2 Material Issue Workflow
+1. Store selects approved indent
+2. System displays available stock with batch details
+3. Store selects batch based on FIFO/FEFO logic
+4. Store verifies expiry date
+5. Store enters issued quantity and carrier details
+6. System prints material issue slip
+7. System updates stock levels
+8. Notification sent to receiving department
+9. Receiving department verifies received items
+10. Receiving department accepts/rejects in system
+11. System updates department inventory
+12. Issue marked as completed
+6.3 Material Return Workflow
+1. Department creates material return request
+2. System validates return and generates return number
+3. Department prints return slip
+4. Materials physically returned to store
+5. Store verifies returned items  
+6. Store inspects item condition 
+7. Store accepts/rejects return in system
+8. System updates store stock levels 
+9. System updates department inventory  
+10. Notification sent to returning department
+11. Return marked as completed 
+6.4 Stock Adjustment Workflow
+1. Store identifies need for stock adjustment
+2. Store creates adjustment request with reason
+3. System validates adjustment details 
+4. Adjustment routed to Store In-charge for approval
+5. Store In-charge reviews adjustment and supporting documents
+6. Store In-charge approves/rejects adjustment
+7. System updates stock levels upon approval
+8. System updates inventory valuation
+9. Notification sent to Finance module
+10. Adjustment marked as completed
+6.5 Scrap and Disposal Workflow
+1. Store creates scrap request for unusable items
+2. System validates scrap details
+3. Scrap request routed to Store In-charge for approval
+4. Store In-charge reviews and approves/rejects
+5. Approved items moved to disposal worklist
+6. Disposal team executes disposal as per approved method
+7. Disposal details recorded in system
+8. Witness assigned for verification
+9. Witness verifies disposal execution
+10. Witness approves disposal in system
+11. System updates stock levels
+12. System updates inventory valuation
+13. Disposal certificate generated
+14. Notification sent to Finance and Audit
+15. Disposal marked as completed
+6.6 Workflow Integration Points
+All workflows are managed by the HIS workflow engine with the following integration points:
+Approval Engine: Centralized approval routing based on HIS RBAC
+Billing Integration: Automatic consumption data transfer for patient billing
+Finance Integration: Real-time inventory valuation updates
+Reporting Service: Workflow analytics and performance metrics
+7. Integration Requirements
+7.1 External System Integration
+Barcode/RFID Systems: Item tracking and identification
+Vendor Portals: Automated purchase orders and delivery tracking
+Regulatory Systems: Compliance reporting for controlled substances
+ERP Systems: Financial data exchange for multi-location hospitals
+7.2 Data Synchronization
+Real-time synchronization for stock levels and transactions
+Batch synchronization for historical data and reports
+Conflict resolution mechanism for concurrent updates
+Data consistency checks across integrated modules
+Audit trail for all data exchanges
+
+8. Reporting Requirements
+8.1 Operational Reports
+Daily Stock Summary Report
+Material Issue Register
+Material Return Register
+Store Indent Status Report
+Pending Approvals Report
+Stock Movement Report
+Department Consumption Report
+Batch-wise Stock Report
+Location-wise Stock Report
+8.2 Compliance Reports
+Expiry Stock Report (with configurable alert days)
+Zero Stock Report
+Near Expiry Alert Report
+Stock Adjustment Report
+Scrap and Disposal Report
+Witness Verification Report
+Audit Trail Report
+Controlled Substance Report (if applicable)
+8.3 Financial Reports
+Inventory Valuation Report
+Stock Value by Category
+Consumption Value Report
+Department-wise Consumption Cost
+Scrap Value Report
+Stock Aging Report
+Slow-moving and Fast-moving Items Report
+8.4 Management Reports
+Inventory Turnover Ratio
+Stock-out Analysis
+Consumption Trend Analysis
+Department Performance Report
+Vendor Performance Report (linked to Procurement)
+Inventory KPI Dashboard
+Executive Summary Report
+8.5 Report Features
+Customizable date ranges and filters
+Export to Excel, PDF, and CSV formats
+Scheduled report generation and email delivery
+Drill-down capability for detailed analysis
+Graphical visualization (charts and graphs)
+Print-friendly formats
+Report templates for standardization
+
+9. Security Requirements
+9.1 Authentication and Authorization
+Integration with HIS Single Sign-On (SSO)
+Role-Based Access Control (RBAC) for all functions
+Multi-factor authentication for sensitive operations
+Session timeout after 30 minutes of inactivity
+Password policy enforcement (complexity, expiry)
+User activity logging for security audit
+9.2 Data Security
+Encryption of data at rest and in transit (TLS 1.2+)
+Database access controls and encryption
+Secure API endpoints with authentication tokens
+Data masking for sensitive information
+Regular security vulnerability assessments
+Compliance with healthcare data protection regulations
+9.3 Audit and Compliance
+Comprehensive audit trail for all transactions
+Capture user, timestamp, action, and changes
+Immutable audit logs (no deletion or modification)
+Audit log retention for 7 years
+Audit report generation for compliance
+Regular compliance audits and reviews
+9.4 Data Privacy
+Access to inventory data based on role and department
+No unauthorized access to financial data
+Secure disposal of sensitive documents
+Privacy training for all users
+Incident response plan for data breaches
+
+10. Assumptions and Constraints
+10.1 Assumptions
+HIS infrastructure is available and operational
+Users have basic computer literacy and training
+Network connectivity is reliable across all locations
+Item master data is maintained and up-to-date in HIS
+Department master and user roles are configured in HIS
+Integration APIs are available for all HIS modules
+Barcode/RFID infrastructure is available (if required)
+Adequate storage space for physical inventory
+10.2 Constraints
+Module must comply with hospital policies and procedures
+Must adhere to HIS technical architecture and standards
+Budget constraints for hardware and infrastructure
+Timeline constraints for implementation
+Regulatory compliance requirements
+Data migration from legacy systems (if applicable)
+User adoption and change management challenges
+
+11. Document Approval 
+This document requires approval from the following stakeholders: 
+
+Role 
+Name 
+Signature 
+Date 
+Product Owner 
+ 
+ 
+ 
+CTO 
+ 
+ 
+ 
+Director  
+ 
+ 
+ 
+ 
+End of Document 
+

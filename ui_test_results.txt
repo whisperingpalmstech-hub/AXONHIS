@@ -1,0 +1,96 @@
+
+================================================================================
+  UI FEATURE VALIDATION v2 — Testing all frontend-facing API endpoints
+================================================================================
+
+[AUTH] Logging in...
+  ✅ Authenticated.
+
+────────────────────────────────────────────────────────────
+[MODULE 1] Patient Registration
+────────────────────────────────────────────────────────────
+  ✅ PASS  Patient Registration                          POST /patients/
+  ✅ PASS  Add Identifier (Aadhaar)                      POST /patients/.../identifiers/
+  ✅ PASS  Add Patient Insurance                         POST /patients/.../insurance/
+  ✅ PASS  Get Patient Profile                           GET /patients/{id}
+  ✅ PASS  Patient Search                                GET /patients/search?query=UITest
+
+────────────────────────────────────────────────────────────
+[MODULE 2] Doctor Desk
+────────────────────────────────────────────────────────────
+  ✅ PASS  Doctor Worklist                               GET /doctor-desk/worklist/{doc_id}
+  ✅ PASS  Seed Patient to Doctor Queue                  POST /doctor-desk/worklist
+  ✅ PASS  Update Worklist Status                        PUT /doctor-desk/worklist/.../status?status=...
+  ✅ PASS  Save Doctor Note (Scribe)                     POST /doctor-desk/scribe
+  ✅ PASS  AI Diagnostic Suggestions                     POST /doctor-desk/ai/suggestions
+  ✅ PASS  Place Diagnostic Order                        POST /doctor-desk/orders
+  ✅ PASS  Get Clinical Timeline                         GET /doctor-desk/timeline/{patient_id}
+
+────────────────────────────────────────────────────────────
+[MODULE 3] IPD Admission & Bed Management
+────────────────────────────────────────────────────────────
+  ✅ PASS  IPD Admission Request                         POST /ipd/requests
+  ✅ PASS  IPD Request Approval                          PUT /ipd/requests/.../status?new_status=Approved
+  ✅ PASS  Create Fresh Bed                              POST /wards/beds
+  ✅ PASS  IPD Bed Allocation                            POST /ipd/requests/.../allocate/BED-34d6
+         └── Admission #: IPD-ADM-2026-467243
+
+────────────────────────────────────────────────────────────
+[MODULE 4] IPD Billing & Insurance
+────────────────────────────────────────────────────────────
+  ✅ PASS  Billing Dashboard                             GET /ipd/billing/dashboard
+  ✅ PASS  Billing Master Record                         GET /ipd/billing/{adm_no}
+  ✅ PASS  Add Service Charge                            POST /ipd/billing/.../services
+  ✅ PASS  Collect Advance Deposit                       POST /ipd/billing/.../deposits
+  ✅ PASS  File Insurance Claim                          POST /ipd/billing/.../insurance
+  ✅ PASS  Approve Insurance Claim (TPA)                 POST /ipd/billing/insurance/.../approve
+  ✅ PASS  Available Insurance Lookup                    GET /ipd/billing/.../available-insurance
+  ✅ PASS  Recalculate Bill                              POST /ipd/billing/.../recalculate
+         └── Charges: ₹3000.00 | Insurance: ₹3000.00 | Patient: ₹0.00 | Outstanding: ₹-3000.00
+  ✅ PASS  Process Payment                               POST /ipd/billing/.../payments
+
+────────────────────────────────────────────────────────────
+[MODULE 5] IPD Nursing & Clinical Documentation
+────────────────────────────────────────────────────────────
+  ✅ PASS  Record Nursing Vitals                         POST /ipd/vitals/{adm_no}
+  ✅ PASS  Add IPD Diagnosis                             POST /ipd/doctor/diagnoses/{adm_no}
+  ✅ PASS  Add Treatment Plan                            POST /ipd/doctor/treatment-plans/{adm_no}
+
+────────────────────────────────────────────────────────────
+[MODULE 6] Blood Bank
+────────────────────────────────────────────────────────────
+  ✅ PASS  Register Blood Donor                          POST /blood-bank/donors
+  ✅ PASS  Log Blood Collection                          POST /blood-bank/donors/.../collections
+  ✅ PASS  Add Unit to Inventory                         POST /blood-bank/inventory
+  ✅ PASS  Get Blood Inventory                           GET /blood-bank/inventory
+  ✅ PASS  Get Donor Registry                            GET /blood-bank/donors
+
+────────────────────────────────────────────────────────────
+[MODULE 7] Pharmacy
+────────────────────────────────────────────────────────────
+  ✅ PASS  Get Prescriptions                             GET /pharmacy/prescriptions
+  ✅ PASS  Get Pharmacy Inventory                        GET /pharmacy/inventory
+
+────────────────────────────────────────────────────────────
+[MODULE 8] Encounters
+────────────────────────────────────────────────────────────
+  ✅ PASS  Create Encounter                              POST /encounters/
+  ✅ PASS  List Encounters                               GET /encounters/
+
+────────────────────────────────────────────────────────────
+[MODULE 9] Radiology
+────────────────────────────────────────────────────────────
+  ✅ PASS  Get Radiology Orders                          GET /radiology/orders
+
+────────────────────────────────────────────────────────────
+[MODULE 10] Wards Management
+────────────────────────────────────────────────────────────
+  ✅ PASS  Get Wards List                                GET /wards/
+  ✅ PASS  Get All Beds                                  GET /wards/beds
+
+================================================================================
+  RESULTS: 40 PASSED, 0 FAILED out of 40 tests
+================================================================================
+
+  🎉 ALL FEATURES PASSED! Every UI endpoint is working correctly.
+

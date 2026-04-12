@@ -1,0 +1,781 @@
+ Functional Requirements Document (FRD)
+Outpatient Department (OPD) Module
+Hospital Information System (HIS) 
+
+1. Document Control
+Document Title
+Functional Requirements Document - OPD Module
+Module Name
+Outpatient Department (OPD) Module
+Parent System
+Hospital Information System (HIS)
+Version
+Document Version 
+Date
+December 17, 2025
+Status
+Draft
+
+ Document Conventions
+HIS: Hospital Information System
+OPD: Outpatient Department
+EMR: Electronic Medical Records
+EHR: Electronic Health Records
+UHID: Universal Health Identification Number
+ICPC: International Classification of Primary Care
+RBAC: Role-Based Access Control
+ICD: International Classification of Diseases
+LIS: Laboratory Information System
+RIS: Radiology Information System
+IPD: Inpatient Department
+ER: Emergency Room
+BP: Blood Pressure
+HR: Heart Rate
+RR: Respiratory Rate
+SpO2: Oxygen Saturation
+
+2. Introduction
+2.1 Purpose
+This Functional Requirements Document (FRD) defines the comprehensive functional and technical requirements for the Outpatient Department (OPD) Module within the Hospital Information System (HIS). The OPD module is designed to streamline the complete outpatient care workflow, from patient registration and appointment scheduling to doctor consultation and billing settlement.
+2.2 Enhancement
+The OPD Module encompasses the following key functionalities:
+Patient Registration and Demographics Management
+Appointment Scheduling for Doctors and Modalities
+Patient Visit Management
+OPD Billing and Payment Processing
+OP Nursing Station and Clinical Documentation
+Nursing -Initial Assessment (Refer KIOSK document)
+Doctor Desk with Electronic Medical Records (EMR)
+Teleconsultation Support 
+Integration with other HIS modules (Billing, Pharmacy, Laboratory, Radiology, etc.)
+Patient Communication and Document Management
+Reporting and Analytics
+Face recognition (Biometric) check-in 
+  Predictive OPD crowd management (Check Configuration document)
+Virtual Secretary for quick registration -
+The patient registration screen supports AI-assisted data capture, where the system prompts mandatory registration questions sequentially (one at a time) to ensure completeness and accuracy.
+Voice enabled OPD registration: 
+Voice commands for:
+“Register new patient”
+“Search patient by mobile”
+“Proceed to billing”
+Multilingual voice support (English, Hindi, regional languages)
+Digital Consent & Privacy Layer ( Paperless –tab or from mobile) 
+Consent capture for:
+Data usage
+AI consultation
+Report sharing
+Granular consent (OPD-only, Labs, Tele consult)
+AI-based complaint (Reason for visit) capture during OPD visit creation
+Auto-suggest:
+Specialty
+Doctor
+Required vitals / investigation
+Digital Queue & Wayfinding
+Token-less OPD flow
+Live queue visible on:
+Patient app
+Lobby displays
+Kiosk
+Navigation guidance:
+“Go to OPD Wing B → Room 203”
+Color-coded signage integration
+Hybrid Consultation Model
+Option to convert OPD visit to:
+Video consult
+Assisted consult
+AI clinical scribe for doctor notes
+Voice-to-text prescription & advice
+
+
+OPD FLOW ADVANCE ENHANCEMENT:
+1. Registration & Field-Level Enhancements
+a) Smart & Dynamic Fields
+Auto-populate:
+ZIP code-> Area-> City->state-> Country
+Multi-language labels for patient-facing screens (Kiosk / App)
+2. Visit Management Enhancements
+a) Intelligent Visit Creation
+Visit tagging:
+Routine / Priority / Emergency-OPD 
+Auto visit classification using:
+Patient complaint
+Vital signs (if captured)
+Configurable rules for multiple visits in one day
+b) Pre-Visit Data Collection
+Pre-consult questionnaires via: 
+Patient App
+Kiosk( Refer KIOSK Document)
+Auto attach previous:
+Diagnoses
+Medications
+Allergies 
+3. Doctor Consultation Enhancements
+a) Smart Doctor Desk
+Timeline view of patient history (visits, labs, radiology)
+Red-flag indicators for:
+Abnormal vitals
+Abnormal labs
+High clinical risk scores (MEWS, etc.)
+One-click access to:
+Last prescription
+b) AI-Assisted Consultation
+AI clinical scribe (voice → notes)
+AI diagnosis & order suggestions (configurable, advisory only)
+Auto-generated clinical summary
+4. Queue & Patient Flow Optimization
+Real-time OPD queue management
+Doctor availability-based routing
+Live wait-time display for patients
+Missed-token recovery logic
+Auto notification:
+“You are next”
+“Please proceed to Room 12”
+
+5. Billing Enhancements (OPD)
+a) Pre-Consult Billing Intelligence
+Display estimated consultation cost before billing
+Tariff auto-selection based on:
+Patient category
+Doctor grade
+Alert if billing not completed before consultation
+b) Post-Consult Auto Billing
+Auto add:
+Procedures
+Consumables
+Orders placed by doctor
+Rule-based discounts (role controlled)
+Partial payment & wallet balance support
+6. Analytics & Dashboard Enhancements
+OPD performance KPIs:
+Registration TAT
+Waiting time
+Consultation duration
+Doctor-wise productivity
+Revenue leakage detection
+Peak hour prediction using historical data
+End-to-End Workflow OverviewOPD Flow – Future-State (Flow-Based View)
+1. Patient Entry & Identification
+Entry Points: Patient App / Kiosk / Front Office / Face Recognition
+Patient arrives at hospital or initiates OPD journey digitally
+Patient identification via:
+Face recognition (biometric check-in)
+QR code / Mobile number + OTP
+UHID search (existing patient)
+System performs AI-based duplicate check
+2. AI-Assisted OPD Registration & Demographics
+Actor: Kiosk / Front Office / Virtual Secretary
+AI-driven registration prompts mandatory questions sequentially  
+Voice-enabled registration commands:
+“Register new patient”
+“Search patient by mobile”
+“Proceed to billing”
+Multilingual voice support (English, Hindi, regional)
+Demographics auto-validated and saved
+3. Digital Consent & Privacy Management
+Actors: Patient / System
+Paperless consent captured via:
+Kiosk / Tablet
+Patient mobile device
+Consent types:
+Data usage
+AI consultation
+Report sharing
+Granular consent tagging (OPD / Labs / Teleconsult)
+Consent stored and audit logged
+4. Appointment Scheduling & Visit Creation
+Actors: HIS Scheduling Engine
+Appointment booking or walk-in visit creation
+AI-based complaint (reason for visit) captured
+System auto-suggests:
+Specialty
+Doctor
+Required vitals and investigations
+OPD visit created with priority tagging
+5. Digital Queue & Wayfinding
+Actors: Queue Engine / Signage System
+Token-less OPD queue assigned
+Live queue visibility on:
+Patient App
+Lobby displays
+Kiosk
+Predictive OPD crowd management applied
+Wayfinding guidance displayed:
+Wing → Floor → Room (color-coded signage)
+6. Nursing Station – Initial Assessment
+Actors: Nurse / Kiosk
+Patient routed to OPD Nursing Station
+Initial assessment captured (vitals, nursing notes)
+Integration with Kiosk for self-assessment (if enabled)
+Abnormal vitals flagged
+Data pushed to Doctor Desk
+7. Doctor Consultation & EMR
+Actors: Doctor Dashboard
+Doctor accesses patient EMR timeline
+Red flags visible for abnormal vitals/reports
+Hybrid consultation options:
+In-person consult
+Video consult
+Assisted consult
+AI clinical scribe enabled for notes
+Voice-to-text prescription and advice
+8. OPD Billing & Payment Processing
+Actors: Billing System / Patient
+Pre-consult or post-consult billing triggered
+Auto-billing for consultation and services
+Multiple payment modes supported
+Digital receipt generated and shared
+
+9. Diagnostics & Cross-Module Integration
+Actors: Lab / Radiology / Pharmacy
+Doctor orders sent electronically
+Status updates visible in Doctor Dashboard
+Abnormal results trigger alerts
+Seamless integration with:
+Laboratory
+Radiology
+Pharmacy
+10. Teleconsultation Support (Optional Flow)
+Actors: Doctor / Patient
+OPD visit converted to teleconsultation 
+Secure video session initiated
+Documentation stored in EMR 
+11. Post-Consult Communication & Documents
+Actors: Patient App / HIS
+Digital prescription and visit summary shared
+Reports and documents accessible digitally
+Notifications via SMS / App / WhatsApp
+12. Reporting & Analytics
+Actors: Administrators
+OPD performance analytics
+Crowd prediction dashboards
+Doctor productivity and TAT reports
+Outcome
+Faster OPD throughput
+Reduced waiting time
+Improved clinical safety
+Enhanced patient experience
+
+
+2.3 Module Context within Existing HIS
+The OPD Module is a core component of the HIS platform and serves as the primary entry point for outpatient care delivery. It integrates seamlessly with multiple HIS modules to ensure continuity of care and efficient hospital operations:
+Front Office: Patient registration and appointment management
+Billing: Service charges, payment collection, and financial settlement
+Nursing: Clinical documentation and vital signs recording
+Doctor Desk/EMR: Clinical consultation and prescription management
+Pharmacy: Medication orders and dispensing
+Laboratory (LIS): Lab test orders and result management
+Radiology (RIS): Imaging orders and report management
+IPD: Patient admission from OPD
+Emergency: Patient transfer and referral
+Finance: Revenue tracking and financial reporting
+Back Office: Administrative functions and reporting
+3. System Architecture and Integration
+3.1 Module Architecture
+The OPD Module is built on the Advance HIS SAAS platform developed by Axonic Health Pvt Ltd. It leverages cloud-based architecture for scalability, real-time data access, and seamless integration with other HIS modules. The module follows a multi-tier architecture:
+Presentation Layer: Web-based user interface accessible via browsers
+Application Layer: Business logic and workflow management
+Integration Layer: APIs for HIS module communication
+Data Layer: Centralized HIS database with patient records
+Security Layer: HIS SSO, RBAC 
+3.2 Integration Points with HIS Modules
+The OPD Module integrates with the following HIS modules:
+HIMS Module
+Integration Type
+Data Exchange
+Front Office
+Bi-directional
+Patient registration, appointment scheduling, visit management
+Billing
+Bi-directional
+Service charges, payment collection, bill settlement, refunds 
+Nursing Station
+Bi-directional
+Vital signs, nursing notes, clinical observations
+Doctor Desk/EMR
+Bi-directional
+Clinical documentation, diagnosis, prescriptions, orders
+Pharmacy
+Inbound-Outbound
+Patient details, medication orders, prescription details
+Laboratory (LIS)
+Bi-directional
+Lab test orders, sample collection, results
+Radiology (RIS)
+Bi-directional
+Imaging orders, appointment scheduling, reports
+IPD
+Outbound
+Patient admission requests, clinical history
+Emergency
+Bi-directional
+Patient transfers, referrals, clinical data
+Inventory
+Inbound
+Consumable items, stock availability
+Back Office
+Bi-directional
+Administrative reports, analytics, audit logs
+
+3.3 Data Flow within Existing HIS
+The OPD Module follows a structured data flow within the HIS: 
+Patient Registration ( Manual / Registration With ID / Virtual Secretary) → HIS Master Patient → UHID Generation
+Appointment Scheduling → Doctor/Modality Calendar → Slot Management
+Patient Visit → OPD Billing → Payment Gateway → Bill Settlement →Bill List
+Nursing → OPD Nursing Coversheet → Complete Casesheet →Doctor Desk
+Doctor Desk → Pharmacy/Lab/Radiology orders  → Respective LIS, RIS, Pharmacy Modules 
+Clinical Documentation → EHR Repository → Patient Health Records
+Billing Transactions→ Revenue Reporting ( BI Module)
+
+4. User Roles and Permissions
+The OPD Module implements HIS Role-Based Access Control (RBAC) to ensure secure and appropriate access to functionalities based on user roles. The following roles are defined:
+Role
+Responsibilities
+Key Permissions
+Front Office Executive
+Patient registration, appointment scheduling, visit management
+Create/update patient records, schedule appointments, manage visits
+Billing Executive
+Service billing, payment collection, bill settlement
+Add services, process payments, generate bills, apply discounts
+Nurse
+Clinical documentation, vital signs, nursing notes
+Record vitals, document complaints, update nursing notes, upload documents
+Doctor
+Clinical consultation, diagnosis, prescription, orders
+Access patient records, document diagnosis, prescribe medications, order tests
+Receptionist
+Patient check-in, appointment confirmation, document handling
+Check-in patients, confirm appointments, print documents
+Pharmacist
+View prescriptions, medication dispensing
+View medication orders, update dispensing status
+Lab Technician
+View lab orders, sample collection
+View lab orders, update sample collection status
+Radiologist
+View imaging orders, report entry
+View radiology orders, enter reports
+Hospital Administrator
+System configuration, user management, reporting
+Configure masters, manage users, access all reports
+
+Note: All user roles are managed centrally through the HIS User Management module with granular permission controls at the feature and data level.
+
+5. Functional Requirements
+5.1 Patient Registration
+5.1.1 New Patient Registration
+The system shall provide functionality to register new patients with the following capabilities: Patient registration can be done by three ways : 1. Manual Registration 2.Quick Registration ( AI assistance / Virtual Secretary) System should support for voice & chat functionality for patient registration by asking questions regarding mandatory fields such as reason to visit, name,  DOB, gender, phone number, e-mail id  3. Registration with ID Scan :By scanning ID (for global use) details should have to reflect on mandatory field boxes 
+Capture patient demographics: First name, middle name, last name, date of birth, age, gender
+Record contact information: Mobile number, WhatsApp number, email ID, Skype ID
+Capture identification details: Identification type (Aadhar, PAN, Passport, etc.), identification number (Refer NFR Document) 
+Record patient category: National, General, VIP, Staff, Employee dependent, etc.
+Capture additional details: Nationality, marital status, occupation, blood group, religion, race
+Record local address: Country, state, city, pin code, address lines
+Capture next of kin details: Name, relationship, contact information
+Generate unique UHID (Universal Health Identification Number) automatically
+Support patient search by UHID, name, mobile number, identification number
+Validate mandatory fields before saving
+Support document upload (ID proof, photos, etc.)
+Generate patient health card
+Send registration confirmation via email/SMS
+Support employee/dependent registration with employee ID linkage
+5.1.2 Patient Search and Update
+The system shall allow users to search and update existing patient records:
+Search patients by UHID, name, mobile number, date of birth, identification number
+Display patient list with key details (UHID, name, DOB, mobile, health card) 
+Allow authorized users to update patient demographics and contact information
+Prevent duplicate patient registration with validation checks
+5.2 Appointment Scheduling
+5.2.1 Doctor Appointment Scheduling
+The system shall provide comprehensive appointment scheduling for doctors:
+Display doctor availability calendar with time slots
+Support appointment booking for registered and new patients
+Capture appointment details: Doctor, specialty, date, time slot, visit type
+Support multiple visit types: Doctor consultation, follow-up, teleconsultation
+Display slot status: Available, booked, blocked, overbooked
+Allow overbooking for emergency cases (configurable)
+Support slot blocking for doctor unavailability
+Capture reason for appointment
+Collect payment during appointment booking
+Generate appointment slip with QR code
+Send appointment confirmation via email/SMS
+Support appointment rescheduling and cancellation
+Maintain appointment history for patients
+Support token number generation for queue management
+5.2.2 Modality Appointment Scheduling
+The system shall support appointment scheduling for diagnostic modalities:
+Display modality availability calendar (X-ray, MRI, CT, Ultrasound, etc.)
+Support appointment booking for radiology and diagnostic services
+Capture modality details: Modality type, specialty, sub-specialty, date, time
+Display slot availability and booking status
+Generate appointment slip for modality services
+Integrate with RIS for imaging appointments
+Support appointment confirmation and reminders
+5.2.3 Appointment List and Management
+The system shall provide appointment list management:
+Display appointment list by date, doctor, specialty, modality
+Show appointment status: Scheduled, checked-in, completed, cancelled
+Support patient check-in from appointment list
+Allow appointment confirmation and reminders
+Support video call initiation for teleconsultation
+Display patient priority indicators (VIP, critical, review)
+Support appointment printing and email
+Provide appointment analytics and reports
+
+5.2.4 Cyclic Appointment Scheduling: 
+System display doctor's specialty, hospital services, doctor name, date, duration & sessions, occurrence
+Provision to order services from coversheet from orders tab-> Cyclic order
+As per selected sessions & days, respective schedule needs to display on system 
+5.3 Patient Visit Management
+5.3.1 OPD Visit Creation
+The system shall support OPD visit creation with the following features: 
+Create patient visit after registration or from existing patient record 
+Support multiple visit types: Doctor consultation, hospital visit, lab, radiology, EHC, free visit
+Capture visit details: Specialty, doctor, time slot, clinic, patient class, source
+Record referral details: Referral type (hospital, doctor, staff, digital marketing), referred by, remarks 
+Support payment entitlement selection: Self-pay, insurance, corporate
+Display bill details during visit creation
+Support cash settlement during visit creation
+Redirect to OPD billing after visit creation
+Generate visit number and encounter ID
+Support visit cancellation with reason
+Maintain visit history for patients 
+5.3.2 Patient Visit List
+The system shall provide patient visit list management:
+Display patient visit list by date, doctor, specialty
+Show visit status: Scheduled, checked-in, in-progress, completed
+Support patient check-in from visit list
+Display patient priority indicators with color coding (VIP-blue, critical-red, review-green)
+Support patient call functionality for nursing station
+Allow mark arrival for patients
+Provide access to patient details and clinical templates
+Support video call for teleconsultation
+Display appointment confirmation status
+Provide visit analytics and reports
+
+5.4 OPD Billing
+5.4.1 Service Billing
+The system shall provide comprehensive OPD billing functionality:
+Add services from HIS Unit Service Master (consultation, procedures, investigations)
+Support package-based billing
+Capture service details: Service name, department, sub-department, tariff, quantity, unit price
+Support multiple discount types: Bill-wise, item-wise, amount-wise, percentage-wise
+Apply concessions based on patient category and hospital policy
+Support multiple payers: Self, insurance, corporate
+Display service count and summary
+Support medication billing from pharmacy
+Allow service modification and cancellation before settlement
+Maintain service order history
+5.4.2 Payment Collection
+The system shall support multiple payment modes:
+Cash: Collect cash payment with amount entry
+Cheque: Capture bank name, hospital account, cheque number, cheque date, amount
+Card: Support credit/debit card payments with card holder name, card type, card number, transaction number, expiry date, device (sales, QR code, SMS pay)
+Loyalty Card: Support loyalty card payment with card number and OTP verification
+E-Transfer: Capture transaction type, bank name, transaction number, transaction date, amount
+Payment Gateway: Support online payment with mobile number and payment link generation
+Support partial payments and advance collection
+Calculate change amount for cash payments
+Generate payment receipt automatically
+Support payment refunds and cancellations
+Integrate with HIS BI module for revenue collections
+5.4.3 Bill Settlement
+The system shall provide bill settlement functionality:
+Display bill summary with total amount, paid amount, balance amount
+Support full and partial bill settlement
+Generate bill receipt with hospital details, patient details, service details, payment details
+Print bill receipt automatically after settlement
+Send bill receipt via email/SMS
+Support bill cancellation with authorization
+Support credit billing for insurance and corporate patients
+Generate financial clearance certificate
+Provide billing reports and analytics( Refer Billing Document for detail info.) 
+
+5.5 OP Nursing Station
+5.5.1 Nursing Worklist
+The system shall provide nursing worklist management:
+Display patient worklist by date, doctor, specialty, status
+Show patient priority with color coding (critical-red, VIP-blue, review-green, normal-white)
+Support patient filtering by department and nursing station
+Display patient details: Name, UHID, doctor, specialty, encounter details, token number
+Support patient call functionality
+Allow mark arrival for patients
+Provide access to nursing cover sheet
+Support video call for teleconsultation
+Display appointment confirmation status
+Show visit status: Pending, in-progress, completed
+
+5.6 Doctor Desk (Easy EMR)
+5.6.1 Doctor Worklist
+The system shall provide doctor worklist management: 
+Display patient worklist by OPD, day care, referred, transferred
+Show patient details: Name, UHID, doctor, specialty, token number, encounter details 
+Display check-in/checkout time
+Show patient priority indicator 
+Support patient call functionality 
+Allow mark arrival for patients 
+Provide access to patient profile and cover sheet 
+Support video call for teleconsultation 
+Display appointment and consultation status 
+5.6.2 OPD Doctor Cover Sheet
+The system shall provide comprehensive clinical documentation: 
+Display patient demographics and visit details
+Show nursing-documented data (vitals, complaints, history) 
+Record quick notes for immediate observations
+Capture patient remarks and concerns
+Document complaints using ICPC system or free text
+Record past medical history, family history, social history
+Capture examination findings (general, systemic)
+Record diagnosis with ICD coding support
+Order diagnostic tests (lab, radiology, procedures)
+Prescribe medications with dosage, frequency, duration, instructions
+Provide clinical advice and lifestyle modifications
+Schedule follow-up appointments
+Support clinical template usage
+Access past visit history and clinical records
+View observation charts and nursing notes
+Generate certificates (fitness, medical leave, etc.)
+Complete consultation and close case sheet
+
+6. Process Workflows
+6.1 New Patient Registration and Visit Workflow
+The complete workflow for new patient registration and OPD visit:
+ Front office executive logs into HIS
+Navigate to OPD → Patient Management → Patient Registration
+ Enter patient demographics and contact information
+Capture identification details and local address
+Record next of kin details
+Save patient registration (UHID generated automatically)
+ System prompts for admission or OPD visit selection
+Select "OPD Visit" option
+System redirects to patient visit screen
+ Enter visit details (visit type, specialty, doctor, time slot, clinic)
+Capture referral details (if applicable)
+Select payment entitlement (self/insurance/corporate)
+ Save patient visit
+System redirects to OPD billing
+Add services (registration, consultation, etc.)
+ Apply discounts (if applicable)
+ Save bill
+ Collect payment (select payment mode)
+ Settle bill
+ Generate and print bill receipt
+ Patient proceeds to nursing station
+6.2 Appointment Scheduling Workflow
+The workflow for scheduling doctor appointments:
+Navigate to OPD → Patient Management → Appointment Scheduling
+Select appointment type (doctor/modality)
+Select specialty and doctor
+View doctor availability calendar
+Select date and available time slot
+Click on available slot
+System opens appointment scheduling dialog
+Select patient type (new/registered)
+For new patient: Enter patient details
+For registered patient: Search and select patient
+11. Enter reason for appointment
+12. Select visit type (consultation/follow-up/teleconsultation)
+13. View bill details
+14. Collect payment
+15. Save appointment
+16. Generate and print appointment slip
+17. Send appointment confirmation via email/SMS
+6.3 OP Nursing Documentation Workflow
+The workflow for nursing station documentation:
+1. Nurse logs into HIS
+2. Navigate to Nursing → Nursing Worklist
+3. View patient worklist filtered by nursing station
+4. Call patient using call button
+5. Mark patient arrival
+6. Click on action button to open nursing cover sheet
+7. Record patient vitals (BP, pulse, temperature, SpO2, height, weight)
+8. Document patient complaints using ICPC system
+9. Record allergy information
+10.Document past medical history
+Capture developmental history 
+ Record examination findings
+ Provide diet advice
+ Use clinical templates (if applicable)
+ Upload patient documents (reports, images)
+ Save nursing documentation
+ Complete case sheet
+ Patient proceeds to doctor consultation
+6.4 Doctor Consultation Workflow
+The workflow for doctor consultation and EMR documentation:
+1. Doctor logs into HIS
+2. Navigate to EHR → Doctor Desk
+3.View patient worklist in OPD tab
+4. Call patient using call button
+5. Click on patient profile to open OPD doctor cover sheet
+6. Review nursing-documented data (vitals, complaints, history)
+7. Record quick notes and patient remarks
+8. Document additional complaints (if any)
+9.Record detailed history (past, family, social)
+10. Document examination findings
+11. Enter diagnosis with ICD coding
+12. Order diagnostic tests (lab, radiology)
+13. Prescribe medications with dosage and instructions
+14. Provide clinical advice
+15. Schedule follow-up appointment (if required)
+16. Generate certificates (if required)
+17. Review and verify all documentation
+18.Complete consultation
+ System generates prescription and clinical summary
+Print/email prescription to patient
+Patient proceeds to billing (if additional charges)
+ Patient proceeds to pharmacy/lab/radiology as per orders
+6.5 Workflow Integration Points
+The OPD Module integrates with HIS workflow engine at the following points:
+Patient registration triggers UHID generation in HIS
+Patient visit creation triggers billing workflow
+Bill settlement triggers finance accounting workflow
+Nursing documentation triggers doctor desk notification
+Doctor orders trigger pharmacy/lab/radiology workflows
+Prescription generation triggers pharmacy dispensing workflow
+Lab orders trigger LIS sample collection workflow
+Radiology orders trigger RIS appointment scheduling workflow
+Follow-up scheduling triggers appointment reminder workflow
+Teleconsultation triggers video call and notification workflow
+
+7. Integration Requirements
+7.1 External System Integration
+The OPD Module shall support integration with external systems:
+Payment Gateway: Integration for online payment processing
+SMS Gateway: Integration for SMS notifications
+Email Server: Integration for email notifications
+WhatsApp Business API: Integration for WhatsApp notifications
+Video Conferencing: Integration for teleconsultation (Zoom, Google Meet, etc.)
+Insurance TPA: Integration for insurance claim processing
+Government Health Systems: Integration for health data reporting (ABDM, etc.)
+Diagnostic Equipment: Integration for vital signs capture from devices
+7.2 Data Synchronization
+The OPD Module shall ensure data synchronization across HIS:
+Patient demographics shall be synchronized with HIS ‘Patient Registration’ Master 
+Appointment data shall be synchronized with doctor/modality calendars
+Billing transactions shall be synchronized 
+Clinical documentation shall be synchronized with EHR repository
+Doctor orders shall be synchronized with pharmacy/lab/radiology in real-time
+All data synchronization shall be transactional to ensure consistency
+Failed synchronization shall be logged and retried automatically
+
+8. Reporting Requirements
+8.1 Operational Reports
+The OPD Module shall provide the following operational reports:
+Daily OPD Registration Report
+Daily OPD Visit Report by Specialty/Doctor
+Appointment Schedule Report
+Appointment Cancellation Report
+Patient Visit Status Report
+Doctor Consultation Report
+Patient Wait Time Report 
+Teleconsultation Report
+Patient No-Show Report 
+8.2 Financial Reports
+The OPD Module shall provide the following financial reports:
+Daily OPD Revenue Report
+Service-wise Revenue Report
+Doctor-wise Revenue Report
+Payment Mode-wise Collection Report
+Discount Analysis Report
+Outstanding Payment Report
+Refund Report
+Insurance/Corporate Billing Report
+8.3 Clinical Reports
+The OPD Module shall provide the following clinical reports:
+Disease-wise Patient Report (ICD-based)
+Specialty-wise Patient Report
+Prescription Analysis Report
+Diagnostic Test Utilization Report
+Follow-up Compliance Report
+Patient Satisfaction Report
+Clinical Template Usage Report
+8.4 Management Reports
+The OPD Module shall provide the following management reports:
+OPD Performance Dashboard
+Doctor Performance Report
+Patient Demographics Report
+Referral Source Analysis Report
+Patient Retention Report
+Service Utilization Report
+Operational Efficiency Report
+8.5 Report Features
+All reports shall support the following features:
+Date range selection
+Multi-parameter filtering (doctor, specialty, department, etc.)
+Export to PDF, Excel, CSV formats
+Print functionality
+Email scheduling for automated report delivery
+Drill-down capability for detailed analysis
+Graphical visualization (charts, graphs)
+Real-time data refresh
+
+9. Security Requirements
+9.1 Authentication and Authorization
+System shall use HIS Single Sign-On (SSO) for user authentication
+System shall implement HIS Role-Based Access Control (RBAC)
+System shall enforce strong password policies
+System shall support multi-factor authentication (MFA) for sensitive operations
+System shall automatically log out users after inactivity timeout
+System shall prevent concurrent logins from multiple devices (configurable)
+System shall maintain user session management
+9.2 Data Security
+System shall encrypt sensitive data at rest and in transit
+System shall mask sensitive patient information (mobile, email, identification numbers)
+System shall implement data access controls at field level
+System shall prevent SQL injection and XSS attacks
+System shall validate all user inputs
+System shall implement secure API communication with authentication tokens
+9.3 Audit and Compliance
+System shall log all user activities with timestamp and user details
+System shall maintain audit trail for all data modifications
+System shall provide audit reports for compliance monitoring
+System shall comply with healthcare data privacy regulations (HIPAA, GDPR, etc.)
+System shall support data retention policies as per regulatory requirements
+System shall provide data anonymization for research purposes
+9.4 Patient Privacy
+System shall implement patient consent management
+System shall restrict access to patient records based on user roles
+System shall provide patient data access logs
+System shall support patient data export and deletion (right to be forgotten)
+System shall mask patient identity in reports (configurable)
+System shall implement break-the-glass access for emergency situations
+
+10. Assumptions and Constraints
+10.1 Assumptions
+Users have basic computer literacy and training on HIS
+Hospital has reliable internet connectivity for cloud-based HIS access
+Master data (doctors, specialties, services, tariffs) is configured in HIS
+Integration with payment gateway, SMS gateway, and email server is available
+Hospital has defined workflows and policies for OPD operations
+Users have appropriate devices (computers, tablets) for system access
+Hospital has IT support for system administration and troubleshooting
+10.2 Constraints
+System is dependent on HIS platform availability
+Integration with external systems is subject to API availability
+Customization is limited to configuration without code changes
+Report generation is limited to data available in HIS database
+Teleconsultation is dependent on third-party video conferencing integration
+Mobile app functionality is limited to web-based responsive design
+Offline mode is not supported (requires internet connectivity)
+
+11. Document Approval
+This document requires approval from the following stakeholders:
+Role
+Name
+Signature
+Date
+Product Owner
+
+
+
+CTO
+
+
+
+Director 
+
+
+
+
+End of Document

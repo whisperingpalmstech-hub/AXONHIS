@@ -1,10 +1,10 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { TopNav } from "@/components/TopNav";
 import { API, authHeaders, apiFetch, apiPost, apiPut } from "@/lib/api";
 
-export default function Page() {
+function BillingPage() {
   const searchParams = useSearchParams();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -249,4 +249,12 @@ export default function Page() {
         </div>
       )}
     </div></div>);
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BillingPage />
+    </Suspense>
+  );
 }

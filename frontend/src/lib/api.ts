@@ -23,6 +23,7 @@ async function request<T>(
   const url = `${API_BASE}${API_PREFIX}${path}`;
   const headers: HeadersInit = {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "69420",
     ...options.headers,
   };
 

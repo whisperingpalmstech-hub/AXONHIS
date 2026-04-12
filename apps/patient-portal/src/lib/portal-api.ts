@@ -1,6 +1,17 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9500';
 const API_URL = BASE_URL.includes('/api/v1') ? BASE_URL : `${BASE_URL}/api/v1`;
 
+const originalFetch = globalThis.fetch;
+const fetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+  return originalFetch(url, {
+    ...init,
+    headers: {
+      ...init?.headers,
+      "ngrok-skip-browser-warning": "69420",
+    },
+  });
+};
+
 export const portalApi = {
   // Accounts
   login: async (email: string, pass: string) => {

@@ -5,6 +5,7 @@ export function authHeaders(): Record<string, string> {
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   return {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "69420",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }

@@ -22,6 +22,14 @@ export const portalApi = {
     });
     return res.json();
   },
+  register: async (data: { email: string; password: string; patient_id: string; phone_number?: string | null }) => {
+    const res = await fetch(`${API_URL}/portal/accounts/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
   searchPatient: async (query: string) => {
     const res = await fetch(`${API_URL}/portal/accounts/search?query=${query}`);
     return res.json();

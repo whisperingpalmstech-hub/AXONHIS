@@ -202,6 +202,8 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         process_time = time.time() - start_time
         response.headers["X-Process-Time"] = str(process_time)
+        # Add ngrok skip browser warning header
+        response.headers["ngrok-skip-browser-warning"] = "69420"
         return response
 
     # ── API Routers ───────────────────────────────────────────────────────

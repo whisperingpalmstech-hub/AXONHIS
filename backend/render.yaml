@@ -1,9 +1,10 @@
 services:
   - type: web
     name: axonhis-backend
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    env: docker
+    dockerContext: .
+    dockerfilePath: Dockerfile
+    plan: free
     envVars:
       - key: POSTGRES_USER
         sync: false
@@ -18,10 +19,28 @@ services:
       - key: SECRET_KEY
         sync: false
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
-        sync: false
+        value: "15"
       - key: REFRESH_TOKEN_EXPIRE_DAYS
-        sync: false
+        value: "7"
       - key: APP_ENV
         value: production
       - key: BACKEND_CORS_ORIGINS
         value: https://your-vercel-frontend.vercel.app,https://your-patient-portal.vercel.app,https://your-axonhis-md.vercel.app
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: gpt-4o
+      - key: STT_PROVIDER
+        value: whisper
+      - key: CELERY_BROKER_URL
+        sync: false
+      - key: CELERY_RESULT_BACKEND
+        sync: false
+
+databases:
+  - name: axonhis-postgres
+    databaseName: axonhis
+    user: axonhis
+
+caches:
+  - name: axonhis-redis

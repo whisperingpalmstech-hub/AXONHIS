@@ -488,6 +488,16 @@ def create_app() -> FastAPI:
     async def health_check() -> dict[str, str]:
         return {"status": "ok", "service": "axonhis-backend", "version": "0.1.0"}
 
+    # ── Root Route ────────────────────────────────────────────────────────────
+    @app.get("/", tags=["root"])
+    async def root() -> dict[str, str]:
+        return {
+            "message": "AXONHIS API",
+            "docs": "/docs",
+            "health": "/health",
+            "version": "0.1.0"
+        }
+
     return app
 
 

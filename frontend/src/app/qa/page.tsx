@@ -2,6 +2,13 @@
 
 import { useState, useEffect } from "react";
 
+interface Module {
+  name: string;
+  status: 'healthy' | 'degraded' | 'unknown';
+  endpointCount: number;
+  lastChecked: string;
+}
+
 interface TestSuite {
   id: string;
   name: string;
@@ -34,16 +41,34 @@ interface QAReport {
   file_path: string | null;
 }
 
+const MODULES = [
+  { name: 'auth', label: 'Authentication', icon: '🔐' },
+  { name: 'patients', label: 'Patients', icon: '👥' },
+  { name: 'opd', label: 'OPD', icon: '🏥' },
+  { name: 'ipd', label: 'IPD', icon: '🛏️' },
+  { name: 'er', label: 'Emergency', icon: '🚑' },
+  { name: 'lab', label: 'Laboratory', icon: '🔬' },
+  { name: 'radiology', label: 'Radiology', icon: '📷' },
+  { name: 'pharmacy', label: 'Pharmacy', icon: '💊' },
+  { name: 'inventory', label: 'Inventory', icon: '📦' },
+  { name: 'billing', label: 'Billing', icon: '💰' },
+  { name: 'ot', label: 'Operating Theatre', icon: '🏥' },
+  { name: 'qa', label: 'QA Module', icon: '✅' },
+];
+
 export default function QA() {
   const [suites, setSuites] = useState<TestSuite[]>([]);
   const [selectedSuite, setSelectedSuite] = useState<string | null>(null);
   const [results, setResults] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [reports, setReports] = useState<QAReport[]>([]);
+  const [moduleStatus, setModuleStatus] = useState<Record<string, Module>>({});
+  const [testingModule, setTestingModule] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSuites();
     fetchReports();
+    checkAllModules();
   }, []);
 
   const fetchSuites = async () => {
@@ -63,6 +88,59 @@ export default function QA() {
       setReports(data);
     } catch (error) {
       console.error("Failed to fetch reports:", error);
+    }
+  };
+
+  const checkModuleHealth = async (moduleName: string) => {
+    setTestingModule(moduleName);
+    try {
+      const response = await fetch(`/api/v1/qa/modules/${moduleName}/health`, {
+        method: "GET",
+      });
+      const data = await response.json();
+      setModuleStatus(prev => ({
+        ...prev,
+        [moduleName]: {
+          name: moduleName,
+          status: data.status || 'unknown',
+          endpointCount: data.endpointCount || 0,
+          lastChecked: new Date().toISOString(),
+        }
+      }));
+    } catch (error) {
+      setModuleStatus(prev => ({
+        ...prev,
+        [moduleName]: {
+          name: moduleName,
+          status: 'degraded',
+          endpointCount: 0,
+          lastChecked: new Date().toISOString(),
+        }
+      }));
+    } finally {
+      setTestingModule(null);
+    }
+  };
+
+  const checkAllModules = async () => {
+    for (const mod of MODULES) {
+      await checkModuleHealth(mod.name);
+    }
+  };
+
+  const runModuleTests = async (moduleName: string) => {
+    setIsRunning(true);
+    setSelectedSuite(moduleName);
+    try {
+      const response = await fetch(`/api/v1/qa/modules/${moduleName}/run`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      setResults(data.results || []);
+    } catch (error) {
+      console.error("Failed to run module tests:", error);
+    } finally {
+      setIsRunning(false);
     }
   };
 
@@ -124,8 +202,10 @@ export default function QA() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "passed":
+      case "healthy":
         return "text-green-600 bg-green-100";
       case "failed":
+      case "degraded":
         return "text-red-600 bg-red-100";
       case "skipped":
         return "text-yellow-600 bg-yellow-100";
@@ -140,6 +220,45 @@ export default function QA() {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Quality Assurance Panel</h1>
       
+      {/* Module Health Check */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Module Health Check</h2>
+          <button
+            onClick={checkAllModules}
+            disabled={testingModule !== null}
+            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400"
+          >
+            {testingModule ? "Checking..." : "Check All Modules"}
+          </button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {MODULES.map((mod) => {
+            const status = moduleStatus[mod.name];
+            return (
+              <div
+                key={mod.name}
+                className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => checkModuleHealth(mod.name)}
+              >
+                <div className="text-3xl mb-2">{mod.icon}</div>
+                <div className="font-medium text-sm">{mod.label}</div>
+                <div className="mt-2">
+                  <span className={`px-2 py-1 rounded text-xs ${status ? getStatusColor(status.status) : 'text-gray-600 bg-gray-100'}`}>
+                    {testingModule === mod.name ? 'Checking...' : (status?.status || 'Unknown')}
+                  </span>
+                </div>
+                {status && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    {status.endpointCount} endpoints
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Test Suites */}
         <div className="bg-white rounded-lg shadow p-6">

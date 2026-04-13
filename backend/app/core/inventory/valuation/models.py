@@ -60,6 +60,6 @@ class StockAdjustment(Base):
     quantity = Column(Numeric(12, 2), nullable=False)
     reason = Column(Text, nullable=False)
     adjustment_value = Column(Numeric(12, 2), nullable=True)
-    approved_by = Column(UUID(as_uuid=True, ForeignKey("users.id"), nullable=False)
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     approved_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

@@ -417,6 +417,10 @@ def create_app() -> FastAPI:
     # Expiry Management Module
     from app.core.inventory.expiry.router import router as expiry_router
     app.include_router(expiry_router, prefix="/api/v1/inventory/expiry", tags=["Expiry Management"])
+
+    # Stock Valuation Module
+    from app.core.inventory.valuation.router import router as valuation_router
+    app.include_router(valuation_router, prefix="/api/v1/inventory/valuation", tags=["Stock Valuation"])
     app.include_router(diagnostics_router, prefix="/api/v1/diagnostics", tags=["Diagnostic Procedures"])
     app.include_router(new_advanced_lab_router, prefix="/api/v1/advanced", tags=["Advanced Diagnostics"])
     app.include_router(procurement_router, prefix="/api/v1", tags=["Procurement & Supply Chain"])

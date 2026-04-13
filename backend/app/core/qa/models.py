@@ -64,7 +64,7 @@ class QATestResult(Base):
     __tablename__ = "qa_test_results"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    test_definition_id = Column(UUID(as_uuid=True), ForeignKey("qa_test_definitions.id", ondelete="CASCADE"), nullable=False, index=True)
+    test_definition_id = Column(UUID(as_uuid=True), ForeignKey("qa_test_definitions.id", ondelete="CASCADE"), nullable=True, index=True)
     suite_id = Column(UUID(as_uuid=True), ForeignKey("qa_test_suites.id", ondelete="CASCADE"), nullable=True, index=True)
     status = Column(String(50), nullable=False, default=TestStatus.PENDING)
     execution_time_ms = Column(Numeric(10, 2), nullable=True)

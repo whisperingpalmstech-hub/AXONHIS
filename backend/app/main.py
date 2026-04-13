@@ -289,6 +289,10 @@ def create_app() -> FastAPI:
     from app.core.billing.package.router import router as package_router
     app.include_router(package_router, prefix="/api/v1/billing/packages", tags=["Billing Packages"])
 
+    # Multi-stage Billing Module
+    from app.core.billing.stages.router import router as billing_stages_router
+    app.include_router(billing_stages_router, prefix="/api/v1/billing/stages", tags=["Billing Stages"])
+
     # Sprint 2: Emergency Room (ER) Module (FRD Gap 1)
     from app.core.er.routes import router as er_router
     app.include_router(er_router, prefix="/api/v1")

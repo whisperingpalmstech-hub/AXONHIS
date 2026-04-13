@@ -413,6 +413,10 @@ def create_app() -> FastAPI:
     # Stock Movement Analytics Module
     from app.core.inventory.movement.router import router as movement_router
     app.include_router(movement_router, prefix="/api/v1/inventory/movement", tags=["Stock Movement"])
+
+    # Expiry Management Module
+    from app.core.inventory.expiry.router import router as expiry_router
+    app.include_router(expiry_router, prefix="/api/v1/inventory/expiry", tags=["Expiry Management"])
     app.include_router(diagnostics_router, prefix="/api/v1/diagnostics", tags=["Diagnostic Procedures"])
     app.include_router(new_advanced_lab_router, prefix="/api/v1/advanced", tags=["Advanced Diagnostics"])
     app.include_router(procurement_router, prefix="/api/v1", tags=["Procurement & Supply Chain"])

@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
-class PackageInclusionBase(BaseModel):
+class PackageInclusionV2Base(BaseModel):
     """Base schema for package inclusion."""
     service_id: str
     service_name: str
@@ -13,7 +13,7 @@ class PackageInclusionBase(BaseModel):
     is_mandatory: bool = False
 
 
-class PackageInclusionCreate(PackageInclusionBase):
+class PackageInclusionV2Create(PackageInclusionV2Base):
     """Schema for creating a package inclusion."""
     pass
 
@@ -81,7 +81,7 @@ class PackageCreate(BaseModel):
     description: Optional[str] = None
     package_type: str  # 'opd', 'ipd', 'daycare', 'gender_based'
     base_price: float
-    inclusions: List[PackageInclusionCreate]
+    inclusions: List[PackageInclusionV2Create]
     exclusions: List[PackageExclusionCreate] = []
     pricing: List[PackagePricingCreate]
     validity_start_date: Optional[datetime] = None
@@ -95,7 +95,7 @@ class PackageUpdate(BaseModel):
     description: Optional[str] = None
     version_name: Optional[str] = None
     changes_description: Optional[str] = None
-    inclusions: Optional[List[PackageInclusionCreate]] = None
+    inclusions: Optional[List[PackageInclusionV2Create]] = None
     exclusions: Optional[List[PackageExclusionCreate]] = None
     pricing: Optional[List[PackagePricingCreate]] = None
     validity_start_date: Optional[datetime] = None
@@ -122,7 +122,7 @@ class PackageResponse(BaseModel):
 
 class PackageWithDetailsResponse(PackageResponse):
     """Schema for package response with details."""
-    inclusions: List[PackageInclusionBase]
+    inclusions: List[PackageInclusionV2Base]
     exclusions: List[PackageExclusionBase]
     pricing: List[PackagePricingBase]
     current_version: Optional[int] = None

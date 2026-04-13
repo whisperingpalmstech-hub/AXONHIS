@@ -5,11 +5,11 @@ from typing import List, Optional
 from datetime import datetime, timezone
 
 from app.core.billing.package.models import (
-    PackageVersion, PackageInclusion, PackageExclusion,
+    PackageVersion, PackageInclusionV2, PackageExclusion,
     PackagePricing, PackageApproval, PackageProfit
 )
 from app.core.billing.package.schemas import (
-    PackageCreate, PackageUpdate, PackageInclusionCreate,
+    PackageCreate, PackageUpdate, PackageInclusionV2Create,
     PackageExclusionCreate, PackagePricingCreate
 )
 from app.core.billing_masters.models import PackageMaster as Package
@@ -48,7 +48,7 @@ class PackageService:
         
         # Add inclusions
         for inclusion_data in package_data.inclusions:
-            inclusion = PackageInclusion(
+            inclusion = PackageInclusionV2(
                 package_id=package.id,
                 service_id=inclusion_data.service_id,
                 service_name=inclusion_data.service_name,
@@ -129,17 +129,17 @@ class PackageService:
         if package_data.inclusions is not None:
             # Delete old inclusions
             await self.db.execute(
-                select(PackageInclusion).where(PackageInclusion.package_id == package_id)
+                select(PackageInclusionV2).where(PackageInclusionV2.package_id == package_id)
             )
             old_inclusions = (await self.db.execute(
-                select(PackageInclusion).where(PackageInclusion.package_id == package_id)
+                select(PackageInclusionV2).where(PackageInclusionV2.package_id == package_id)
             )).scalars().all()
             for old in old_inclusions:
                 await self.db.delete(old)
             
             # Add new inclusions
             for inclusion_data in package_data.inclusions:
-                inclusion = PackageInclusion(
+                inclusion = PackageInclusionV2(
                     package_id=package.id,
                     service_id=inclusion_data.service_id,
                     service_name=inclusion_data.service_name,
@@ -197,10 +197,10 @@ class PackageService:
         return package
     
     async def add_package_inclusion(
-        self, package_id: str, inclusion_data: PackageInclusionCreate
-    ) -> PackageInclusion:
+        self, package_id: str, inclusion_data: PackageInclusionV2Create
+    ) -> PackageInclusionV2:
         """Add a service to package inclusions."""
-        inclusion = PackageInclusion(
+        inclusion = PackageInclusionV2(
             package_id=package_id,
             service_id=inclusion_data.service_id,
             service_name=inclusion_data.service_name,
@@ -215,7 +215,7 @@ class PackageService:
     
     async def remove_package_inclusion(self, package_id: str, inclusion_id: str) -> bool:
         """Remove a service from package inclusions."""
-        inclusion = await self.db.get(PackageInclusion, inclusion_id)
+        inclusion = await self.db.get(PackageInclusionV2, inclusion_id)
         if inclusion and inclusion.package_id == package_id:
             await self.db.delete(inclusion)
             await self.db.commit()
@@ -352,7 +352,7 @@ class PackageService:
         
         # Get original inclusions
         inclusions_result = await self.db.execute(
-            select(PackageInclusion).where(PackageInclusion.package_id == package_id)
+            select(PackageInclusionV2).where(PackageInclusionV2.package_id == package_id)
         )
         inclusions = inclusions_result.scalars().all()
         
@@ -393,7 +393,7 @@ class PackageService:
         
         # Copy inclusions
         for inclusion in inclusions:
-            new_inclusion = PackageInclusion(
+            new_inclusion = PackageInclusionV2(
                 package_id=new_package.id,
                 service_id=inclusion.service_id,
                 service_name=inclusion.service_name,

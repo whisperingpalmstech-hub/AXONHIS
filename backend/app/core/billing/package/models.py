@@ -21,7 +21,7 @@ class PackageVersion(Base):
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
 
-class PackageInclusion(Base):
+class PackageInclusionV2(Base):
     """Services included in a package."""
     __tablename__ = "billing_package_inclusions_v2"
     

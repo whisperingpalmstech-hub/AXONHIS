@@ -6,7 +6,7 @@ from typing import List
 from app.database import get_db
 from app.core.billing.package.schemas import (
     PackageCreate, PackageUpdate, PackageResponse, PackageWithDetailsResponse,
-    PackageInclusionCreate, PackageExclusionCreate, PackageApprovalRequest, PackageApprovalResponse
+    PackageInclusionV2Create, PackageExclusionCreate, PackageApprovalRequest, PackageApprovalResponse
 )
 from app.core.billing.package.services import PackageService
 
@@ -43,7 +43,7 @@ async def get_package(
     db: AsyncSession = Depends(get_db)
 ):
     """Get package details with inclusions, exclusions, and pricing."""
-    from app.core.billing.package.models import Package, PackageInclusion, PackageExclusion, PackagePricing
+    from app.core.billing.package.models import Package, PackageInclusionV2, PackageExclusion, PackagePricing
     from sqlalchemy import select
     
     # Get package
@@ -53,7 +53,7 @@ async def get_package(
     
     # Get inclusions
     inclusions_result = await db.execute(
-        select(PackageInclusion).where(PackageInclusion.package_id == package_id)
+        select(PackageInclusionV2).where(PackageInclusionV2.package_id == package_id)
     )
     inclusions = inclusions_result.scalars().all()
     
@@ -110,7 +110,7 @@ async def update_package(
 @router.post("/packages/{package_id}/inclusions")
 async def add_package_inclusion(
     package_id: str,
-    inclusion_data: PackageInclusionCreate,
+    inclusion_data: PackageInclusionV2Create,
     db: AsyncSession = Depends(get_db)
 ):
     """Add a service to package inclusions."""

@@ -301,10 +301,10 @@ export default function QA() {
           <div className="flex gap-2">
             <button
               onClick={checkAllModules}
-              disabled={isRunning}
+              disabled={isRunning && testingModule !== null}
               className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400"
             >
-              {isRunning ? "Loading..." : "Load Modules"}
+              {testingModule ? "Loading..." : "Load Modules"}
             </button>
             <button
               onClick={runAllModuleTests}

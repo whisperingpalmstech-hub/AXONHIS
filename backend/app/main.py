@@ -421,6 +421,10 @@ def create_app() -> FastAPI:
     # Stock Valuation Module
     from app.core.inventory.valuation.router import router as valuation_router
     app.include_router(valuation_router, prefix="/api/v1/inventory/valuation", tags=["Stock Valuation"])
+
+    # Physical Stock Verification Module
+    from app.core.inventory.verification.router import router as verification_router
+    app.include_router(verification_router, prefix="/api/v1/inventory/verification", tags=["Stock Verification"])
     app.include_router(diagnostics_router, prefix="/api/v1/diagnostics", tags=["Diagnostic Procedures"])
     app.include_router(new_advanced_lab_router, prefix="/api/v1/advanced", tags=["Advanced Diagnostics"])
     app.include_router(procurement_router, prefix="/api/v1", tags=["Procurement & Supply Chain"])

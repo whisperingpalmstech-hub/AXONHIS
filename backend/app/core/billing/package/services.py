@@ -12,7 +12,7 @@ from app.core.billing.package.schemas import (
     PackageCreate, PackageUpdate, PackageInclusionCreate,
     PackageExclusionCreate, PackagePricingCreate
 )
-from app.core.billing.models import Package  # Assuming this exists in billing/models.py
+from app.core.billing_masters.models import PackageMaster as Package
 
 
 class PackageService:

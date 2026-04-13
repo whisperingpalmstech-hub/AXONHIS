@@ -30,7 +30,7 @@ class VerificationItem(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     schedule_id = Column(UUID(as_uuid=True), ForeignKey("inv_verification_schedules.id", ondelete="CASCADE"), nullable=False, index=True)
     item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="RESTRICT"), nullable=False)
-    batch_record_id = Column(UUID(as_uuid=True, ForeignKey("inv_batch_records.id", ondelete="RESTRICT"), nullable=False)
+    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="RESTRICT"), nullable=False)
     expected_quantity = Column(Numeric(12, 2), nullable=False)
     verified_quantity = Column(Numeric(12, 2), nullable=True)
     variance = Column(Numeric(12, 2), nullable=True)
@@ -45,7 +45,7 @@ class Discrepancy(Base):
     __tablename__ = "inv_discrepancies"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    verification_item_id = Column(UUID(as_uuid=True, ForeignKey("inv_verification_items.id", ondelete="CASCADE"), nullable=False, index=True)
+    verification_item_id = Column(UUID(as_uuid=True), ForeignKey("inv_verification_items.id", ondelete="CASCADE"), nullable=False, index=True)
     discrepancy_type = Column(String(50), nullable=False)  # 'shortage', 'excess', 'damage'
     expected_quantity = Column(Numeric(12, 2), nullable=False)
     actual_quantity = Column(Numeric(12, 2), nullable=False)
@@ -64,7 +64,7 @@ class VerificationReport(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     report_number = Column(String(100), unique=True, nullable=False, index=True)
-    schedule_id = Column(UUID(as_uuid=True, ForeignKey("inv_verification_schedules.id", ondelete="SET NULL"), nullable=True, index=True)
+    schedule_id = Column(UUID(as_uuid=True), ForeignKey("inv_verification_schedules.id", ondelete="SET NULL"), nullable=True, index=True)
     generated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     generated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     total_items = Column(Integer, nullable=False)

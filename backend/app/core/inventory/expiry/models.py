@@ -25,7 +25,7 @@ class ExpiryTracking(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="CASCADE"), nullable=False, index=True)
     item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="RESTRICT"), nullable=False, index=True)
-    store_id = Column(UUID(as_uuid=True, ForeignKey("inv_stores.id", ondelete="RESTRICT"), nullable=True, index=True)
+    store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="RESTRICT"), nullable=True, index=True)
     expiry_date = Column(DateTime(timezone=True), nullable=False, index=True)
     quantity = Column(Numeric(12, 2), nullable=False)
     status = Column(String(50), nullable=False, default="active")  # 'active', 'near_expiry', 'expired', 'consumed', 'disposed'

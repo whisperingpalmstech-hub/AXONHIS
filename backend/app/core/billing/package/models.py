@@ -9,7 +9,7 @@ from app.database import Base
 
 class PackageVersion(Base):
     """Package version tracking."""
-    __tablename__ = "billing_package_versions"
+    __tablename__ = "billing_package_versions_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     package_id = Column(UUID(as_uuid=True), ForeignKey("billing_packages.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -23,7 +23,7 @@ class PackageVersion(Base):
 
 class PackageInclusion(Base):
     """Services included in a package."""
-    __tablename__ = "billing_package_inclusions"
+    __tablename__ = "billing_package_inclusions_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     package_id = Column(UUID(as_uuid=True), ForeignKey("billing_packages.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -37,7 +37,7 @@ class PackageInclusion(Base):
 
 class PackageExclusion(Base):
     """Services excluded from a package."""
-    __tablename__ = "billing_package_exclusions"
+    __tablename__ = "billing_package_exclusions_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     package_id = Column(UUID(as_uuid=True), ForeignKey("billing_packages.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -50,7 +50,7 @@ class PackageExclusion(Base):
 
 class PackagePricing(Base):
     """Package pricing by patient category, bed type, payment entitlement."""
-    __tablename__ = "billing_package_pricing"
+    __tablename__ = "billing_package_pricing_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     package_id = Column(UUID(as_uuid=True), ForeignKey("billing_packages.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -66,7 +66,7 @@ class PackagePricing(Base):
 
 class PackageApproval(Base):
     """Approval workflow for forceful inclusion/exclusion."""
-    __tablename__ = "billing_package_approvals"
+    __tablename__ = "billing_package_approvals_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     package_id = Column(UUID(as_uuid=True), ForeignKey("billing_packages.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -84,7 +84,7 @@ class PackageApproval(Base):
 
 class PackageProfit(Base):
     """Package profit calculation tracking."""
-    __tablename__ = "billing_package_profits"
+    __tablename__ = "billing_package_profits_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     package_id = Column(UUID(as_uuid=True), ForeignKey("billing_packages.id", ondelete="CASCADE"), nullable=False, index=True)

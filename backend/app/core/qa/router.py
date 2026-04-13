@@ -12,9 +12,69 @@ from app.core.qa.schemas import (
     TestExecutionRequest, ReportRequest, ReportResponse
 )
 from app.core.qa.services import QAService
-from app.core.qa.endpoint_registry import endpoint_registry
 
 router = APIRouter()
+
+# Static module and endpoint mapping (simplified approach)
+MODULE_ENDPOINTS = {
+    'auth': [
+        {'path': '/api/v1/auth/login', 'methods': ['POST']},
+        {'path': '/api/v1/auth/register', 'methods': ['POST']},
+        {'path': '/api/v1/auth/me', 'methods': ['GET']},
+    ],
+    'patients': [
+        {'path': '/api/v1/patients', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/patients/identifiers', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/patients/contacts', 'methods': ['GET', 'POST']},
+    ],
+    'opd': [
+        {'path': '/api/v1/opd/visits', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/opd/queue', 'methods': ['GET']},
+        {'path': '/api/v1/opd/scheduling', 'methods': ['GET', 'POST']},
+    ],
+    'ipd': [
+        {'path': '/api/v1/ipd/admissions', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/ipd/beds', 'methods': ['GET']},
+        {'path': '/api/v1/ipd/discharges', 'methods': ['POST']},
+    ],
+    'er': [
+        {'path': '/api/v1/er/triage', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/er/encounters', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/er/dispositions', 'methods': ['POST']},
+    ],
+    'lab': [
+        {'path': '/api/v1/lab/orders', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/lab/results', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/lab/processing', 'methods': ['GET', 'POST']},
+    ],
+    'radiology': [
+        {'path': '/api/v1/radiology/orders', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/radiology/reports', 'methods': ['GET', 'POST']},
+    ],
+    'pharmacy': [
+        {'path': '/api/v1/pharmacy/prescriptions', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/pharmacy/inventory', 'methods': ['GET']},
+        {'path': '/api/v1/pharmacy/dispensing', 'methods': ['POST']},
+    ],
+    'inventory': [
+        {'path': '/api/v1/inventory/items', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/inventory/stock', 'methods': ['GET']},
+        {'path': '/api/v1/inventory/movements', 'methods': ['GET', 'POST']},
+    ],
+    'billing': [
+        {'path': '/api/v1/billing/invoices', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/billing/packages', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/billing/payments', 'methods': ['POST']},
+    ],
+    'ot': [
+        {'path': '/api/v1/ot/schedules', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/ot/procedures', 'methods': ['GET', 'POST']},
+    ],
+    'qa': [
+        {'path': '/api/v1/qa/suites', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/qa/reports', 'methods': ['GET']},
+    ],
+}
 
 
 @router.get("/modules")
@@ -24,10 +84,10 @@ async def get_all_modules():
         "modules": [
             {
                 "name": module,
-                "endpointCount": endpoint_registry.get_endpoint_count(module),
-                "endpoints": endpoint_registry.get_module_endpoints(module)
+                "endpointCount": len(endpoints),
+                "endpoints": endpoints
             }
-            for module in endpoint_registry.get_modules()
+            for module, endpoints in MODULE_ENDPOINTS.items()
         ]
     }
 
@@ -35,9 +95,9 @@ async def get_all_modules():
 @router.get("/modules/{module_name}")
 async def get_module_details(module_name: str):
     """Get details for a specific module."""
-    endpoints = endpoint_registry.get_module_endpoints(module_name)
+    endpoints = MODULE_ENDPOINTS.get(module_name)
     if not endpoints:
-        raise HTTPException(status_code=404, detail=f"Module {module_name} not found or has no endpoints")
+        raise HTTPException(status_code=404, detail=f"Module {module_name} not found")
     
     return {
         "module": module_name,
@@ -49,9 +109,9 @@ async def get_module_details(module_name: str):
 @router.post("/test/module/{module_name}")
 async def test_module(module_name: str, db: AsyncSession = Depends(get_db)):
     """Run tests for all endpoints in a specific module."""
-    endpoints = endpoint_registry.get_module_endpoints(module_name)
+    endpoints = MODULE_ENDPOINTS.get(module_name)
     if not endpoints:
-        raise HTTPException(status_code=404, detail=f"Module {module_name} not found or has no endpoints")
+        raise HTTPException(status_code=404, detail=f"Module {module_name} not found")
     
     results = []
     passed = 0
@@ -131,12 +191,11 @@ async def test_module(module_name: str, db: AsyncSession = Depends(get_db)):
 @router.post("/test/all")
 async def test_all_modules(db: AsyncSession = Depends(get_db)):
     """Run tests for all modules."""
-    modules = endpoint_registry.get_modules()
     all_results = {}
     total_passed = 0
     total_failed = 0
     
-    for module in modules:
+    for module in MODULE_ENDPOINTS.keys():
         try:
             result = await test_module(module, db)
             all_results[module] = result
@@ -155,7 +214,7 @@ async def test_all_modules(db: AsyncSession = Depends(get_db)):
     
     return {
         "modules": all_results,
-        "total_modules": len(modules),
+        "total_modules": len(MODULE_ENDPOINTS),
         "total_passed": total_passed,
         "total_failed": total_failed
     }

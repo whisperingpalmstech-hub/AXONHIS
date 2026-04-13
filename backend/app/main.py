@@ -476,13 +476,8 @@ def create_app() -> FastAPI:
     app.include_router(doctor_preferences_router, prefix="/api/v1")
 
     # QA Module - Quality Assurance and Testing
-    # QA Module
     from app.core.qa.router import router as qa_router
-    from app.core.qa.endpoint_registry import endpoint_registry
     app.include_router(qa_router, prefix="/api/v1/qa", tags=["QA Module"])
-    
-    # Register endpoint registry after all routers are included
-    endpoint_registry.register_app(app)
 
     # Force-load AxonHIS MD models for SQLAlchemy registry
     from app.core.axonhis_md.models import (

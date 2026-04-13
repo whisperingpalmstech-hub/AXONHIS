@@ -123,6 +123,11 @@ export default function QA() {
   const checkAllModules = async () => {
     try {
       const response = await fetch("/api/v1/qa/modules");
+      if (!response.ok) {
+        console.error("API returned error:", response.status, response.statusText);
+        alert(`Failed to load modules: ${response.status} ${response.statusText}`);
+        return;
+      }
       const data = await response.json();
       
       if (data.modules) {
@@ -137,9 +142,13 @@ export default function QA() {
             }
           }));
         });
+      } else {
+        console.error("No modules data received:", data);
+        alert("No modules data received from API");
       }
     } catch (error) {
       console.error("Failed to fetch modules:", error);
+      alert(`Error fetching modules: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

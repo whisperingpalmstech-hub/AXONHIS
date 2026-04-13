@@ -9,7 +9,7 @@ from app.database import Base
 
 class BaseRate(Base):
     """Base rate for services."""
-    __tablename__ = "billing_base_rates"
+    __tablename__ = "billing_base_rates_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     service_id = Column(UUID(as_uuid=True), nullable=False, index=True)
@@ -22,10 +22,10 @@ class BaseRate(Base):
 
 class RateVariation(Base):
     """Rate variations by patient category, bed type, payment entitlement."""
-    __tablename__ = "billing_rate_variations"
+    __tablename__ = "billing_rate_variations_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    base_rate_id = Column(UUID(as_uuid=True), ForeignKey("billing_base_rates.id", ondelete="CASCADE"), nullable=False, index=True)
+    base_rate_id = Column(UUID(as_uuid=True), ForeignKey("billing_base_rates_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     patient_category = Column(String(50), nullable=False)  # 'national', 'foreign', 'bpl', 'employee', 'nok_employee'
     bed_type = Column(String(50), nullable=True)  # 'general', 'private', 'semi_private', 'icu'
     payment_entitlement = Column(String(50), nullable=True)  # 'self', 'insurance', 'corporate', 'stat'
@@ -39,10 +39,10 @@ class RateVariation(Base):
 
 class RateValidity(Base):
     """Rate validity periods."""
-    __tablename__ = "billing_rate_validity"
+    __tablename__ = "billing_rate_validity_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    base_rate_id = Column(UUID(as_uuid=True), ForeignKey("billing_base_rates.id", ondelete="CASCADE"), nullable=False, index=True)
+    base_rate_id = Column(UUID(as_uuid=True), ForeignKey("billing_base_rates_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     valid_from = Column(DateTime(timezone=True), nullable=False)
     valid_to = Column(DateTime(timezone=True), nullable=True)
     reason = Column(Text, nullable=True)
@@ -51,7 +51,7 @@ class RateValidity(Base):
 
 class AfterHoursCharge(Base):
     """After-hours charging rules."""
-    __tablename__ = "billing_after_hours_charges"
+    __tablename__ = "billing_after_hours_charges_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     service_id = Column(UUID(as_uuid=True), nullable=False, index=True)
@@ -67,7 +67,7 @@ class AfterHoursCharge(Base):
 
 class Currency(Base):
     """Multi-currency support."""
-    __tablename__ = "billing_currencies"
+    __tablename__ = "billing_currencies_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     currency_code = Column(String(3), nullable=False, unique=True)  # 'USD', 'EUR', 'INR'
@@ -82,11 +82,11 @@ class Currency(Base):
 
 class ExchangeRate(Base):
     """Exchange rate tracking."""
-    __tablename__ = "billing_exchange_rates"
+    __tablename__ = "billing_exchange_rates_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    from_currency_id = Column(UUID(as_uuid=True), ForeignKey("billing_currencies.id", ondelete="CASCADE"), nullable=False, index=True)
-    to_currency_id = Column(UUID(as_uuid=True), ForeignKey("billing_currencies.id", ondelete="CASCADE"), nullable=False, index=True)
+    from_currency_id = Column(UUID(as_uuid=True), ForeignKey("billing_currencies_v2.id", ondelete="CASCADE"), nullable=False, index=True)
+    to_currency_id = Column(UUID(as_uuid=True), ForeignKey("billing_currencies_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     rate = Column(Numeric(12, 6), nullable=False)
     effective_from = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     effective_to = Column(DateTime(timezone=True), nullable=True)

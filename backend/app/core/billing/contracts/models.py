@@ -9,7 +9,7 @@ from app.database import Base
 
 class Contract(Base):
     """Corporate/Insurance contracts."""
-    __tablename__ = "billing_contracts"
+    __tablename__ = "billing_contracts_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     contract_number = Column(String(100), unique=True, nullable=False, index=True)
@@ -29,10 +29,10 @@ class Contract(Base):
 
 class ContractInclusion(Base):
     """Services included in contract."""
-    __tablename__ = "billing_contract_inclusions"
+    __tablename__ = "billing_contract_inclusions_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="CASCADE"), nullable=False, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     service_id = Column(UUID(as_uuid=True), nullable=False)
     service_name = Column(String(200), nullable=False)
     service_type = Column(String(50), nullable=False)  # 'hospital_service', 'lab', 'radiology', 'pharmacy'
@@ -42,10 +42,10 @@ class ContractInclusion(Base):
 
 class ContractExclusion(Base):
     """Services excluded from contract."""
-    __tablename__ = "billing_contract_exclusions"
+    __tablename__ = "billing_contract_exclusions_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="CASCADE"), nullable=False, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     service_id = Column(UUID(as_uuid=True), nullable=False)
     service_name = Column(String(200), nullable=False)
     service_type = Column(String(50), nullable=False)
@@ -55,10 +55,10 @@ class ContractExclusion(Base):
 
 class ContractCoPay(Base):
     """Co-pay configuration for contracts."""
-    __tablename__ = "billing_contract_copay"
+    __tablename__ = "billing_contract_copay_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="CASCADE"), nullable=False, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     service_type = Column(String(50), nullable=True)  # Null means applies to all services
     copay_type = Column(String(50), nullable=False)  # 'percentage', 'fixed', 'tiered'
     copay_value = Column(Numeric(12, 2), nullable=False)
@@ -71,10 +71,10 @@ class ContractCoPay(Base):
 
 class ContractCAP(Base):
     """CAP amount configuration for contracts."""
-    __tablename__ = "billing_contract_caps"
+    __tablename__ = "billing_contract_caps_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="CASCADE"), nullable=False, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     cap_type = Column(String(50), nullable=False)  # 'per_visit', 'per_month', 'per_year', 'lifetime'
     cap_amount = Column(Numeric(12, 2), nullable=False)
     cap_period_start = Column(DateTime(timezone=True), nullable=True)
@@ -85,10 +85,10 @@ class ContractCAP(Base):
 
 class ContractCreditLimit(Base):
     """Credit limit configuration for contracts."""
-    __tablename__ = "billing_contract_credit_limits"
+    __tablename__ = "billing_contract_credit_limits_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="CASCADE"), nullable=False, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     credit_limit = Column(Numeric(12, 2), nullable=False)
     used_credit = Column(Numeric(12, 2), nullable=False, default=0)
     available_credit = Column(Numeric(12, 2), nullable=False)
@@ -101,10 +101,10 @@ class ContractCreditLimit(Base):
 
 class ContractPaymentTerms(Base):
     """Payment terms for contracts."""
-    __tablename__ = "billing_contract_payment_terms"
+    __tablename__ = "billing_contract_payment_terms_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="CASCADE"), nullable=False, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     payment_mode = Column(String(50), nullable=False)  # 'credit', 'prepaid', 'postpaid'
     credit_period_days = Column(Integer, nullable=True)
     discount_for_early_payment = Column(Numeric(5, 2), nullable=True)  # Percentage
@@ -117,10 +117,10 @@ class ContractPaymentTerms(Base):
 
 class ContractPackage(Base):
     """Packages under contract."""
-    __tablename__ = "billing_contract_packages"
+    __tablename__ = "billing_contract_packages_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="CASCADE"), nullable=False, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     package_id = Column(UUID(as_uuid=True), nullable=False)
     package_name = Column(String(200), nullable=False)
     contract_price = Column(Numeric(12, 2), nullable=False)  # Special price under contract
@@ -130,10 +130,10 @@ class ContractPackage(Base):
 
 class ContractEmployeeGrade(Base):
     """Employee grade contracts."""
-    __tablename__ = "billing_contract_employee_grades"
+    __tablename__ = "billing_contract_employee_grades_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="CASCADE"), nullable=False, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     employee_grade = Column(String(50), nullable=False)  # 'A', 'B', 'C', 'executive', 'staff'
     discount_percentage = Column(Numeric(5, 2), nullable=False)
     credit_limit = Column(Numeric(12, 2), nullable=True)
@@ -143,11 +143,11 @@ class ContractEmployeeGrade(Base):
 
 class PatientCreditAssignment(Base):
     """Patient to credit company assignment."""
-    __tablename__ = "billing_patient_credit_assignments"
+    __tablename__ = "billing_patient_credit_assignments_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="CASCADE"), nullable=False, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     employee_id = Column(String(100), nullable=True)
     employee_grade = Column(String(50), nullable=True)
     assigned_date = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

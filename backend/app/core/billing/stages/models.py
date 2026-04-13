@@ -9,12 +9,12 @@ from app.database import Base
 
 class BillStage(Base):
     """Bill stage tracking (interim, intermediate, final)."""
-    __tablename__ = "billing_bill_stages"
+    __tablename__ = "billing_bill_stages_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="CASCADE"), nullable=False, index=True)
     stage_type = Column(String(50), nullable=False)  # 'interim', 'intermediate', 'final'
-    previous_stage_id = Column(UUID(as_uuid=True), ForeignKey("billing_bill_stages.id", ondelete="SET NULL"), nullable=True)
+    previous_stage_id = Column(UUID(as_uuid=True), ForeignKey("billing_bill_stages_v2.id", ondelete="SET NULL"), nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
@@ -22,7 +22,7 @@ class BillStage(Base):
 
 class BillStageTransition(Base):
     """Track bill stage changes."""
-    __tablename__ = "billing_bill_stage_transitions"
+    __tablename__ = "billing_bill_stage_transitions_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -35,7 +35,7 @@ class BillStageTransition(Base):
 
 class PartialPayment(Base):
     """Track partial payments on bills."""
-    __tablename__ = "billing_partial_payments"
+    __tablename__ = "billing_partial_payments_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -49,7 +49,7 @@ class PartialPayment(Base):
 
 class BillHold(Base):
     """Track bills on hold status."""
-    __tablename__ = "billing_bill_holds"
+    __tablename__ = "billing_bill_holds_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -64,7 +64,7 @@ class BillHold(Base):
 
 class RefundRequest(Base):
     """Track refund requests."""
-    __tablename__ = "billing_refund_requests"
+    __tablename__ = "billing_refund_requests_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -81,7 +81,7 @@ class RefundRequest(Base):
 
 class CreditNote(Base):
     """Track credit notes for post-bill discounts."""
-    __tablename__ = "billing_credit_notes"
+    __tablename__ = "billing_credit_notes_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="SET NULL"), nullable=True, index=True)
@@ -98,7 +98,7 @@ class CreditNote(Base):
 
 class DebitNote(Base):
     """Track debit notes for additional charges."""
-    __tablename__ = "billing_debit_notes"
+    __tablename__ = "billing_debit_notes_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="SET NULL"), nullable=True, index=True)

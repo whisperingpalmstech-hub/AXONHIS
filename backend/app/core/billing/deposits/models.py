@@ -9,7 +9,7 @@ from app.database import Base
 
 class Deposit(Base):
     """Security deposit, active deposit."""
-    __tablename__ = "billing_deposits"
+    __tablename__ = "billing_deposits_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
@@ -27,10 +27,10 @@ class Deposit(Base):
 
 class DepositUsage(Base):
     """Track deposit usage."""
-    __tablename__ = "billing_deposit_usage"
+    __tablename__ = "billing_deposit_usage_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    deposit_id = Column(UUID(as_uuid=True), ForeignKey("billing_deposits.id", ondelete="CASCADE"), nullable=False, index=True)
+    deposit_id = Column(UUID(as_uuid=True), ForeignKey("billing_deposits_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     bill_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     amount_used = Column(Numeric(12, 2), nullable=False)
     used_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -39,10 +39,10 @@ class DepositUsage(Base):
 
 class DepositRefund(Base):
     """Refund tracking."""
-    __tablename__ = "billing_deposit_refunds"
+    __tablename__ = "billing_deposit_refunds_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    deposit_id = Column(UUID(as_uuid=True), ForeignKey("billing_deposits.id", ondelete="CASCADE"), nullable=False, index=True)
+    deposit_id = Column(UUID(as_uuid=True), ForeignKey("billing_deposits_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     refund_amount = Column(Numeric(12, 2), nullable=False)
     refund_method = Column(String(50), nullable=False)  # 'cash', 'card', 'upi', 'neft', 'cheque'
     refund_reference = Column(String(200), nullable=True)
@@ -59,7 +59,7 @@ class DepositRefund(Base):
 
 class FamilyDeposit(Base):
     """Family deposit with OTP."""
-    __tablename__ = "billing_family_deposits"
+    __tablename__ = "billing_family_deposits_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     family_deposit_number = Column(String(100), unique=True, nullable=False, index=True)
@@ -76,10 +76,10 @@ class FamilyDeposit(Base):
 
 class FamilyDepositMember(Base):
     """Family deposit members."""
-    __tablename__ = "billing_family_deposit_members"
+    __tablename__ = "billing_family_deposit_members_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    family_deposit_id = Column(UUID(as_uuid=True), ForeignKey("billing_family_deposits.id", ondelete="CASCADE"), nullable=False, index=True)
+    family_deposit_id = Column(UUID(as_uuid=True), ForeignKey("billing_family_deposits_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     relationship = Column(String(50), nullable=False)  # 'self', 'spouse', 'child', 'parent', 'sibling'
     is_active = Column(Boolean, default=True)
@@ -88,10 +88,10 @@ class FamilyDepositMember(Base):
 
 class FamilyDepositOTP(Base):
     """OTP for family deposit usage."""
-    __tablename__ = "billing_family_deposit_otps"
+    __tablename__ = "billing_family_deposit_otps_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    family_deposit_id = Column(UUID(as_uuid=True), ForeignKey("billing_family_deposits.id", ondelete="CASCADE"), nullable=False, index=True)
+    family_deposit_id = Column(UUID(as_uuid=True), ForeignKey("billing_family_deposits_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     otp_code = Column(String(10), nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=False)

@@ -9,7 +9,7 @@ from app.database import Base
 
 class CreditCompany(Base):
     """Credit company details."""
-    __tablename__ = "billing_credit_companies"
+    __tablename__ = "billing_credit_companies_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     company_name = Column(String(200), nullable=False)
@@ -25,11 +25,11 @@ class CreditCompany(Base):
 
 class PatientCreditAssignment(Base):
     """Patient to credit company assignment (reused from contracts)."""
-    __tablename__ = "billing_patient_credit_assignments"
+    __tablename__ = "billing_patient_credit_assignments_v3"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="CASCADE"), nullable=False, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     employee_id = Column(String(100), nullable=True)
     employee_grade = Column(String(50), nullable=True)
     assigned_date = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -39,12 +39,12 @@ class PatientCreditAssignment(Base):
 
 class Authorization(Base):
     """Authorization tracking."""
-    __tablename__ = "billing_authorizations"
+    __tablename__ = "billing_authorizations_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     authorization_number = Column(String(100), unique=True, nullable=False, index=True)
     patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="CASCADE"), nullable=False, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     authorized_amount = Column(Numeric(12, 2), nullable=False)
     used_amount = Column(Numeric(12, 2), nullable=False, default=0)
     status = Column(String(50), nullable=False, default="active")  # 'active', 'exhausted', 'expired', 'cancelled'
@@ -56,12 +56,12 @@ class Authorization(Base):
 
 class CoPaySplit(Base):
     """Co-pay splitting tracking."""
-    __tablename__ = "billing_copay_splits"
+    __tablename__ = "billing_copay_splits_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bill_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="SET NULL"), nullable=True, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="SET NULL"), nullable=True, index=True)
     total_amount = Column(Numeric(12, 2), nullable=False)
     patient_share = Column(Numeric(12, 2), nullable=False)
     company_share = Column(Numeric(12, 2), nullable=False)
@@ -71,7 +71,7 @@ class CoPaySplit(Base):
 
 class Denial(Base):
     """Denial tracking."""
-    __tablename__ = "billing_denials"
+    __tablename__ = "billing_denials_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     bill_id = Column(UUID(as_uuid=True), nullable=False, index=True)
@@ -87,11 +87,11 @@ class Denial(Base):
 
 class Invoice(Base):
     """Invoice generation for credit billing."""
-    __tablename__ = "billing_invoices"
+    __tablename__ = "billing_invoices_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     invoice_number = Column(String(100), unique=True, nullable=False, index=True)
-    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts.id", ondelete="SET NULL"), nullable=True, index=True)
+    contract_id = Column(UUID(as_uuid=True), ForeignKey("billing_contracts_v2.id", ondelete="SET NULL"), nullable=True, index=True)
     patient_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     bill_ids = Column(JSONB, nullable=True)  # List of bill IDs
     total_amount = Column(Numeric(12, 2), nullable=False)
@@ -104,10 +104,10 @@ class Invoice(Base):
 
 class InvoiceSettlement(Base):
     """Invoice settlement tracking."""
-    __tablename__ = "billing_invoice_settlements"
+    __tablename__ = "billing_invoice_settlements_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    invoice_id = Column(UUID(as_uuid=True), ForeignKey("billing_invoices.id", ondelete="CASCADE"), nullable=False, index=True)
+    invoice_id = Column(UUID(as_uuid=True), ForeignKey("billing_invoices_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     settlement_amount = Column(Numeric(12, 2), nullable=False)
     settlement_method = Column(String(50), nullable=False)  # 'cheque', 'neft', 'upi', 'card'
     settlement_reference = Column(String(200), nullable=True)

@@ -9,7 +9,7 @@ from app.database import Base
 
 class Tax(Base):
     """Tax master."""
-    __tablename__ = "billing_taxes"
+    __tablename__ = "billing_taxes_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tax_code = Column(String(50), unique=True, nullable=False, index=True)
@@ -26,10 +26,10 @@ class Tax(Base):
 
 class TaxApplicability(Base):
     """Tax applicability for services."""
-    __tablename__ = "billing_tax_applicability"
+    __tablename__ = "billing_tax_applicability_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tax_id = Column(UUID(as_uuid=True), ForeignKey("billing_taxes.id", ondelete="CASCADE"), nullable=False, index=True)
+    tax_id = Column(UUID(as_uuid=True), ForeignKey("billing_taxes_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     service_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     service_name = Column(String(200), nullable=False)
     service_type = Column(String(50), nullable=False)  # 'hospital_service', 'lab', 'radiology', 'pharmacy'
@@ -42,10 +42,10 @@ class TaxApplicability(Base):
 
 class TaxValidity(Base):
     """Tax validity periods."""
-    __tablename__ = "billing_tax_validity"
+    __tablename__ = "billing_tax_validity_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tax_id = Column(UUID(as_uuid=True), ForeignKey("billing_taxes.id", ondelete="CASCADE"), nullable=False, index=True)
+    tax_id = Column(UUID(as_uuid=True), ForeignKey("billing_taxes_v2.id", ondelete="CASCADE"), nullable=False, index=True)
     valid_from = Column(DateTime(timezone=True), nullable=False)
     valid_to = Column(DateTime(timezone=True), nullable=True)
     tax_percentage = Column(Numeric(5, 2), nullable=False)

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Calendar, FileText, Activity, CreditCard, 
-  Video, LogOut, Bell, User, Clock
+  Video, LogOut, Bell, User, Clock, TestTube2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { portalApi } from '@/lib/portal-api';
@@ -164,6 +164,7 @@ export default function PatientDashboard() {
             { id: 'records', label: 'Medical Records', icon: FileText },
             { id: 'telemed', label: 'Telemedicine', icon: Video },
             { id: 'billing', label: 'Billing & Payments', icon: CreditCard },
+            { id: 'qa', label: 'QA Testing', icon: TestTube2, action: () => router.push('/qa') },
           ].map((item) => (
             <button
               key={item.id}

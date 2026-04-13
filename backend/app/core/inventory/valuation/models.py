@@ -50,7 +50,7 @@ class ValuationMethod(Base):
 
 class StockAdjustment(Base):
     """Stock adjustment for valuation differences."""
-    __tablename__ = "inv_stock_adjustments"
+    __tablename__ = "inv_stock_valuation_adjustments"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     adjustment_number = Column(String(100), unique=True, nullable=False, index=True)

@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional, Dict, Any
 import httpx
+import time
+import asyncio
 
 from app.database import get_db
 from app.core.qa.schemas import (
@@ -10,87 +12,152 @@ from app.core.qa.schemas import (
     TestExecutionRequest, ReportRequest, ReportResponse
 )
 from app.core.qa.services import QAService
+from app.core.qa.endpoint_registry import endpoint_registry
 
 router = APIRouter()
 
-# Module endpoint mapping for health checks
-MODULE_ENDPOINTS = {
-    'auth': ['/api/v1/auth/login', '/api/v1/auth/register', '/api/v1/auth/me'],
-    'patients': ['/api/v1/patients', '/api/v1/patients/identifiers', '/api/v1/patients/contacts'],
-    'opd': ['/api/v1/opd/visits', '/api/v1/opd/queue', '/api/v1/opd/scheduling'],
-    'ipd': ['/api/v1/ipd/admissions', '/api/v1/ipd/beds', '/api/v1/ipd/discharges'],
-    'er': ['/api/v1/er/triage', '/api/v1/er/encounters', '/api/v1/er/dispositions'],
-    'lab': ['/api/v1/lab/orders', '/api/v1/lab/results', '/api/v1/lab/processing'],
-    'radiology': ['/api/v1/radiology/orders', '/api/v1/radiology/reports'],
-    'pharmacy': ['/api/v1/pharmacy/prescriptions', '/api/v1/pharmacy/inventory', '/api/v1/pharmacy/dispensing'],
-    'inventory': ['/api/v1/inventory/items', '/api/v1/inventory/stock', '/api/v1/inventory/movements'],
-    'billing': ['/api/v1/billing/invoices', '/api/v1/billing/packages', '/api/v1/billing/payments'],
-    'ot': ['/api/v1/ot/schedules', '/api/v1/ot/procedures'],
-    'qa': ['/api/v1/qa/suites', '/api/v1/qa/reports'],
-}
 
-
-@router.get("/modules/{module_name}/health")
-async def check_module_health(
-    module_name: str,
-    db: AsyncSession = Depends(get_db)
-):
-    """Check health of all endpoints in a module."""
-    if module_name not in MODULE_ENDPOINTS:
-        raise HTTPException(status_code=404, detail=f"Module {module_name} not found")
-    
-    endpoints = MODULE_ENDPOINTS[module_name]
-    healthy_count = 0
-    total_count = len(endpoints)
-    
-    # Check each endpoint
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        for endpoint in endpoints:
-            try:
-                # Try to ping the endpoint
-                response = await client.get(f"http://backend:8000{endpoint}")
-                if response.status_code < 500:
-                    healthy_count += 1
-            except:
-                pass
-    
-    status = 'healthy' if healthy_count == total_count else 'degraded' if healthy_count > 0 else 'unknown'
-    
+@router.get("/modules")
+async def get_all_modules():
+    """Get all modules with their endpoint counts."""
     return {
-        'status': status,
-        'endpointCount': total_count,
-        'healthyEndpoints': healthy_count,
-        'endpoints': endpoints
+        "modules": [
+            {
+                "name": module,
+                "endpointCount": endpoint_registry.get_endpoint_count(module),
+                "endpoints": endpoint_registry.get_module_endpoints(module)
+            }
+            for module in endpoint_registry.get_modules()
+        ]
     }
 
 
-@router.post("/modules/{module_name}/run")
-async def run_module_tests(
-    module_name: str,
-    db: AsyncSession = Depends(get_db)
-):
-    """Run all tests for a specific module."""
-    service = QAService(db)
-    
-    # Get all test suites for this module
-    suites = await service.get_test_suites(module=module_name, is_active=True)
-    
-    if not suites:
-        raise HTTPException(status_code=404, detail=f"No active test suites found for module {module_name}")
-    
-    # Run all suites for this module
-    all_results = []
-    for suite in suites:
-        result = await service.execute_test_suite(suite.id)
-        all_results.extend(result.get('results', []))
+@router.get("/modules/{module_name}")
+async def get_module_details(module_name: str):
+    """Get details for a specific module."""
+    endpoints = endpoint_registry.get_module_endpoints(module_name)
+    if not endpoints:
+        raise HTTPException(status_code=404, detail=f"Module {module_name} not found or has no endpoints")
     
     return {
-        'module': module_name,
-        'suites_run': len(suites),
-        'results': all_results,
-        'total_tests': len(all_results),
-        'passed': sum(1 for r in all_results if r.get('status') == 'passed'),
-        'failed': sum(1 for r in all_results if r.get('status') == 'failed')
+        "module": module_name,
+        "endpointCount": len(endpoints),
+        "endpoints": endpoints
+    }
+
+
+@router.post("/test/module/{module_name}")
+async def test_module(module_name: str, db: AsyncSession = Depends(get_db)):
+    """Run tests for all endpoints in a specific module."""
+    endpoints = endpoint_registry.get_module_endpoints(module_name)
+    if not endpoints:
+        raise HTTPException(status_code=404, detail=f"Module {module_name} not found or has no endpoints")
+    
+    results = []
+    passed = 0
+    failed = 0
+    
+    base_url = "http://backend:8000"
+    
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        for endpoint_info in endpoints:
+            endpoint_path = endpoint_info['path']
+            methods = endpoint_info['methods']
+            
+            # Use GET if available, otherwise use the first available method
+            method = 'GET' if 'GET' in methods else list(methods)[0] if methods else 'GET'
+            
+            start_time = time.time()
+            status = "failed"
+            error_message = None
+            status_code = None
+            
+            try:
+                # Make the API call
+                if method == 'GET':
+                    response = await client.get(f"{base_url}{endpoint_path}")
+                elif method == 'POST':
+                    response = await client.post(f"{base_url}{endpoint_path}", json={})
+                else:
+                    response = await client.get(f"{base_url}{endpoint_path}")
+                
+                status_code = response.status_code
+                elapsed_time = (time.time() - start_time) * 1000
+                
+                # Validate response
+                if status_code < 500:
+                    status = "passed"
+                    passed += 1
+                else:
+                    status = "failed"
+                    failed += 1
+                    error_message = f"Status code: {status_code}"
+            except Exception as e:
+                elapsed_time = (time.time() - start_time) * 1000
+                status = "failed"
+                failed += 1
+                error_message = str(e)
+            
+            results.append({
+                "endpoint": endpoint_path,
+                "method": method,
+                "status": status,
+                "time_ms": round(elapsed_time, 2),
+                "status_code": status_code,
+                "error": error_message
+            })
+    
+    # Store results in database
+    service = QAService(db)
+    for result in results:
+        await service.create_test_result(
+            name=f"{module_name} - {result['endpoint']}",
+            module=module_name,
+            test_type="api_health",
+            status=result['status'],
+            execution_time_ms=result['time_ms'],
+            error_message=result.get('error')
+        )
+    
+    return {
+        "module": module_name,
+        "total": len(endpoints),
+        "passed": passed,
+        "failed": failed,
+        "results": results
+    }
+
+
+@router.post("/test/all")
+async def test_all_modules(db: AsyncSession = Depends(get_db)):
+    """Run tests for all modules."""
+    modules = endpoint_registry.get_modules()
+    all_results = {}
+    total_passed = 0
+    total_failed = 0
+    
+    for module in modules:
+        try:
+            result = await test_module(module, db)
+            all_results[module] = result
+            total_passed += result['passed']
+            total_failed += result['failed']
+        except Exception as e:
+            all_results[module] = {
+                "module": module,
+                "total": 0,
+                "passed": 0,
+                "failed": 0,
+                "results": [],
+                "error": str(e)
+            }
+            total_failed += 1
+    
+    return {
+        "modules": all_results,
+        "total_modules": len(modules),
+        "total_passed": total_passed,
+        "total_failed": total_failed
     }
 
 

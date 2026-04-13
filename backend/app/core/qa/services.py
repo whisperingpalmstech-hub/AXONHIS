@@ -338,3 +338,26 @@ class QAService:
         query = select(QAReport).order_by(QAReport.generated_at.desc()).limit(limit)
         result = await self.db.execute(query)
         return result.scalars().all()
+    
+    async def create_test_result(
+        self,
+        name: str,
+        module: str,
+        test_type: str,
+        status: str,
+        execution_time_ms: float,
+        error_message: Optional[str] = None
+    ) -> QATestResult:
+        """Create a test result directly (for API health checks)."""
+        result = QATestResult(
+            test_definition_id=None,  # No test definition for API health checks
+            status=TestStatus.PASSED if status == "passed" else TestStatus.FAILED if status == "failed" else TestStatus.ERROR,
+            started_at=datetime.now(timezone.utc),
+            completed_at=datetime.now(timezone.utc),
+            execution_time_ms=execution_time_ms,
+            error_message=error_message
+        )
+        self.db.add(result)
+        await self.db.commit()
+        await self.db.refresh(result)
+        return result

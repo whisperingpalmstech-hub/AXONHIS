@@ -94,15 +94,13 @@ export default function QA() {
   const checkModuleHealth = async (moduleName: string) => {
     setTestingModule(moduleName);
     try {
-      const response = await fetch(`/api/v1/qa/modules/${moduleName}/health`, {
-        method: "GET",
-      });
+      const response = await fetch(`/api/v1/qa/modules/${moduleName}`);
       const data = await response.json();
       setModuleStatus(prev => ({
         ...prev,
         [moduleName]: {
           name: moduleName,
-          status: data.status || 'unknown',
+          status: 'unknown',  // Will be updated after running tests
           endpointCount: data.endpointCount || 0,
           lastChecked: new Date().toISOString(),
         }
@@ -123,22 +121,98 @@ export default function QA() {
   };
 
   const checkAllModules = async () => {
-    for (const mod of MODULES) {
-      await checkModuleHealth(mod.name);
+    try {
+      const response = await fetch("/api/v1/qa/modules");
+      const data = await response.json();
+      
+      if (data.modules) {
+        data.modules.forEach((mod: any) => {
+          setModuleStatus(prev => ({
+            ...prev,
+            [mod.name]: {
+              name: mod.name,
+              status: 'unknown',
+              endpointCount: mod.endpointCount || 0,
+              lastChecked: new Date().toISOString(),
+            }
+          }));
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch modules:", error);
     }
   };
 
   const runModuleTests = async (moduleName: string) => {
+    setTestingModule(moduleName);
     setIsRunning(true);
-    setSelectedSuite(moduleName);
     try {
-      const response = await fetch(`/api/v1/qa/modules/${moduleName}/run`, {
+      const response = await fetch(`/api/v1/qa/test/module/${moduleName}`, {
         method: "POST",
       });
       const data = await response.json();
+      
+      // Update module status based on test results
+      const status = data.failed === 0 ? 'healthy' : data.passed > 0 ? 'degraded' : 'unknown';
+      setModuleStatus(prev => ({
+        ...prev,
+        [moduleName]: {
+          name: moduleName,
+          status: status,
+          endpointCount: data.total || 0,
+          lastChecked: new Date().toISOString(),
+        }
+      }));
+      
+      // Update results display
       setResults(data.results || []);
     } catch (error) {
       console.error("Failed to run module tests:", error);
+      setModuleStatus(prev => ({
+        ...prev,
+        [moduleName]: {
+          name: moduleName,
+          status: 'degraded',
+          endpointCount: 0,
+          lastChecked: new Date().toISOString(),
+        }
+      }));
+    } finally {
+      setTestingModule(null);
+      setIsRunning(false);
+    }
+  };
+
+  const runAllModuleTests = async () => {
+    setIsRunning(true);
+    try {
+      const response = await fetch("/api/v1/qa/test/all", {
+        method: "POST",
+      });
+      const data = await response.json();
+      
+      // Update all module statuses
+      if (data.modules) {
+        Object.keys(data.modules).forEach(moduleName => {
+          const moduleResult = data.modules[moduleName];
+          const status = moduleResult.failed === 0 ? 'healthy' : moduleResult.passed > 0 ? 'degraded' : 'unknown';
+          setModuleStatus(prev => ({
+            ...prev,
+            [moduleName]: {
+              name: moduleName,
+              status: status,
+              endpointCount: moduleResult.total || 0,
+              lastChecked: new Date().toISOString(),
+            }
+          }));
+        });
+      }
+      
+      // Show combined results
+      const allResults = Object.values(data.modules || {}).flatMap((m: any) => m.results || []);
+      setResults(allResults);
+    } catch (error) {
+      console.error("Failed to run all module tests:", error);
     } finally {
       setIsRunning(false);
     }
@@ -224,13 +298,22 @@ export default function QA() {
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Module Health Check</h2>
-          <button
-            onClick={checkAllModules}
-            disabled={testingModule !== null}
-            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400"
-          >
-            {testingModule ? "Checking..." : "Check All Modules"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={checkAllModules}
+              disabled={isRunning}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400"
+            >
+              {isRunning ? "Loading..." : "Load Modules"}
+            </button>
+            <button
+              onClick={runAllModuleTests}
+              disabled={isRunning}
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400"
+            >
+              {isRunning ? "Testing..." : "Test All Modules"}
+            </button>
+          </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {MODULES.map((mod) => {
@@ -238,14 +321,13 @@ export default function QA() {
             return (
               <div
                 key={mod.name}
-                className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => checkModuleHealth(mod.name)}
+                className="p-4 border rounded-lg hover:shadow-md transition-shadow"
               >
                 <div className="text-3xl mb-2">{mod.icon}</div>
                 <div className="font-medium text-sm">{mod.label}</div>
                 <div className="mt-2">
                   <span className={`px-2 py-1 rounded text-xs ${status ? getStatusColor(status.status) : 'text-gray-600 bg-gray-100'}`}>
-                    {testingModule === mod.name ? 'Checking...' : (status?.status || 'Unknown')}
+                    {testingModule === mod.name ? 'Testing...' : (status?.status || 'Unknown')}
                   </span>
                 </div>
                 {status && (
@@ -253,6 +335,13 @@ export default function QA() {
                     {status.endpointCount} endpoints
                   </div>
                 )}
+                <button
+                  onClick={() => runModuleTests(mod.name)}
+                  disabled={isRunning || testingModule === mod.name}
+                  className="mt-2 w-full px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+                >
+                  Test Module
+                </button>
               </div>
             );
           })}

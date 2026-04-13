@@ -409,6 +409,10 @@ def create_app() -> FastAPI:
     # Phase 27 - Hospital Inventory and Store Management Module
     from app.core.inventory.router import router as inventory_router
     app.include_router(inventory_router, prefix="/api/v1/inventory", tags=["Inventory & Stores"])
+
+    # Stock Movement Analytics Module
+    from app.core.inventory.movement.router import router as movement_router
+    app.include_router(movement_router, prefix="/api/v1/inventory/movement", tags=["Stock Movement"])
     app.include_router(diagnostics_router, prefix="/api/v1/diagnostics", tags=["Diagnostic Procedures"])
     app.include_router(new_advanced_lab_router, prefix="/api/v1/advanced", tags=["Advanced Diagnostics"])
     app.include_router(procurement_router, prefix="/api/v1", tags=["Procurement & Supply Chain"])

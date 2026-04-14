@@ -53,9 +53,12 @@ export default function LoginPage() {
           // Determine primary role from the roles array
           const roleNames = (profile.roles || []).map((r: any) => (r.name || "").toLowerCase());
           let primaryRole = "admin"; // fallback
-          const rolePriority = ["admin", "director", "doctor", "nurse", "pharmacist", "lab_technician", "front_desk"];
+          const rolePriority = ["administrator", "admin", "director", "doctor", "nurse", "pharmacist", "lab_technician", "front_desk"];
           for (const rp of rolePriority) {
-            if (roleNames.includes(rp)) { primaryRole = rp; break; }
+            if (roleNames.includes(rp)) { 
+              primaryRole = rp === "administrator" ? "admin" : rp; 
+              break; 
+            }
           }
           const userObj = {
             ...profile,

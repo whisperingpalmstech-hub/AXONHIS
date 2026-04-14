@@ -2,465 +2,479 @@
 
 import { useState, useEffect } from "react";
 
-interface Module {
-  name: string;
-  status: 'healthy' | 'degraded' | 'unknown';
-  endpointCount: number;
-  lastChecked: string;
+interface EndpointInfo {
+  path: string;
+  methods: string[];
 }
 
-interface TestSuite {
-  id: string;
+interface ModuleInfo {
   name: string;
-  module: string;
-  is_active: boolean;
+  endpointCount: number;
+  endpoints: EndpointInfo[];
 }
 
 interface TestResult {
-  id: string;
-  name: string;
-  module: string;
-  test_type: string;
+  endpoint: string;
+  method: string;
   status: string;
-  execution_time_ms: number;
-  error_message: string | null;
+  time_ms: number;
+  status_code: number | null;
+  error: string | null;
 }
 
-interface QAReport {
-  id: string;
-  report_name: string;
-  suite_id: string | null;
-  total_tests: number;
-  passed_tests: number;
-  failed_tests: number;
-  skipped_tests: number;
-  error_tests: number;
-  execution_time_ms: number;
-  summary: string;
-  generated_at: string;
-  file_path: string | null;
+interface ModuleTestResult {
+  module: string;
+  total: number;
+  passed: number;
+  failed: number;
+  results: TestResult[];
 }
 
-const MODULES = [
-  { name: 'auth', label: 'Authentication', icon: '🔐' },
-  { name: 'patients', label: 'Patients', icon: '👥' },
-  { name: 'opd', label: 'OPD', icon: '🏥' },
-  { name: 'ipd', label: 'IPD', icon: '🛏️' },
-  { name: 'er', label: 'Emergency', icon: '🚑' },
-  { name: 'lab', label: 'Laboratory', icon: '🔬' },
-  { name: 'radiology', label: 'Radiology', icon: '📷' },
-  { name: 'pharmacy', label: 'Pharmacy', icon: '💊' },
-  { name: 'inventory', label: 'Inventory', icon: '📦' },
-  { name: 'billing', label: 'Billing', icon: '💰' },
-  { name: 'ot', label: 'Operating Theatre', icon: '🏥' },
-  { name: 'qa', label: 'QA Module', icon: '✅' },
-];
-
-export default function QA() {
-  const [suites, setSuites] = useState<TestSuite[]>([]);
-  const [selectedSuite, setSelectedSuite] = useState<string | null>(null);
-  const [results, setResults] = useState<TestResult[]>([]);
+export default function QAPage() {
+  const [modules, setModules] = useState<ModuleInfo[]>([]);
+  const [activeTab, setActiveTab] = useState("modules");
   const [isRunning, setIsRunning] = useState(false);
-  const [reports, setReports] = useState<QAReport[]>([]);
-  const [moduleStatus, setModuleStatus] = useState<Record<string, Module>>({});
-  const [testingModule, setTestingModule] = useState<string | null>(null);
+  const [runningModule, setRunningModule] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<ModuleTestResult | null>(null);
+  const [allResults, setAllResults] = useState<Record<string, ModuleTestResult>>({});
+  const [loadingModules, setLoadingModules] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchSuites();
-    fetchReports();
-    checkAllModules();
+    fetchModules();
   }, []);
 
-  const fetchSuites = async () => {
+  const fetchModules = async () => {
+    setLoadingModules(true);
+    setError(null);
     try {
-      const response = await fetch("/api/v1/qa/suites");
+      const response = await fetch("/api/v1/qa/modules?app=axonhis");
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      setSuites(data);
-    } catch (error) {
-      console.error("Failed to fetch test suites:", error);
-    }
-  };
-
-  const fetchReports = async () => {
-    try {
-      const response = await fetch("/api/v1/qa/reports");
-      const data = await response.json();
-      setReports(data);
-    } catch (error) {
-      console.error("Failed to fetch reports:", error);
-    }
-  };
-
-  const checkModuleHealth = async (moduleName: string) => {
-    setTestingModule(moduleName);
-    try {
-      const response = await fetch(`/api/v1/qa/modules/${moduleName}`);
-      const data = await response.json();
-      setModuleStatus(prev => ({
-        ...prev,
-        [moduleName]: {
-          name: moduleName,
-          status: 'unknown',  // Will be updated after running tests
-          endpointCount: data.endpointCount || 0,
-          lastChecked: new Date().toISOString(),
-        }
-      }));
-    } catch (error) {
-      setModuleStatus(prev => ({
-        ...prev,
-        [moduleName]: {
-          name: moduleName,
-          status: 'degraded',
-          endpointCount: 0,
-          lastChecked: new Date().toISOString(),
-        }
-      }));
+      setModules(data.modules || []);
+    } catch (err: any) {
+      console.error("Failed to fetch modules:", err);
+      setError(`Failed to load modules: ${err.message}`);
     } finally {
-      setTestingModule(null);
+      setLoadingModules(false);
     }
   };
 
-  const checkAllModules = async () => {
-    try {
-      const response = await fetch("/api/v1/qa/modules");
-      if (!response.ok) {
-        console.error("API returned error:", response.status, response.statusText);
-        alert(`Failed to load modules: ${response.status} ${response.statusText}`);
-        return;
-      }
-      const data = await response.json();
-      
-      if (data.modules) {
-        data.modules.forEach((mod: any) => {
-          setModuleStatus(prev => ({
-            ...prev,
-            [mod.name]: {
-              name: mod.name,
-              status: 'unknown',
-              endpointCount: mod.endpointCount || 0,
-              lastChecked: new Date().toISOString(),
-            }
-          }));
-        });
-      } else {
-        console.error("No modules data received:", data);
-        alert("No modules data received from API");
-      }
-    } catch (error) {
-      console.error("Failed to fetch modules:", error);
-      alert(`Error fetching modules: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
-  const runModuleTests = async (moduleName: string) => {
-    setTestingModule(moduleName);
+  const testModule = async (moduleName: string) => {
     setIsRunning(true);
+    setRunningModule(moduleName);
+    setError(null);
     try {
       const response = await fetch(`/api/v1/qa/test/module/${moduleName}`, {
         method: "POST",
       });
-      const data = await response.json();
-      
-      // Update module status based on test results
-      const status = data.failed === 0 ? 'healthy' : data.passed > 0 ? 'degraded' : 'unknown';
-      setModuleStatus(prev => ({
-        ...prev,
-        [moduleName]: {
-          name: moduleName,
-          status: status,
-          endpointCount: data.total || 0,
-          lastChecked: new Date().toISOString(),
-        }
-      }));
-      
-      // Update results display
-      setResults(data.results || []);
-    } catch (error) {
-      console.error("Failed to run module tests:", error);
-      setModuleStatus(prev => ({
-        ...prev,
-        [moduleName]: {
-          name: moduleName,
-          status: 'degraded',
-          endpointCount: 0,
-          lastChecked: new Date().toISOString(),
-        }
-      }));
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data: ModuleTestResult = await response.json();
+      setTestResults(data);
+      setAllResults((prev) => ({ ...prev, [moduleName]: data }));
+      setActiveTab("results");
+    } catch (err: any) {
+      console.error("Failed to test module:", err);
+      setError(`Failed to test ${moduleName}: ${err.message}`);
     } finally {
-      setTestingModule(null);
       setIsRunning(false);
+      setRunningModule(null);
     }
   };
 
-  const runAllModuleTests = async () => {
+  const testAllModules = async () => {
     setIsRunning(true);
+    setRunningModule("all");
+    setError(null);
     try {
-      const response = await fetch("/api/v1/qa/test/all", {
-        method: "POST",
-      });
+      const response = await fetch(`/api/v1/qa/test/all?app=axonhis`, { method: "POST" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      
-      // Update all module statuses
+      const newResults: Record<string, ModuleTestResult> = {};
+      let combined: TestResult[] = [];
       if (data.modules) {
-        Object.keys(data.modules).forEach(moduleName => {
-          const moduleResult = data.modules[moduleName];
-          const status = moduleResult.failed === 0 ? 'healthy' : moduleResult.passed > 0 ? 'degraded' : 'unknown';
-          setModuleStatus(prev => ({
-            ...prev,
-            [moduleName]: {
-              name: moduleName,
-              status: status,
-              endpointCount: moduleResult.total || 0,
-              lastChecked: new Date().toISOString(),
-            }
-          }));
+        Object.entries(data.modules).forEach(([name, mod]: [string, any]) => {
+          newResults[name] = mod;
+          if (mod.results) combined = [...combined, ...mod.results];
         });
       }
-      
-      // Show combined results
-      const allResults = Object.values(data.modules || {}).flatMap((m: any) => m.results || []);
-      setResults(allResults);
-    } catch (error) {
-      console.error("Failed to run all module tests:", error);
+      setAllResults(newResults);
+      setTestResults({
+        module: "All Modules",
+        total: combined.length,
+        passed: data.total_passed || 0,
+        failed: data.total_failed || 0,
+        results: combined,
+      });
+      setActiveTab("results");
+    } catch (err: any) {
+      console.error("Failed to test all:", err);
+      setError(`Failed to test all modules: ${err.message}`);
     } finally {
       setIsRunning(false);
+      setRunningModule(null);
     }
   };
 
-  const runTestSuite = async (suiteId: string) => {
-    setIsRunning(true);
-    setSelectedSuite(suiteId);
-    try {
-      const response = await fetch(`/api/v1/qa/suites/${suiteId}/run`, {
-        method: "POST",
-      });
-      const data = await response.json();
-      setResults(data.results || []);
-    } catch (error) {
-      console.error("Failed to run test suite:", error);
-    } finally {
-      setIsRunning(false);
-    }
+  const generateReport = () => {
+    if (!testResults) return;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const lines: string[] = [];
+    lines.push("AXONHIS QA TEST REPORT");
+    lines.push("=".repeat(60));
+    lines.push(`Generated: ${new Date().toLocaleString()}`);
+    lines.push(`Module: ${testResults.module}`);
+    lines.push(`Total: ${testResults.total} | Passed: ${testResults.passed} | Failed: ${testResults.failed}`);
+    lines.push(`Pass Rate: ${testResults.total > 0 ? ((testResults.passed / testResults.total) * 100).toFixed(1) : 0}%`);
+    lines.push("");
+    lines.push("-".repeat(60));
+    lines.push("DETAILED RESULTS");
+    lines.push("-".repeat(60));
+    testResults.results.forEach((r, i) => {
+      lines.push(`${i + 1}. [${r.status.toUpperCase()}] ${r.method} ${r.endpoint}`);
+      lines.push(`   Status Code: ${r.status_code ?? "N/A"} | Time: ${r.time_ms}ms`);
+      if (r.error) lines.push(`   Error: ${r.error}`);
+    });
+    lines.push("");
+    lines.push("=".repeat(60));
+    lines.push("END OF REPORT");
+
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `axonhis-qa-report-${timestamp}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
-  const generateReport = async (suiteId: string) => {
-    try {
-      const response = await fetch("/api/v1/qa/reports/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          suiteId,
-          reportName: `QA Report ${new Date().toISOString()}`,
-        }),
-      });
-      const data = await response.json();
-      fetchReports();
-      return data;
-    } catch (error) {
-      console.error("Failed to generate report:", error);
-    }
+  const getStatusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      passed: "background: #dcfce7; color: #166534; border: 1px solid #86efac",
+      failed: "background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5",
+      error: "background: #fef3c7; color: #92400e; border: 1px solid #fcd34d",
+    };
+    return colors[status] || "background: #f3f4f6; color: #374151; border: 1px solid #d1d5db";
   };
 
-  const downloadReport = async (reportId: string, reportName: string) => {
-    try {
-      const response = await fetch(`/api/v1/qa/reports/${reportId}/download`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${reportName}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
-    } catch (error) {
-      console.error("Failed to download report:", error);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "passed":
-      case "healthy":
-        return "text-green-600 bg-green-100";
-      case "failed":
-      case "degraded":
-        return "text-red-600 bg-red-100";
-      case "skipped":
-        return "text-yellow-600 bg-yellow-100";
-      case "error":
-        return "text-purple-600 bg-purple-100";
-      default:
-        return "text-gray-600 bg-gray-100";
-    }
-  };
+  const totalEndpoints = modules.reduce((sum, m) => sum + m.endpointCount, 0);
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Quality Assurance Panel</h1>
-      
-      {/* Module Health Check */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Module Health Check</h2>
-          <div className="flex gap-2">
-            <button
-              onClick={checkAllModules}
-              disabled={isRunning && testingModule !== null}
-              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400"
-            >
-              {testingModule ? "Loading..." : "Load Modules"}
-            </button>
-            <button
-              onClick={runAllModuleTests}
-              disabled={isRunning}
-              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400"
-            >
-              {isRunning ? "Testing..." : "Test All Modules"}
-            </button>
-          </div>
+    <div style={{ padding: "24px", fontFamily: "'Inter', -apple-system, sans-serif", background: "#f8fafc", minHeight: "100vh" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+        <div>
+          <h1 style={{ fontSize: "28px", fontWeight: 700, color: "#0f172a", margin: 0 }}>
+            AxonHIS QA Testing Center
+          </h1>
+          <p style={{ color: "#64748b", marginTop: "4px", fontSize: "14px" }}>
+            {modules.length} modules · {totalEndpoints} endpoints
+          </p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {MODULES.map((mod) => {
-            const status = moduleStatus[mod.name];
-            return (
-              <div
-                key={mod.name}
-                className="p-4 border rounded-lg hover:shadow-md transition-shadow"
-              >
-                <div className="text-3xl mb-2">{mod.icon}</div>
-                <div className="font-medium text-sm">{mod.label}</div>
-                <div className="mt-2">
-                  <span className={`px-2 py-1 rounded text-xs ${status ? getStatusColor(status.status) : 'text-gray-600 bg-gray-100'}`}>
-                    {testingModule === mod.name ? 'Testing...' : (status?.status || 'Unknown')}
-                  </span>
-                </div>
-                {status && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    {status.endpointCount} endpoints
-                  </div>
-                )}
-                <button
-                  onClick={() => runModuleTests(mod.name)}
-                  disabled={isRunning || testingModule === mod.name}
-                  className="mt-2 w-full px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-                >
-                  Test Module
-                </button>
-              </div>
-            );
-          })}
+        <div style={{ display: "flex", gap: "8px" }}>
+          {["modules", "results", "report"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: "8px 18px",
+                borderRadius: "8px",
+                border: "none",
+                fontWeight: 600,
+                fontSize: "13px",
+                cursor: "pointer",
+                background: activeTab === tab ? "#3b82f6" : "#e2e8f0",
+                color: activeTab === tab ? "#fff" : "#475569",
+                transition: "all 0.2s",
+              }}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Test Suites */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Test Suites</h2>
-          <div className="space-y-2">
-            {suites.map((suite) => (
-              <div
-                key={suite.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-              >
-                <div>
-                  <div className="font-medium">{suite.name}</div>
-                  <div className="text-sm text-gray-500">
-                    Module: {suite.module} | Active: {suite.is_active ? "Yes" : "No"}
-                  </div>
-                </div>
-                <button
-                  onClick={() => runTestSuite(suite.id)}
-                  disabled={isRunning}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-                >
-                  {isRunning ? "Running..." : "Run"}
-                </button>
-              </div>
-            ))}
-          </div>
+      {error && (
+        <div style={{ background: "#fee2e2", color: "#991b1b", padding: "12px 16px", borderRadius: "8px", marginBottom: "16px", fontSize: "14px" }}>
+          ⚠️ {error}
         </div>
+      )}
 
-        {/* Test Results */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Test Results</h2>
-          {results.length > 0 ? (
-            <div className="space-y-2">
-              {results.map((result) => (
-                <div
-                  key={result.id}
-                  className="p-4 border rounded-lg"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">{result.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {result.test_type} | {result.execution_time_ms.toFixed(2)}ms
-                      </div>
-                    </div>
-                    <span className={`px-2 py-1 rounded text-sm ${getStatusColor(result.status)}`}>
-                      {result.status}
-                    </span>
-                  </div>
-                  {result.error_message && (
-                    <div className="mt-2 text-sm text-red-600">
-                      {result.error_message}
-                    </div>
-                  )}
-                </div>
-              ))}
+      {/* Modules Tab */}
+      {activeTab === "modules" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: 600, color: "#1e293b" }}>API Modules</h2>
+            <button
+              onClick={testAllModules}
+              disabled={isRunning}
+              style={{
+                padding: "10px 24px",
+                borderRadius: "8px",
+                border: "none",
+                fontWeight: 600,
+                fontSize: "14px",
+                cursor: isRunning ? "not-allowed" : "pointer",
+                background: isRunning ? "#94a3b8" : "linear-gradient(135deg, #7c3aed, #6366f1)",
+                color: "#fff",
+                boxShadow: "0 2px 8px rgba(99, 102, 241, 0.3)",
+              }}
+            >
+              {isRunning && runningModule === "all" ? "⏳ Testing All..." : "🚀 Test All Modules"}
+            </button>
+          </div>
+
+          {loadingModules ? (
+            <div style={{ textAlign: "center", padding: "48px", color: "#64748b" }}>
+              <div style={{ fontSize: "32px", marginBottom: "8px" }}>⏳</div>
+              Loading modules...
             </div>
           ) : (
-            <div className="text-gray-500 text-center py-8">
-                No test results. Run a test suite to see results.
-              </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
+              {modules.map((mod) => {
+                const modResult = allResults[mod.name];
+                return (
+                  <div
+                    key={mod.name}
+                    style={{
+                      background: "#fff",
+                      borderRadius: "12px",
+                      padding: "20px",
+                      border: "1px solid #e2e8f0",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                      <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#1e293b", textTransform: "uppercase", margin: 0 }}>
+                        {mod.name}
+                      </h3>
+                      <span style={{ fontSize: "12px", padding: "2px 10px", borderRadius: "12px", background: "#f1f5f9", color: "#475569", fontWeight: 500 }}>
+                        {mod.endpointCount} endpoints
+                      </span>
+                    </div>
+
+                    {modResult && (
+                      <div style={{ display: "flex", gap: "8px", marginBottom: "12px", fontSize: "12px", fontWeight: 600 }}>
+                        <span style={{ color: "#16a34a" }}>✅ {modResult.passed}</span>
+                        <span style={{ color: "#dc2626" }}>❌ {modResult.failed}</span>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => testModule(mod.name)}
+                      disabled={isRunning}
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "8px",
+                        border: "1px solid #bfdbfe",
+                        background: isRunning && runningModule === mod.name ? "#e0e7ff" : "#eff6ff",
+                        color: "#2563eb",
+                        fontWeight: 600,
+                        fontSize: "13px",
+                        cursor: isRunning ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {isRunning && runningModule === mod.name ? "⏳ Running..." : "▶ Run Tests"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
-      </div>
+      )}
 
-      {/* Reports Section */}
-      <div className="mt-6 bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">QA Reports</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-2 px-4">Report Name</th>
-                <th className="text-left py-2 px-4">Total Tests</th>
-                <th className="text-left py-2 px-4">Passed</th>
-                <th className="text-left py-2 px-4">Failed</th>
-                <th className="text-left py-2 px-4">Generated At</th>
-                <th className="text-left py-2 px-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reports.map((report) => (
-                <tr key={report.id} className="border-b">
-                  <td className="py-2 px-4">{report.report_name}</td>
-                  <td className="py-2 px-4">{report.total_tests}</td>
-                  <td className="py-2 px-4 text-green-600">{report.passed_tests}</td>
-                  <td className="py-2 px-4 text-red-600">{report.failed_tests}</td>
-                  <td className="py-2 px-4">
-                    {new Date(report.generated_at).toLocaleString()}
-                  </td>
-                  <td className="py-2 px-4">
-                    <button
-                      onClick={() => downloadReport(report.id, report.report_name)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                    >
-                      Download PDF
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Results Tab */}
+      {activeTab === "results" && (
+        <div>
+          {testResults ? (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <h2 style={{ fontSize: "20px", fontWeight: 600, color: "#1e293b" }}>
+                  Results: {testResults.module}
+                </h2>
+                <div style={{ display: "flex", gap: "16px", fontSize: "14px", fontWeight: 600 }}>
+                  <span style={{ color: "#64748b" }}>Total: {testResults.total}</span>
+                  <span style={{ color: "#16a34a" }}>Passed: {testResults.passed}</span>
+                  <span style={{ color: "#dc2626" }}>Failed: {testResults.failed}</span>
+                  <span style={{ color: "#0ea5e9" }}>
+                    Rate: {testResults.total > 0 ? ((testResults.passed / testResults.total) * 100).toFixed(0) : 0}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div style={{ height: "8px", background: "#e2e8f0", borderRadius: "4px", marginBottom: "20px", overflow: "hidden" }}>
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${testResults.total > 0 ? (testResults.passed / testResults.total) * 100 : 0}%`,
+                    background: "linear-gradient(90deg, #22c55e, #16a34a)",
+                    borderRadius: "4px",
+                    transition: "width 0.5s ease",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {testResults.results.map((r, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      background: "#fff",
+                      borderRadius: "8px",
+                      padding: "14px 18px",
+                      border: "1px solid #e2e8f0",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: "14px", color: "#1e293b" }}>
+                        <span style={{ display: "inline-block", width: "50px", fontSize: "11px", padding: "2px 6px", borderRadius: "4px", background: "#f1f5f9", color: "#475569", fontWeight: 700, textAlign: "center", marginRight: "8px" }}>
+                          {r.method}
+                        </span>
+                        {r.endpoint}
+                      </div>
+                      {r.error && (
+                        <div style={{ fontSize: "12px", color: "#dc2626", marginTop: "4px" }}>
+                          {r.error}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <span style={{ fontSize: "12px", color: "#94a3b8" }}>{r.time_ms}ms</span>
+                      {r.status_code && (
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>{r.status_code}</span>
+                      )}
+                      <span
+                        style={{
+                          padding: "4px 12px",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          ...Object.fromEntries(
+                            getStatusBadge(r.status)
+                              .split(";")
+                              .map((s) => s.trim().split(":").map((v) => v.trim()))
+                          ),
+                        }}
+                      >
+                        {r.status.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", padding: "64px", color: "#94a3b8" }}>
+              <div style={{ fontSize: "48px", marginBottom: "12px" }}>🧪</div>
+              <p style={{ fontSize: "16px" }}>No test results yet. Run a module test to see results here.</p>
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* Report Tab */}
+      {activeTab === "report" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: 600, color: "#1e293b" }}>QA Reports</h2>
+            {testResults && (
+              <button
+                onClick={generateReport}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "none",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
+                  color: "#fff",
+                  boxShadow: "0 2px 8px rgba(59, 130, 246, 0.3)",
+                }}
+              >
+                📥 Download Report
+              </button>
+            )}
+          </div>
+
+          {testResults ? (
+            <div style={{ background: "#fff", borderRadius: "12px", padding: "24px", border: "1px solid #e2e8f0" }}>
+              <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "16px", color: "#1e293b" }}>
+                Latest Test Summary
+              </h3>
+
+              {/* Summary cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "24px" }}>
+                <div style={{ padding: "16px", borderRadius: "8px", background: "#f8fafc", textAlign: "center" }}>
+                  <div style={{ fontSize: "28px", fontWeight: 700, color: "#0f172a" }}>{testResults.total}</div>
+                  <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>Total Tests</div>
+                </div>
+                <div style={{ padding: "16px", borderRadius: "8px", background: "#f0fdf4", textAlign: "center" }}>
+                  <div style={{ fontSize: "28px", fontWeight: 700, color: "#16a34a" }}>{testResults.passed}</div>
+                  <div style={{ fontSize: "12px", color: "#16a34a", fontWeight: 500 }}>Passed</div>
+                </div>
+                <div style={{ padding: "16px", borderRadius: "8px", background: "#fef2f2", textAlign: "center" }}>
+                  <div style={{ fontSize: "28px", fontWeight: 700, color: "#dc2626" }}>{testResults.failed}</div>
+                  <div style={{ fontSize: "12px", color: "#dc2626", fontWeight: 500 }}>Failed</div>
+                </div>
+                <div style={{ padding: "16px", borderRadius: "8px", background: "#eff6ff", textAlign: "center" }}>
+                  <div style={{ fontSize: "28px", fontWeight: 700, color: "#2563eb" }}>
+                    {testResults.total > 0 ? ((testResults.passed / testResults.total) * 100).toFixed(0) : 0}%
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#2563eb", fontWeight: 500 }}>Pass Rate</div>
+                </div>
+              </div>
+
+              {/* Module breakdown */}
+              {Object.keys(allResults).length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#475569", marginBottom: "12px" }}>
+                    Module Breakdown
+                  </h4>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                        <th style={{ textAlign: "left", padding: "8px 12px", color: "#475569", fontWeight: 600 }}>Module</th>
+                        <th style={{ textAlign: "center", padding: "8px 12px", color: "#475569", fontWeight: 600 }}>Total</th>
+                        <th style={{ textAlign: "center", padding: "8px 12px", color: "#16a34a", fontWeight: 600 }}>Passed</th>
+                        <th style={{ textAlign: "center", padding: "8px 12px", color: "#dc2626", fontWeight: 600 }}>Failed</th>
+                        <th style={{ textAlign: "center", padding: "8px 12px", color: "#475569", fontWeight: 600 }}>Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(allResults).map(([name, res]) => (
+                        <tr key={name} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                          <td style={{ padding: "10px 12px", fontWeight: 600, textTransform: "uppercase" }}>{name}</td>
+                          <td style={{ textAlign: "center", padding: "10px 12px" }}>{res.total}</td>
+                          <td style={{ textAlign: "center", padding: "10px 12px", color: "#16a34a", fontWeight: 600 }}>{res.passed}</td>
+                          <td style={{ textAlign: "center", padding: "10px 12px", color: "#dc2626", fontWeight: 600 }}>{res.failed}</td>
+                          <td style={{ textAlign: "center", padding: "10px 12px" }}>
+                            {res.total > 0 ? ((res.passed / res.total) * 100).toFixed(0) : 0}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", padding: "64px", color: "#94a3b8" }}>
+              <div style={{ fontSize: "48px", marginBottom: "12px" }}>📊</div>
+              <p style={{ fontSize: "16px" }}>Run tests first to generate a report.</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

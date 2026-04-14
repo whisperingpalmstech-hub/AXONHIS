@@ -81,7 +81,7 @@ class ERTriageCreate(BaseModel):
 
 class ERTriageOut(ERTriageCreate):
     id: UUID
-    org_id: UUID
+    org_id: Optional[UUID] = None
     triage_color: Optional[str]
     triaged_by: UUID
     triaged_by_name: Optional[str]

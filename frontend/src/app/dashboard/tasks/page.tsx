@@ -219,7 +219,7 @@ export default function TasksPage() {
                       <div className="space-y-3 mt-4">
                         <div className="flex justify-between text-sm">
                           <span className="text-slate-500">{t("tasks.patient")}:</span>
-                          <span className="font-medium text-slate-900 truncate max-w-[150px]">{task.patient_id.slice(0,8)}...</span>
+                          <span className="font-medium text-slate-900 truncate max-w-[150px]">{task.patient_id ? task.patient_id.slice(0,8) + '...' : t("tasks.unassigned")}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-slate-500">{t("tasks.role")}:</span>

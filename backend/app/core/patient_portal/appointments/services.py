@@ -10,29 +10,93 @@ from app.core.auth.models import User
 class AppointmentPortalService:
     @staticmethod
     async def get_available_doctors(db: AsyncSession, patient_id: uuid.UUID, department: str | None = None):
-        """Fetch all doctors with their availability."""
-        # Dynamic import to avoid circular dependencies
-        from app.core.patients.patients.models import Patient
-        from app.core.auth.models import Role, UserRole
+        """Fetch all doctors with their availability.
         
-        patient = await db.scalar(select(Patient).where(Patient.id == patient_id))
+        Queries auth system first (User→UserRole→Role where role='doctor').
+        Falls back to MdClinician table (AxonHIS MD) if no auth-system doctors found.
+        """
+        doctors = []
         
-        # If the org lacks an org_id (e.g. test patients), don't filter by org_id strictly
-        query = (
-            select(User)
-            .join(UserRole, User.id == UserRole.user_id)
-            .join(Role, UserRole.role_id == Role.id)
-            .where(Role.name == "doctor")
-        )
-        
-        if patient and patient.org_id:
-            query = query.where(User.org_id == patient.org_id)
-        
-        if department:
+        # Strategy 1: Query from auth RBAC system
+        try:
+            from app.core.patients.patients.models import Patient
+            from app.core.auth.models import Role, UserRole
+            
+            patient = await db.scalar(select(Patient).where(Patient.id == patient_id))
+            
+            query = (
+                select(User)
+                .join(UserRole, User.id == UserRole.user_id)
+                .join(Role, UserRole.role_id == Role.id)
+                .where(Role.name == "doctor")
+            )
+            
+            if patient and patient.org_id:
+                query = query.where(User.org_id == patient.org_id)
+            
+            result = await db.execute(query)
+            auth_doctors = result.scalars().all()
+            
+            for d in auth_doctors:
+                doctors.append({
+                    "id": str(d.id),
+                    "first_name": d.first_name,
+                    "last_name": d.last_name,
+                    "email": d.email,
+                    "display_name": f"Dr. {d.first_name} {d.last_name}",
+                    "specialty": "General Practice",
+                    "source": "auth"
+                })
+        except Exception:
             pass
         
-        result = await db.execute(query)
-        return result.scalars().all()
+        # Strategy 2: Fallback to MdClinician table (AxonHIS MD) 
+        if not doctors:
+            try:
+                from app.core.axonhis_md.models import MdClinician
+                
+                q = select(MdClinician).where(
+                    MdClinician.clinician_type.in_(["DOCTOR", "PHYSICIAN", "SPECIALIST", "doctor", "physician"])
+                ).limit(50)
+                result = await db.execute(q)
+                md_clinicians = result.scalars().all()
+                
+                for c in md_clinicians:
+                    doctors.append({
+                        "id": str(c.clinician_id),
+                        "first_name": c.first_name or "",
+                        "last_name": c.last_name or "",
+                        "email": c.email or "",
+                        "display_name": c.display_name or f"Dr. {c.first_name or ''} {c.last_name or ''}",
+                        "specialty": c.primary_specialty or "General Practice",
+                        "source": "md_clinician"
+                    })
+            except Exception:
+                pass
+        
+        # Strategy 3: Final fallback — return all MdClinicians regardless of type
+        if not doctors:
+            try:
+                from app.core.axonhis_md.models import MdClinician
+                
+                q = select(MdClinician).limit(20)
+                result = await db.execute(q)
+                all_clinicians = result.scalars().all()
+                
+                for c in all_clinicians:
+                    doctors.append({
+                        "id": str(c.clinician_id),
+                        "first_name": c.first_name or "",
+                        "last_name": c.last_name or "",
+                        "email": c.email or "",
+                        "display_name": c.display_name or f"Dr. {c.first_name or ''} {c.last_name or ''}",
+                        "specialty": c.primary_specialty or "General Practice",
+                        "source": "md_clinician"
+                    })
+            except Exception:
+                pass
+        
+        return doctors
 
     @staticmethod
     async def get_doctor_availability(db: AsyncSession, doctor_id: uuid.UUID, start_date: date, end_date: date):

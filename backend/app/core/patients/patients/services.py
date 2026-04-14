@@ -100,10 +100,19 @@ class PatientService:
         # Combine name for full-text / trigram
         search_name = f"{first_name} {last_name}"
         
+        # Parse date_of_birth if it's a string
+        target_dob = date_of_birth
+        if isinstance(date_of_birth, str):
+            from datetime import date as py_date
+            try:
+                target_dob = py_date.fromisoformat(date_of_birth)
+            except Exception:
+                pass
+
         # We find patients that matched on exact DOB, OR fuzzy match on name.
         stmt = select(Patient).where(
             or_(
-                Patient.date_of_birth == date_of_birth,
+                Patient.date_of_birth == target_dob,
                 func.similarity(func.concat(Patient.first_name, ' ', Patient.last_name), search_name) > SIMILARITY_THRESHOLD,
                 Patient.primary_phone == (phone if phone else "xxx")
             )

@@ -143,7 +143,7 @@ def create_app() -> FastAPI:
     
     # ── Rate Limiting (HIPAA Point 7) ────────────────────────────────────
     from app.core.system.security.rate_limit import RateLimitMiddleware
-    app.add_middleware(RateLimitMiddleware, requests_per_minute=200)
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=10000)
 
     # ── Exception Handler Phase 11 & i18n ────────────────────────────────────────
     from fastapi.exceptions import RequestValidationError
@@ -551,5 +551,4 @@ def create_app() -> FastAPI:
     return app
 
 
-app = create_app()
 app = create_app()

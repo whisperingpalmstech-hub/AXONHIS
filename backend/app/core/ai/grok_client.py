@@ -13,9 +13,9 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-GROK_API_KEY = os.getenv("GROK_API_KEY", "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")
-GROK_BASE_URL = os.getenv("GROK_BASE_URL", "https://api.groq.com/openai/v1")
-GROK_MODEL = os.getenv("GROK_MODEL", "llama-3.3-70b-versatile")
+ANYTHING_LLM_API_KEY = os.getenv("ANYTHINGLLM_API_KEY", "7X1R879-1DS4X5M-NM0GS7H-A91JQZF")
+ANYTHING_LLM_BASE_URL = os.getenv("ANYTHINGLLM_BASE_URL", "https://anythingllm.whispering-palms.org/api/v1/openai")
+ANYTHING_LLM_MODEL = os.getenv("ANYTHINGLLM_MODEL", "my-workspace")
 
 
 async def grok_chat(
@@ -25,17 +25,18 @@ async def grok_chat(
     response_format: str | None = None,
 ) -> dict[str, Any]:
     """
-    Call Grok API (OpenAI-compatible) and return the parsed response dict.
-
+    Call AnythingLLM API (OpenAI-compatible) and return the parsed response dict.
+    We kept the function name grok_chat so we don't have to rename it across the app.
+    
     Returns:
         {"content": str, "usage": dict}
     """
     headers = {
-        "Authorization": f"Bearer {GROK_API_KEY}",
+        "Authorization": f"Bearer {ANYTHING_LLM_API_KEY}",
         "Content-Type": "application/json",
     }
     payload: dict[str, Any] = {
-        "model": GROK_MODEL,
+        "model": ANYTHING_LLM_MODEL,
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -45,7 +46,7 @@ async def grok_chat(
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(f"{GROK_BASE_URL}/chat/completions", headers=headers, json=payload)
+            resp = await client.post(f"{ANYTHING_LLM_BASE_URL}/chat/completions", headers=headers, json=payload)
             resp.raise_for_status()
             data = resp.json()
 
@@ -53,14 +54,14 @@ async def grok_chat(
         usage = data.get("usage", {})
         return {"content": content, "usage": usage}
     except httpx.HTTPStatusError as e:
-        logger.error(f"Groq API HTTP error: {e.response.status_code} - {e.response.text}")
-        raise Exception(f"Groq API error: {e.response.status_code} - {e.response.text}") from e
+        logger.error(f"AnythingLLM API HTTP error: {e.response.status_code} - {e.response.text}")
+        raise Exception(f"AnythingLLM API error: {e.response.status_code} - {e.response.text}") from e
     except httpx.TimeoutException:
-        logger.error("Groq API timeout")
-        raise Exception("Groq API timeout - request took too long") from None
+        logger.error("AnythingLLM API timeout")
+        raise Exception("AnythingLLM API timeout - request took too long") from None
     except Exception as e:
-        logger.error(f"Groq API error: {str(e)}")
-        raise Exception(f"Groq API error: {str(e)}") from e
+        logger.error(f"AnythingLLM API error: {str(e)}")
+        raise Exception(f"AnythingLLM API error: {str(e)}") from e
 
 
 async def grok_json(

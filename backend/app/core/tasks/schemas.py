@@ -57,8 +57,8 @@ class TaskStatusHistoryOut(BaseModel):
 
 # ─── TASK ────────────────────────────────────────────────────────────────
 class TaskBase(BaseModel):
-    task_type: TaskType
-    priority: TaskPriority = TaskPriority.ROUTINE
+    task_type: str | TaskType
+    priority: str | TaskPriority = TaskPriority.ROUTINE
     description: str
     instructions: str | None = None
     assigned_to_role: str | None = None
@@ -68,10 +68,10 @@ class TaskBase(BaseModel):
 
 
 class TaskCreate(TaskBase):
-    order_id: uuid.UUID
-    patient_id: uuid.UUID
-    encounter_id: uuid.UUID
-    metadata_: dict[str, Any] = Field(default_factory=dict, alias="metadata")
+    order_id: uuid.UUID | None = None
+    patient_id: uuid.UUID | None = None
+    encounter_id: uuid.UUID | None = None
+    metadata_: dict[str, Any] | None = Field(default_factory=dict, alias="metadata")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -92,19 +92,19 @@ class TaskCompleteReq(BaseModel):
 
 class TaskOut(TaskBase):
     id: uuid.UUID
-    task_uuid: str
-    order_id: uuid.UUID
-    patient_id: uuid.UUID
-    encounter_id: uuid.UUID
-    status: TaskStatus
+    task_uuid: str | None = None
+    order_id: uuid.UUID | None = None
+    patient_id: uuid.UUID | None = None
+    encounter_id: uuid.UUID | None = None
+    status: str | TaskStatus
     started_at: datetime | None = None
     completed_at: datetime | None = None
     completed_by: uuid.UUID | None = None
     notes: str | None = None
     next_execution_time: datetime | None = None
-    metadata_: dict[str, Any] = Field(default_factory=dict, validation_alias="metadata_")
-    created_at: datetime
-    updated_at: datetime
+    metadata_: dict[str, Any] | None = Field(default_factory=dict, validation_alias="metadata_")
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     assignments: list[TaskAssignmentOut] = []
     status_history: list[TaskStatusHistoryOut] = []

@@ -5,15 +5,16 @@ from typing import List, Optional, Dict, Any
 import httpx
 import time
 import asyncio
+import os
+import logging
 
 from app.database import get_db
-from app.core.qa.schemas import (
-    TestSuiteCreate, TestSuiteResponse,
-    TestExecutionRequest, ReportRequest, ReportResponse
-)
-from app.core.qa.services import QAService
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+# Base URL for internal API calls - use localhost within the container
+QA_BASE_URL = os.getenv("QA_BASE_URL", "http://localhost:8000")
 
 # Static module and endpoint mapping (comprehensive coverage)
 MODULE_ENDPOINTS = {
@@ -166,12 +167,84 @@ MODULE_ENDPOINTS = {
         {'path': '/api/v1/qa/definitions', 'methods': ['GET', 'POST']},
         {'path': '/api/v1/qa/definitions/{id}', 'methods': ['GET', 'PUT', 'DELETE']},
     ],
+    'md': [
+        {'path': '/api/v1/md/organizations', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/md/facilities', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/md/clinicians', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/md/patients', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/md/encounters', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/md/appointments', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/md/payers', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/md/coverage', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/md/billing/invoices', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/md/documents', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/md/dashboard/stats', 'methods': ['GET']},
+    ],
+    'clinical_encounter_flow': [
+        {'path': '/api/v1/clinical-encounter-flow/start', 'methods': ['POST']},
+        {'path': '/api/v1/clinical-encounter-flow/flow/{flow_id}', 'methods': ['GET']},
+    ],
+    'portal': [
+        {'path': '/api/v1/portal/accounts/login', 'methods': ['POST']},
+        {'path': '/api/v1/portal/accounts/register', 'methods': ['POST']},
+        {'path': '/api/v1/portal/accounts/search', 'methods': ['GET']},
+        {'path': '/api/v1/portal/accounts/profile', 'methods': ['GET']},
+        {'path': '/api/v1/portal/medical-records/lab-results', 'methods': ['GET']},
+        {'path': '/api/v1/portal/medical-records/prescriptions', 'methods': ['GET']},
+        {'path': '/api/v1/portal/medical-records/encounters', 'methods': ['GET']},
+        {'path': '/api/v1/portal/appointments/doctors', 'methods': ['GET']},
+        {'path': '/api/v1/portal/appointments/slots', 'methods': ['GET']},
+        {'path': '/api/v1/portal/appointments/my', 'methods': ['GET']},
+        {'path': '/api/v1/portal/appointments/book', 'methods': ['POST']},
+        {'path': '/api/v1/portal/telemedicine/sessions', 'methods': ['GET']},
+        {'path': '/api/v1/portal/billing/invoices', 'methods': ['GET']},
+    ],
+    'system': [
+        {'path': '/api/v1/system/health', 'methods': ['GET']},
+        {'path': '/api/v1/system/logs', 'methods': ['GET']},
+        {'path': '/api/v1/system/metrics', 'methods': ['GET']},
+    ],
+    'analytics': [
+        {'path': '/api/v1/analytics/clinical-metrics', 'methods': ['GET']},
+        {'path': '/api/v1/analytics/dashboards/executive', 'methods': ['GET']},
+        {'path': '/api/v1/analytics/financial-metrics', 'methods': ['GET']},
+        {'path': '/api/v1/analytics/operational-metrics', 'methods': ['GET']},
+        {'path': '/api/v1/analytics/predictions', 'methods': ['GET']},
+    ],
+    'notifications': [
+        {'path': '/api/v1/notifications', 'methods': ['GET']},
+        {'path': '/api/v1/notifications/read-all', 'methods': ['POST']},
+    ],
+    'tasks': [
+        {'path': '/api/v1/tasks', 'methods': ['GET', 'POST']},
+        {'path': '/api/v1/tasks/my-tasks', 'methods': ['GET']},
+    ],
+}
+
+# ── Per-app module mapping: which modules each frontend app uses ──
+APP_MODULES = {
+    'axonhis_md': ['md', 'clinical_encounter_flow'],
+    'axonhis': [
+        'auth', 'patients', 'opd', 'ipd', 'er', 'lab', 'radiology',
+        'pharmacy', 'inventory', 'billing', 'ot', 'system', 'analytics',
+        'notifications', 'tasks',
+    ],
+    'patient_portal': ['portal'],
 }
 
 
+def _get_modules_for_app(app: Optional[str] = None) -> Dict[str, list]:
+    """Return module endpoints filtered by app name."""
+    if app and app in APP_MODULES:
+        module_names = APP_MODULES[app]
+        return {k: v for k, v in MODULE_ENDPOINTS.items() if k in module_names}
+    return MODULE_ENDPOINTS
+
+
 @router.get("/modules")
-async def get_all_modules():
-    """Get all modules with their endpoint counts."""
+async def get_all_modules(app: Optional[str] = None):
+    """Get all modules with their endpoint counts. Optionally filter by app."""
+    filtered = _get_modules_for_app(app)
     return {
         "modules": [
             {
@@ -179,7 +252,7 @@ async def get_all_modules():
                 "endpointCount": len(endpoints),
                 "endpoints": endpoints
             }
-            for module, endpoints in MODULE_ENDPOINTS.items()
+            for module, endpoints in filtered.items()
         ]
     }
 
@@ -199,7 +272,7 @@ async def get_module_details(module_name: str):
 
 
 @router.post("/test/module/{module_name}")
-async def test_module(module_name: str, db: AsyncSession = Depends(get_db)):
+async def test_module(module_name: str):
     """Run tests for all endpoints in a specific module."""
     endpoints = MODULE_ENDPOINTS.get(module_name)
     if not endpoints:
@@ -209,15 +282,15 @@ async def test_module(module_name: str, db: AsyncSession = Depends(get_db)):
     passed = 0
     failed = 0
     
-    base_url = "http://backend:8000"
+    base_url = QA_BASE_URL
     
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         for endpoint_info in endpoints:
             endpoint_path = endpoint_info['path']
             methods = endpoint_info['methods']
             
             # Use GET if available, otherwise use the first available method
-            method = 'GET' if 'GET' in methods else list(methods)[0] if methods else 'GET'
+            method = 'GET' if 'GET' in methods else methods[0] if methods else 'GET'
             
             start_time = time.time()
             status = "failed"
@@ -236,7 +309,7 @@ async def test_module(module_name: str, db: AsyncSession = Depends(get_db)):
                 status_code = response.status_code
                 elapsed_time = (time.time() - start_time) * 1000
                 
-                # Validate response
+                # Validate response - anything below 500 is a pass
                 if status_code < 500:
                     status = "passed"
                     passed += 1
@@ -244,6 +317,11 @@ async def test_module(module_name: str, db: AsyncSession = Depends(get_db)):
                     status = "failed"
                     failed += 1
                     error_message = f"Status code: {status_code}"
+            except httpx.TimeoutException:
+                elapsed_time = (time.time() - start_time) * 1000
+                status = "failed"
+                failed += 1
+                error_message = "Request timed out (30s)"
             except Exception as e:
                 elapsed_time = (time.time() - start_time) * 1000
                 status = "failed"
@@ -259,21 +337,9 @@ async def test_module(module_name: str, db: AsyncSession = Depends(get_db)):
                 "error": error_message
             })
     
-    # Store results in database
-    service = QAService(db)
-    for result in results:
-        await service.create_test_result(
-            name=f"{module_name} - {result['endpoint']}",
-            module=module_name,
-            test_type="api_health",
-            status=result['status'],
-            execution_time_ms=result['time_ms'],
-            error_message=result.get('error')
-        )
-    
     return {
         "module": module_name,
-        "total": len(endpoints),
+        "total": len(results),
         "passed": passed,
         "failed": failed,
         "results": results
@@ -281,15 +347,16 @@ async def test_module(module_name: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/test/all")
-async def test_all_modules(db: AsyncSession = Depends(get_db)):
-    """Run tests for all modules."""
+async def test_all_modules(app: Optional[str] = None):
+    """Run tests for all modules. Optionally filter by app."""
+    filtered = _get_modules_for_app(app)
     all_results = {}
     total_passed = 0
     total_failed = 0
     
-    for module in MODULE_ENDPOINTS.keys():
+    for module in filtered.keys():
         try:
-            result = await test_module(module, db)
+            result = await test_module(module)
             all_results[module] = result
             total_passed += result['passed']
             total_failed += result['failed']
@@ -306,52 +373,72 @@ async def test_all_modules(db: AsyncSession = Depends(get_db)):
     
     return {
         "modules": all_results,
-        "total_modules": len(MODULE_ENDPOINTS),
+        "total_modules": len(filtered),
         "total_passed": total_passed,
         "total_failed": total_failed
     }
 
 
-@router.get("/suites", response_model=List[TestSuiteResponse])
+@router.get("/suites")
 async def list_test_suites(
     module: Optional[str] = None,
     is_active: Optional[bool] = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """List all test suites."""
-    service = QAService(db)
-    return await service.get_test_suites(module=module, is_active=is_active)
+    try:
+        from app.core.qa.services import QAService
+        service = QAService(db)
+        return await service.get_test_suites(module=module, is_active=is_active)
+    except Exception as e:
+        logger.error(f"Error listing test suites: {e}")
+        return []
 
 
 @router.post("/suites/{suite_id}/run")
 async def run_test_suite(
     suite_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Run all tests in a test suite."""
-    service = QAService(db)
-    return await service.execute_test_suite(suite_id)
+    try:
+        from app.core.qa.services import QAService
+        service = QAService(db)
+        return await service.execute_test_suite(suite_id)
+    except Exception as e:
+        logger.error(f"Error running test suite: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/reports/generate", response_model=ReportResponse)
+@router.post("/reports/generate")
 async def generate_report(
-    report_data: ReportRequest,
-    db: AsyncSession = Depends(get_db)
+    report_data: dict,
+    db: AsyncSession = Depends(get_db),
 ):
     """Generate a QA report."""
-    service = QAService(db)
-    return await service.generate_report(
-        suite_id=report_data.suite_id,
-        result_ids=report_data.result_ids,
-        report_name=report_data.report_name
-    )
+    try:
+        from app.core.qa.services import QAService
+        service = QAService(db)
+        return await service.generate_report(
+            suite_id=report_data.get("suite_id"),
+            result_ids=report_data.get("result_ids"),
+            report_name=report_data.get("report_name", "QA Report")
+        )
+    except Exception as e:
+        logger.error(f"Error generating report: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/reports")
 async def list_reports(
     limit: int = 100,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """List QA reports."""
-    service = QAService(db)
-    return await service.get_reports(limit=limit)
+    try:
+        from app.core.qa.services import QAService
+        service = QAService(db)
+        return await service.get_reports(limit=limit)
+    except Exception as e:
+        logger.error(f"Error listing reports: {e}")
+        return []

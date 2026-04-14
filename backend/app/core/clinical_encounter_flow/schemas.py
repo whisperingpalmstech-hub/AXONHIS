@@ -25,7 +25,7 @@ class EncounterPhase(str, Enum):
 class ClinicalEncounterFlowCreate(BaseModel):
     encounter_id: UUID
     patient_id: UUID
-    clinician_id: UUID
+    clinician_id: Optional[UUID] = None
     specialty_profile_id: Optional[UUID] = None
 
 
@@ -44,8 +44,8 @@ class ClinicalEncounterFlowResponse(BaseModel):
     flow_id: UUID
     encounter_id: UUID
     patient_id: UUID
-    clinician_id: UUID
-    specialty_profile_id: Optional[UUID]
+    clinician_id: Optional[UUID] = None
+    specialty_profile_id: Optional[UUID] = None
     current_phase: str
     phase_history: List[Dict[str, Any]]
     chief_complaint_transcript: Optional[str]
@@ -233,7 +233,7 @@ class DoctorPromptOverrideResponse(BaseModel):
 class StartConsultationRequest(BaseModel):
     encounter_id: UUID
     patient_id: UUID
-    clinician_id: UUID
+    clinician_id: Optional[UUID] = None
     specialty_profile_id: Optional[UUID] = None
 
 

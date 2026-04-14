@@ -17,7 +17,7 @@ class MdLongitudinalRecordIndex(Base):
     __tablename__ = "md_longitudinal_record_index"
 
     index_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    patient_id = Column(UUID(as_uuid=True), ForeignKey("md_patient.patient_id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
     encounter_id = Column(UUID(as_uuid=True), ForeignKey("md_encounter.encounter_id", ondelete="CASCADE"), nullable=True, index=True)
     record_type = Column(String(50), nullable=False, index=True)  # encounter, diagnosis, medication, lab_result, document, etc.
     record_id = Column(UUID(as_uuid=True), nullable=False)
@@ -31,7 +31,7 @@ class MdLongitudinalRecordIndex(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
-    patient = relationship("MdPatient", backref="longitudinal_records")
+    patient = relationship("Patient", backref="longitudinal_records")
     encounter = relationship("MdEncounter", backref="longitudinal_records")
 
     __table_args__ = (
@@ -49,7 +49,7 @@ class MdPatientTimeline(Base):
     __tablename__ = "md_patient_timeline"
 
     timeline_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    patient_id = Column(UUID(as_uuid=True), ForeignKey("md_patient.patient_id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
     event_type = Column(String(50), nullable=False, index=True)  # encounter, diagnosis, lab, medication, etc.
     event_date = Column(DateTime, nullable=False, index=True)
     event_data = Column(JSONB, nullable=False, default={})
@@ -59,7 +59,7 @@ class MdPatientTimeline(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    patient = relationship("MdPatient", backref="timeline_events")
+    patient = relationship("Patient", backref="timeline_events")
     encounter = relationship("MdEncounter", backref="timeline_events")
 
     __table_args__ = (
@@ -76,7 +76,7 @@ class MdRecordSearchCache(Base):
     __tablename__ = "md_record_search_cache"
 
     cache_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    patient_id = Column(UUID(as_uuid=True), ForeignKey("md_patient.patient_id", ondelete="CASCADE"), nullable=False, index=True)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
     search_key = Column(String(255), nullable=False, index=True)
     cache_data = Column(JSONB, nullable=False, default={})
     hit_count = Column(Numeric(10,0), default=0, nullable=False)
@@ -85,7 +85,7 @@ class MdRecordSearchCache(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    patient = relationship("MdPatient", backref="search_cache")
+    patient = relationship("Patient", backref="search_cache")
 
     __table_args__ = (
         Index('idx_cache_patient_key', 'patient_id', 'search_key'),

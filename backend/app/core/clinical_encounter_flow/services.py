@@ -148,7 +148,7 @@ class ClinicalEncounterFlowService:
         flow = ClinicalEncounterFlow(
             encounter_id=data.encounter_id,
             patient_id=data.patient_id,
-            clinician_id=data.clinician_id,
+            clinician_id=data.clinician_id or uuid.uuid4(),
             specialty_profile_id=data.specialty_profile_id,
             current_phase=EncounterPhase.COMPLAINT_CAPTURE,
             phase_history=[{

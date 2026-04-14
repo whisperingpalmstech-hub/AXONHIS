@@ -94,31 +94,40 @@ class ERRegistrationService:
             status="registered",
         )
         self.db.add(encounter)
-        await self.db.commit()
-        await self.db.refresh(encounter)
-
         try:
-            cp_service = ChargePostingService(self.db)
-            await cp_service.post_charge(
-                data=ChargePostingCreate(
-                    patient_id=encounter.patient_id,
-                    encounter_type="er",
-                    encounter_id=encounter.id,
-                    service_name="ER Registration Fee",
-                    service_code="ER-REG-01",
-                    service_group="consultation",
-                    source_module="er",
-                    quantity=1,
-                    unit_price=Decimal("200.00"),
-                    is_stat=True
-                ),
-                posted_by=uuid.UUID(int=1),
-                posted_by_name="System",
-                org_id=org_id or uuid.UUID(int=0)
-            )
+            await self.db.commit()
+            await self.db.refresh(encounter)
         except Exception as e:
-            print("Failed to post charge:", e)
             await self.db.rollback()
+            raise ValueError(f"Failed to register ER patient: {str(e)}") from e
+
+        # Charge posting is isolated — failure here should NOT block registration
+        try:
+            if encounter.patient_id:
+                cp_service = ChargePostingService(self.db)
+                await cp_service.post_charge(
+                    data=ChargePostingCreate(
+                        patient_id=encounter.patient_id,
+                        encounter_type="er",
+                        encounter_id=encounter.id,
+                        service_name="ER Registration Fee",
+                        service_code="ER-REG-01",
+                        service_group="consultation",
+                        source_module="er",
+                        quantity=1,
+                        unit_price=Decimal("200.00"),
+                        is_stat=True
+                    ),
+                    posted_by=uuid.UUID(int=1),
+                    posted_by_name="System",
+                    org_id=org_id or uuid.UUID(int=0)
+                )
+        except Exception as e:
+            try:
+                await self.db.rollback()
+            except Exception:
+                pass
+            print(f"[ER REG] Charge posting failed (non-blocking): {e}")
 
         return encounter
 
@@ -239,11 +248,16 @@ class ERTriageService:
                 enc.is_allergy = True
                 enc.allergy_details = data.allergies
 
-        await self.db.commit()
-        await self.db.refresh(triage)
-        
         try:
-            if enc:
+            await self.db.commit()
+            await self.db.refresh(triage)
+        except Exception as e:
+            await self.db.rollback()
+            raise ValueError(f"Failed to save triage: {str(e)}") from e
+        
+        # Charge posting is isolated — failure here should NOT block triage
+        try:
+            if enc and enc.patient_id:
                 cp_service = ChargePostingService(self.db)
                 await cp_service.post_charge(
                     data=ChargePostingCreate(
@@ -262,8 +276,13 @@ class ERTriageService:
                     posted_by_name=triaged_by_name,
                     org_id=org_id
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            # Rollback the failed charge posting but keep the triage intact
+            try:
+                await self.db.rollback()
+            except Exception:
+                pass
+            print(f"[ER TRIAGE] Charge posting failed (non-blocking): {e}")
 
         return triage
 

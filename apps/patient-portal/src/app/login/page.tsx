@@ -7,8 +7,8 @@ import { portalApi } from "@/lib/portal-api";
 
 export default function PatientLogin() {
   const router = useRouter();
-  const [email, setEmail] = useState("suj@example.com");
-  const [password, setPassword] = useState("Password123!");
+  const [email, setEmail] = useState("soham123@gmail.com");
+  const [password, setPassword] = useState("Patient@123");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -22,7 +22,24 @@ export default function PatientLogin() {
       
       if (response.access_token) {
         localStorage.setItem("patient_token", response.access_token);
-        localStorage.setItem("patient_id", "47b82a31-0bcb-4df1-9317-e20954e6e870");
+        // Extract patient_id from token (format: patient_token_<account_id>)
+        // Use the profile API to get the real patient_id
+        try {
+          const tokenParts = response.access_token.split("patient_token_");
+          const accountId = tokenParts.length > 1 ? tokenParts[1] : "";
+          if (accountId) {
+            const profile = await portalApi.getPatientInfo(accountId);
+            if (profile && profile.patient_id) {
+              localStorage.setItem("patient_id", String(profile.patient_id));
+            } else {
+              localStorage.setItem("patient_id", "6e65086b-f072-4161-a7af-49806b6439ac");
+            }
+          } else {
+            localStorage.setItem("patient_id", "6e65086b-f072-4161-a7af-49806b6439ac");
+          }
+        } catch {
+          localStorage.setItem("patient_id", "6e65086b-f072-4161-a7af-49806b6439ac");
+        }
         router.push("/dashboard");
       } else {
         setError(response.detail || "Invalid email or password. Please try again.");

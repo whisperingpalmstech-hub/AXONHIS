@@ -35,6 +35,7 @@ class RpiwRolePermission(Base):
     can_update = Column(Boolean, default=False)
     can_delete = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 
 class RpiwRoleWorkflow(Base):
@@ -50,6 +51,7 @@ class RpiwRoleWorkflow(Base):
     icon = Column(String, nullable=True)  # Icon identifier for frontend
     route_path = Column(String, nullable=True)  # Frontend route
     is_active = Column(Boolean, default=True)
+    org_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
 
 class RpiwRoleSession(Base):

@@ -27,8 +27,15 @@ class OrgCreate(BaseModel):
     global_settings: Dict[str, Any] = {}
     admin_password: str | None = None
 
-class OrgOut(OrgCreate):
+class OrgOut(BaseModel):
     id: uuid.UUID
+    name: str
+    org_code: Optional[str] = None
+    country: Optional[str] = None
+    contact_email: Optional[str] = None
+    is_active: Optional[bool] = True
+    default_language: Optional[str] = "en"
+    global_settings: Optional[Dict[str, Any]] = {}
     created_at: datetime
     sites: List[SiteOut] = []
     model_config = ConfigDict(from_attributes=True)

@@ -6,13 +6,13 @@ import uuid
 import random
 import string
 
-from app.core.inventory.models import InventoryItem, BatchRecord
+from app.core.inventory.models import InvItem, BatchRecord
 from app.core.auth.models import User
 from app.core.notifications.services import NotificationService
 
 from .models import VendorMaster, PurchaseRequest, PurchaseRequestItem, PurchaseOrder, PurchaseOrderItem, GoodsReceiptNote, GRNItem
 from .schemas import VendorMasterCreate, PurchaseRequestCreate, PurchaseOrderCreate, GRNCreate, GRNInspectionCommand
-from app.core.inventory.models import Store, InventoryItem
+from app.core.inventory.models import Store, InvItem
 
 def generate_number(prefix: str) -> str:
     rnd = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
@@ -40,7 +40,7 @@ class ProcurementService:
 
     @staticmethod
     async def get_items(db: AsyncSession):
-        res = await db.execute(select(InventoryItem))
+        res = await db.execute(select(InvItem))
         return list(res.scalars().all())
 
     # --- PURCHASE REQUESTS ---

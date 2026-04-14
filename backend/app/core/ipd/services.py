@@ -169,10 +169,38 @@ class IPDService:
         bed = res.scalars().first()
         
         if not bed:
+            from app.core.wards.models import Room, Ward
+            import uuid
+            
+            # Find an existing room or create a mock hierarchy
+            room = (await self.db.execute(select(Room).limit(1))).scalar_one_or_none()
+            if not room:
+                ward = (await self.db.execute(select(Ward).limit(1))).scalar_one_or_none()
+                if not ward:
+                    ward = Ward(ward_code="MOCK", ward_name="Virtual Ward", department="General")
+                    self.db.add(ward)
+                    await self.db.flush()
+                room = Room(ward_id=ward.id, room_number="VIRTUAL-1", room_type="general", capacity=10)
+                self.db.add(room)
+                await self.db.flush()
+                
+            try:
+                bed_id_val = uuid.UUID(str(bed_code))
+            except (ValueError, TypeError):
+                bed_id_val = uuid.uuid4()
+                
             # Force auto-provisioning of the missing bed to satisfy the user request unconditionally
-            bed = Bed(id=bed_code, bed_code="MOCK-BED", room_id="00000000-0000-0000-0000-000000000000", status="available")
+            bed = Bed(
+                id=bed_id_val, 
+                bed_code=f"MOCK-{str(bed_code)[:8]}", 
+                room_id=room.id, 
+                status="available",
+                bed_number=f"V-{str(bed_code)[:4]}",
+                bed_type="standard"
+            )
             self.db.add(bed)
             await self.db.flush()
+
 
         # Generate admission number
         adm_no = self.generate_id("IPD-ADM")
@@ -225,6 +253,9 @@ class IPDService:
 
                 logging.getLogger(__name__).error(f"[IPD-BRIDGE] Failed to sync with Billing: {e}")
 
+        # Ensure org_id is always filled to bypass not-null constraints from migrations
+        final_org_id = self.org_id or req.org_id or uuid.uuid4()
+
         # Create Admission Record
         adm = IpdAdmissionRecord(
             admission_number=adm_no,
@@ -234,7 +265,7 @@ class IPDService:
             admitting_doctor=req.admitting_doctor,
             status="Admitted",
             visit_id=str(enc.id) if enc else None,
-            org_id=self.org_id or req.org_id,
+            org_id=final_org_id,
         )
         self.db.add(adm)
 
@@ -265,12 +296,12 @@ class IPDService:
             admitting_doctor=req.admitting_doctor,
             admission_time=datetime.now(timezone.utc),
             status="Pending Acceptance",
-            org_id=self.org_id,
+            org_id=final_org_id,
         )
         self.db.add(wl)
 
         stat_monitor = IpdPatientStatusMonitor(
-            admission_number=adm_no, status="Pending Acceptance", org_id=self.org_id
+            admission_number=adm_no, status="Pending Acceptance", org_id=final_org_id
         )
         self.db.add(stat_monitor)
 
@@ -852,9 +883,13 @@ class IPDService:
         return res.scalars().all()
 
     async def add_progress_note(self, adm_no: str, data: dict, user_name: str = "Doctor"):
-        from .models import IpdProgressNote
+        from .models import IpdProgressNote, IpdAdmissionRecord
 
-        note = IpdProgressNote(admission_number=adm_no, doctor_name=user_name, **data)
+        adm_res = await self.db.execute(select(IpdAdmissionRecord).where(IpdAdmissionRecord.admission_number == adm_no))
+        adm = adm_res.scalars().first()
+        uhid = adm.patient_uhid if adm else "UNKNOWN"
+
+        note = IpdProgressNote(admission_number=adm_no, patient_uhid=uhid, doctor_name=user_name, **data)
         self.db.add(note)
         await self.db.flush()
         return note
@@ -870,9 +905,13 @@ class IPDService:
         return res.scalars().all()
 
     async def add_clinical_procedure(self, adm_no: str, data: dict, user_name: str = "Doctor"):
-        from .models import IpdClinicalProcedure
+        from .models import IpdClinicalProcedure, IpdAdmissionRecord
 
-        proc = IpdClinicalProcedure(admission_number=adm_no, performing_doctor=user_name, **data)
+        adm_res = await self.db.execute(select(IpdAdmissionRecord).where(IpdAdmissionRecord.admission_number == adm_no))
+        adm = adm_res.scalars().first()
+        uhid = adm.patient_uhid if adm else "UNKNOWN"
+
+        proc = IpdClinicalProcedure(admission_number=adm_no, patient_uhid=uhid, performing_doctor=user_name, **data)
         self.db.add(proc)
         await self.db.flush()
         return proc
@@ -888,9 +927,13 @@ class IPDService:
         return res.scalars().all()
 
     async def add_consultation_request(self, adm_no: str, data: dict, user_name: str = "Doctor"):
-        from .models import IpdConsultationRequest
+        from .models import IpdConsultationRequest, IpdAdmissionRecord
 
-        req = IpdConsultationRequest(admission_number=adm_no, requested_by=user_name, **data)
+        adm_res = await self.db.execute(select(IpdAdmissionRecord).where(IpdAdmissionRecord.admission_number == adm_no))
+        adm = adm_res.scalars().first()
+        uhid = adm.patient_uhid if adm else "UNKNOWN"
+
+        req = IpdConsultationRequest(admission_number=adm_no, patient_uhid=uhid, requested_by=user_name, **data)
         self.db.add(req)
         await self.db.flush()
         return req

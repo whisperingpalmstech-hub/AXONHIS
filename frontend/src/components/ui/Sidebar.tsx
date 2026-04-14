@@ -220,6 +220,9 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Billing Hub", href: "/dashboard/billing", badge: "HUB" },
       { label: "Billing Masters", href: "/dashboard/billing-masters", badge: "CONFIG" },
       { label: "RCM Billing", href: "/dashboard/rcm-billing", badge: "FINANCE" },
+      { label: "Accounting Dashboard", href: "/dashboard/accounting", badge: "ERP" },
+      { label: "Chart of Accounts", href: "/dashboard/accounting/chart-of-accounts" },
+      { label: "Financial Reports", href: "/dashboard/accounting/reports" },
     ],
   },
   {

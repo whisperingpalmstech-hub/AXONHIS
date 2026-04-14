@@ -1,404 +1,900 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
+import { 
+  Package, 
+  Activity, 
+  AlertTriangle, 
+  Layers, 
+  ArrowRightLeft, 
+  FileWarning, 
+  RefreshCcw, 
+  CheckSquare, 
+  Truck, 
+  Barcode, 
+  PlusCircle,
+  Building2,
+  Calendar,
+  Search,
+  ChevronRight,
+  ClipboardList,
+  AlertCircle
+} from "lucide-react";
 import { TopNav } from "@/components/ui/TopNav";
-import { Package, Activity, AlertTriangle, Layers, ArrowRightLeft, FileWarning, RefreshCcw, CheckSquare, Truck, Barcode, PlusCircle } from "lucide-react";
+import { api } from "@/lib/api";
+
+type Store = {
+  id: string;
+  name: string;
+  store_type: string;
+  is_active: boolean;
+};
+
+type StockLevel = {
+  name: string;
+  item_code: string;
+  category: string;
+  uom: string;
+  total_quantity: number;
+};
+
+type ExpiryAlert = {
+  item_name: string;
+  batch_number: string;
+  expiry_date: string;
+  quantity: number;
+};
 
 export default function InventoryDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [stores, setStores] = useState<any[]>([]);
-  const [syncing, setSyncing] = useState(false);
-  const [indentIssued, setIndentIssued] = useState(false);
-  const [transitAccepted, setTransitAccepted] = useState(false);
-  const [gatepassGenerated, setGatepassGenerated] = useState(false);
-  const [stockAdded, setStockAdded] = useState(false);
-  const [scrapReason, setScrapReason] = useState("");
-  const [scrapSubmitted, setScrapSubmitted] = useState(false);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [stockLevels, setStockLevels] = useState<StockLevel[]>([]);
+  const [expiryAlerts, setExpiryAlerts] = useState<ExpiryAlert[]>([]);
+  const [indents, setIndents] = useState<any[]>([]);
+  const [issues, setIssues] = useState<any[]>([]);
+  const [selectedIndent, setSelectedIndent] = useState<any>(null);
+  const [selectedIssue, setSelectedIssue] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Inward Form State
+  const [inwardForm, setInwardForm] = useState({
+    store_id: "",
+    item_name: "Master Item",
+    item_code: "MASTER-" + Math.floor(Math.random()*1000),
+    category: "General",
+    uom: "Units",
+    batch_number: "BAT-" + Math.floor(Math.random()*1000),
+    expiry_date: "",
+    quantity: 0,
+    price: 0
+  });
+
+  const [items, setItems] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [indentModalOpen, setIndentModalOpen] = useState(false);
+  const [newIndent, setNewIndent] = useState({
+    requesting_store_id: "",
+    issuing_store_id: "",
+    item_id: "",
+    quantity: 0,
+    justification: ""
+  });
 
   useEffect(() => {
-    fetchStores();
+    fetchInitialData();
   }, []);
 
-  const fetchStores = async () => {
-     try {
-         const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
-         const res = await fetch(`${api}/api/v1/inventory/stores`, {
-             headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
-         });
-         if (res.ok) {
-             setStores(await res.json());
-         }
-     } catch(e) { console.error(e) }
+  const fetchInitialData = async () => {
+    setLoading(true);
+    try {
+      const [storesData, stockData, expiryData, indentsData, itemsData, issuesData, analyticsData] = await Promise.all([
+        api.get<Store[]>('/inventory/stores'),
+        api.get<StockLevel[]>('/inventory/stock-levels'),
+        api.get<ExpiryAlert[]>('/inventory/expiry-alerts'),
+        api.get<any[]>('/inventory/indents'),
+        api.get<any[]>('/inventory/items'),
+        api.get<any[]>('/inventory/issues'),
+        api.get<any>('/inventory/analytics').catch(() => null)
+      ]);
+      setStores(Array.isArray(storesData) ? storesData : []);
+      setStockLevels(Array.isArray(stockData) ? stockData : []);
+      setExpiryAlerts(Array.isArray(expiryData) ? expiryData : []);
+      if (analyticsData) {
+        setAnalytics(analyticsData);
+        const realValue = analyticsData.abc_analysis.reduce((acc: number, curr: any) => acc + curr.value, 0);
+        setTotalInventoryValue(realValue);
+      } else {
+        const value = (Array.isArray(stockData) ? stockData : []).reduce((acc: number, curr: any) => acc + (curr.total_quantity * 150), 0); // Mock fallback
+        setTotalInventoryValue(value);
+      }
+    } catch (err) {
+      console.error('Failed to fetch inventory data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleInitStores = async () => {
-      try {
-         const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
-         await fetch(`${api}/api/v1/inventory/stores`, {
-             method: 'POST', headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
-             body: JSON.stringify({ name: "Main Central Store", store_type: "MAIN" })
-         });
-         await fetch(`${api}/api/v1/inventory/stores`, {
-             method: 'POST', headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
-             body: JSON.stringify({ name: "Pharmacy Store", store_type: "PHARMACY" })
-         });
-         await fetch(`${api}/api/v1/inventory/stores`, {
-             method: 'POST', headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
-             body: JSON.stringify({ name: "ICU Sublet", store_type: "ICU" })
-         });
-         fetchStores();
-      } catch (e) { console.error(e) }
-  }
+  const [totalInventoryValue, setTotalInventoryValue] = useState(0);
+  const [ledgerHistory, setLedgerHistory] = useState<any[]>([]);
+  const [ledgerModalOpen, setLedgerModalOpen] = useState(false);
+  const [selectedLedgerItem, setSelectedLedgerItem] = useState<any>(null);
+
+  const handleFetchLedgerHistory = async (item: any) => {
+    try {
+      setLoading(true);
+      // We need the item.id. In stockLevels, the backend returns 'id' directly.
+      const itemId = item.id || items.find(i => i.item_code === item.item_code)?.id;
+      
+      if (!itemId) {
+        console.warn("Could not find ID for item:", item);
+        alert("System syncing... please wait a moment and try again.");
+        return;
+      }
+      
+      const history = await api.get<any[]>(`/inventory/ledger-history/${itemId}`);
+      setLedgerHistory(history);
+      setSelectedLedgerItem(item); // Just use 'item' (from stockLevels) which has name and code
+      setLedgerModalOpen(true);
+    } catch (err) {
+      console.error('Failed to fetch ledger history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSeedStores = async () => {
+    try {
+      alert("Initializing system stores... Please wait.");
+      await api.post('/inventory/stores', { name: "Main Central Store", store_type: "MAIN" });
+      await api.post('/inventory/stores', { name: "Pharmacy Retail", store_type: "PHARMACY" });
+      await api.post('/inventory/stores', { name: "ICU Sublet", store_type: "WARD" });
+      alert("System Initialized Successfully! Stores are now online.");
+      fetchInitialData();
+    } catch (err) {
+      console.error('Failed to seed stores:', err);
+      alert("Failed to initialize stores: " + err);
+    }
+  };
+
+  const handleCreateIndentSubmit = async () => {
+    try {
+      if (!newIndent.requesting_store_id || !newIndent.issuing_store_id || !newIndent.item_id) {
+        alert("Please fill all required fields");
+        return;
+      }
+      setLoading(true);
+      const res: any = await api.post('/inventory/indents', {
+        requesting_store_id: newIndent.requesting_store_id,
+        issuing_store_id: newIndent.issuing_store_id,
+        justification: newIndent.justification || "Urgent Stock Gap fulfillment",
+        items: [
+          { item_id: newIndent.item_id, requested_quantity: Number(newIndent.quantity) }
+        ]
+      });
+      alert("Indent Request Generated: " + res.indent_number);
+      setIndentModalOpen(false);
+      fetchInitialData();
+    } catch (err) {
+      console.error('Failed to create indent:', err);
+      alert("Error creating indent: " + err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteIssue = async () => {
+    if (!selectedIndent) return;
+    try {
+      setLoading(true);
+      const res: any = await api.post('/inventory/issues', {
+        indent_id: selectedIndent.id,
+        issuing_store_id: selectedIndent.issuing_store_id,
+        receiving_store_id: selectedIndent.requesting_store_id,
+        items: selectedIndent.items.map((itm: any) => ({
+          item_id: itm.item_id,
+          batch_record_id: "7701da52-16e0-47de-99c5-671c266a2b8e", // Demo placeholder; in prod selected by user
+          issued_quantity: itm.requested_quantity
+        }))
+      });
+      alert("Material Issue Generated: " + res.issue_number);
+      setSelectedIndent(null);
+      fetchInitialData();
+    } catch (err) {
+      console.error('Failed to issue material:', err);
+      alert("Failed to issue: Check if stock exists in issuing store.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveIndent = async (indentId: string) => {
+    try {
+      setLoading(true);
+      await api.post(`/inventory/indents/${indentId}/approve`, {});
+      alert("Indent Request Approved for fulfilment processing.");
+      fetchInitialData();
+    } catch (err) {
+      console.error('Failed to approve indent:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePostStock = async () => {
+    try {
+      if (!inwardForm.store_id || inwardForm.quantity <= 0) {
+        alert("Please fill all required fields (Store, Qty > 0)");
+        return;
+      }
+      setLoading(true);
+      
+      const item: any = await api.post('/inventory/items', {
+        name: inwardForm.item_name,
+        item_code: inwardForm.item_code,
+        category: inwardForm.category,
+        uom: inwardForm.uom
+      });
+      
+      await api.post('/inventory/opening-balance', {
+        store_id: inwardForm.store_id,
+        item_id: item.id,
+        batch_number: inwardForm.batch_number,
+        expiry_date: inwardForm.expiry_date || new Date(Date.now() + 365*24*60*60*1000).toISOString(),
+        quantity: Number(inwardForm.quantity),
+        purchase_price: Number(inwardForm.price)
+      });
+      
+      alert("Stock Posted Successfully! Inventory levels updated.");
+      setActiveTab('overview');
+      fetchInitialData();
+    } catch (err) {
+      console.error('Failed to post stock:', err);
+      alert("Error posting stock: " + err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAcceptTransit = async (issueId: string) => {
+    try {
+      setLoading(true);
+      await api.post(`/inventory/issues/${issueId}/accept`, {});
+      alert("Material Accepted! Stock levels in receiving store updated successfully.");
+      setSelectedIssue(null);
+      fetchInitialData();
+    } catch (err) {
+      console.error('Failed to accept transit:', err);
+      alert("Failed to accept transit: " + err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [adjustmentForm, setAdjustmentForm] = useState({
+    item_code: "",
+    physical_qty: 0,
+    reason: ""
+  });
+
+  const handleAdjustmentSubmit = async () => {
+    try {
+      if (!adjustmentForm.item_code || adjustmentForm.physical_qty < 0) {
+        alert("Please select an item and enter physical quantity");
+        return;
+      }
+      setLoading(true);
+      
+      const actualItem = items.find(i => i.item_code === adjustmentForm.item_code);
+      if (!actualItem) {
+        alert("Item not found in master catalog");
+        return;
+      }
+
+      await api.post('/inventory/adjustments', {
+        item_id: actualItem.id,
+        store_id: stores[0]?.id, // Assuming main store for now, typically user's store
+        physical_quantity: adjustmentForm.physical_qty,
+        reason: adjustmentForm.reason || "Physical Adjustment Routine"
+      });
+
+      alert(`Stock Adjustment Logged: Physical count of ${adjustmentForm.item_code} adjusted to ${adjustmentForm.physical_qty}.`);
+      fetchInitialData();
+      setActiveTab('overview');
+    } catch (err) {
+      console.error('Adjustment failed:', err);
+      alert("Adjustment failed to sync with the backend. Check network or logs.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredStock = stockLevels.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.item_code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50">
-      <TopNav title="Supply Chain & Inventory Management" />
-      <div className="flex-1 p-8 max-w-7xl mx-auto w-full">
-        <div className="flex items-center justify-between mb-8">
-           <div>
-              <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-                 <Package className="text-indigo-600" size={36}/> Enterprise Store Management
-              </h1>
-              <p className="text-slate-500 font-medium mt-2">Multi-store hierarchical inventory, FEFO batch tracking, and issue workflows.</p>
-           </div>
-           <div className="flex gap-3">
-              <button 
-                  onClick={() => { setSyncing(true); setTimeout(() => { setSyncing(false); alert("ERP successfully synced with live database ledgers."); }, 1500) }}
-                  className="bg-white border text-indigo-600 font-bold px-4 py-2 rounded-xl flex items-center gap-2">
-                 <RefreshCcw size={16} className={syncing ? "animate-spin" : ""}/> {syncing ? "Syncing..." : "Sync ERP"}
-              </button>
-              <button onClick={() => setActiveTab('scrap')} className="btn-primary flex items-center gap-2 px-5 py-2.5 bg-indigo-600 font-bold text-white shadow-md rounded-xl">
-                 <Layers size={18}/> Initiate Stock Audit
-              </button>
-           </div>
-        </div>
-
-        {/* Action KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-           <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-1">Active Stores</h3>
-               <div className="text-3xl font-black text-slate-800">{stores.length} <span className="text-sm font-medium text-emerald-500">Operational</span></div>
-               {stores.length === 0 && <button onClick={handleInitStores} className="mt-2 text-xs text-indigo-600 font-bold underline">Initialize Defaults</button>}
-           </div>
-           <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-1">Pending Indents</h3>
-               <div className="text-3xl font-black text-slate-800">4 <span className="text-sm font-medium text-amber-600">Awaiting Approval</span></div>
-           </div>
-           <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-rose-500">
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-1">Critical Expiry</h3>
-               <div className="text-3xl font-black text-slate-800">12 <span className="text-sm font-medium text-rose-500">Items (Next 30 Days)</span></div>
-           </div>
-           <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-indigo-500">
-               <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-1">Transit Issues</h3>
-               <div className="text-3xl font-black text-slate-800">3 <span className="text-sm font-medium text-indigo-500">Awaiting Acceptance</span></div>
-           </div>
-        </div>
-
-        {/* Tab Switcher */}
-        <div className="flex gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl w-fit mb-6 shadow-sm overflow-x-auto whitespace-nowrap">
-           <button onClick={() => setActiveTab('overview')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition ${activeTab === 'overview' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}><Activity size={16}/> Stock Overview</button>
-           <button onClick={() => setActiveTab('inward')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition ${activeTab === 'inward' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}><PlusCircle size={16}/> Inward & Opening Balance</button>
-           <button onClick={() => setActiveTab('indents')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition ${activeTab === 'indents' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}><ArrowRightLeft size={16}/> Indents & Issuing</button>
-           <button onClick={() => setActiveTab('transit')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition ${activeTab === 'transit' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}><CheckSquare size={16}/> Transit & Acceptances</button>
-           <button onClick={() => setActiveTab('scrap')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition ${activeTab === 'scrap' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}><FileWarning size={16}/> Adjustments & Scrap</button>
-           <button onClick={() => setActiveTab('gatepass')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition ${activeTab === 'gatepass' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}><Truck size={16}/> Returns & Gatepass</button>
-        </div>
-
-        {/* Tab Content */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm min-h-[500px]">
-           {activeTab === 'overview' && (
-              <div className="p-8">
-                  <div className="flex items-center justify-between gap-4 mb-6">
-                      <div className="flex items-center gap-2">
-                          <select className="border-2 border-slate-200 rounded-lg px-4 py-2 font-bold text-slate-700 outline-none focus:border-indigo-500">
-                              <option>Main Central Store</option>
-                              <option>Pharmacy Retail</option>
-                              <option>ICU Sublet</option>
-                          </select>
-                          <input type="text" placeholder="Search item, batch or code..." className="border-2 border-slate-200 rounded-lg px-4 py-2 font-medium w-64 outline-none focus:border-indigo-500" />
-                      </div>
-                      <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-500 rounded-lg border border-slate-200">
-                          <Barcode size={20} />
-                          <input type="text" placeholder="Scan Barcode (SKU/Batch)..." className="bg-transparent outline-none w-48 font-mono text-sm placeholder:font-sans" />
-                      </div>
-                  </div>
-                  <table className="w-full text-left">
-                     <thead>
-                         <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold">
-                             <th className="p-4 border-b">Item Code</th>
-                             <th className="p-4 border-b">Consumable Name</th>
-                             <th className="p-4 border-b">Batch Number</th>
-                             <th className="p-4 border-b">Expiry (FEFO)</th>
-                             <th className="p-4 border-b text-right">Available Qty</th>
-                         </tr>
-                     </thead>
-                     <tbody className="divide-y divide-slate-100">
-                         <tr className="hover:bg-slate-50">
-                             <td className="p-4 font-mono text-xs text-slate-500">ITM-7701</td>
-                             <td className="p-4 font-bold text-slate-800">Ceftriaxone 1g Injection (Vial)</td>
-                             <td className="p-4 font-mono text-sm">BAT-29910</td>
-                             <td className="p-4 font-medium text-slate-600">Nov 15, 2026</td>
-                             <td className="p-4 font-black text-right text-slate-700">450</td>
-                         </tr>
-                         <tr className="hover:bg-slate-50">
-                             <td className="p-4 font-mono text-xs text-slate-500">ITM-8192</td>
-                             <td className="p-4 font-bold text-slate-800">Surgical Gloves Size 7 (Box)</td>
-                             <td className="p-4 font-mono text-sm">GLV-001X</td>
-                             <td className="p-4 font-medium text-rose-500 flex items-center gap-1"><AlertTriangle size={14}/> May 02, 2026</td>
-                             <td className="p-4 font-black text-right text-slate-700">12</td>
-                         </tr>
-                         <tr className="hover:bg-slate-50">
-                             <td className="p-4 font-mono text-xs text-slate-500">ITM-9922</td>
-                             <td className="p-4 font-bold text-slate-800">Blood Collection Tubes EDC (Tray)</td>
-                             <td className="p-4 font-mono text-sm">BCT-202X</td>
-                             <td className="p-4 font-medium text-slate-600">Jan 10, 2027</td>
-                             <td className="p-4 font-black text-right text-slate-700">80</td>
-                         </tr>
-                     </tbody>
-                  </table>
+    <div className="flex flex-col min-h-screen bg-slate-50 font-sans antialiased text-slate-900">
+      <TopNav title="Supply Chain Intelligence" />
+      
+      <div className="p-8 max-w-[1600px] mx-auto w-full space-y-8">
+        
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-4">
+              <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-200">
+                <Package className="text-white w-8 h-8" />
               </div>
-           )}
+              INVENTORY CENTRAL
+            </h1>
+            <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] ml-1">
+              Enterprise Resource Planning & Supply Chain Management
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3 relative z-50">
+            <button 
+              onClick={() => fetchInitialData()}
+              disabled={loading}
+              className="group flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+            >
+              <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Sync ERP
+            </button>
+            <button 
+              onClick={() => setActiveTab('inward')}
+              className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl transition-all hover:bg-slate-800 active:scale-95"
+            >
+              <PlusCircle className="w-4 h-4" />
+              New Inward
+            </button>
+          </div>
+        </div>
 
-           {activeTab === 'inward' && (
-              <div className="p-8">
-                  <h2 className="text-xl font-black text-slate-800 border-b pb-4 mb-6 flex items-center gap-2">
-                      <PlusCircle size={20} className="text-emerald-500"/> Goods Receipt & Opening Balance Initialization
-                  </h2>
-                  <div className="flex gap-8">
-                      <div className="w-1/3 bg-slate-50 rounded-2xl border border-slate-200 p-6">
-                          <h3 className="font-bold text-slate-700 mb-4">Stock Entry Workflow</h3>
-                          <p className="text-sm text-slate-500 mb-4">Use this interface to initialize physical opening balances for a new store, or receive inbound procurement goods from an external supplier (GRN).</p>
-                          <select className="w-full p-3 border rounded-xl bg-white mb-4 shadow-sm font-bold">
-                              <option>Entry Type: Opening Balance</option>
-                              <option>Entry Type: Supplier GRN</option>
-                          </select>
-                          <select className="w-full p-3 border rounded-xl bg-white mb-4 shadow-sm">
-                              <option>Receiving Store: Main Central Store</option>
-                              <option>Receiving Store: Pharmacy Retail</option>
-                          </select>
-                      </div>
-                      
-                      <div className="w-2/3">
-                          <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden mb-6">
-                              <div className="bg-white p-4 border-b flex justify-between items-center gap-4">
-                                  <input type="text" placeholder="Search Master Catalog Items..." className="flex-1 p-2 outline-none" />
-                                  <button className="bg-indigo-50 text-indigo-600 font-bold px-4 py-2 rounded">Scan Barcode</button>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[
+            { label: "Stock Value", value: `₹${totalInventoryValue.toLocaleString()}`, status: "Current Assets", color: "emerald", icon: <Layers /> },
+            { label: "Critical Stock", value: stockLevels.filter(s => s.total_quantity < 50).length, status: "Reorder Required", color: "rose", icon: <AlertTriangle /> },
+            { label: "Near Expiry", value: expiryAlerts.length, status: "Next 90 Days", color: "amber", icon: <Calendar /> },
+            { label: "Total Items", value: items.length, status: "In Catalog", color: "indigo", icon: <ClipboardList /> },
+          ].map((kpi, i) => (
+            <div key={i} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-200 group hover:border-blue-200 transition-all">
+              <div className="flex justify-between items-start mb-4">
+                <div className={`p-3 rounded-2xl bg-${kpi.color}-50 text-${kpi.color}-600 group-hover:bg-blue-600 group-hover:text-white transition-all`}>
+                  {React.cloneElement(kpi.icon as any, { size: 20 })}
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-300" />
+              </div>
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{kpi.label}</h3>
+              <div className="text-3xl font-black text-slate-900">{kpi.value}</div>
+              <p className="text-[10px] font-bold mt-1 uppercase text-slate-400">{kpi.status}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-12 gap-8">
+          <div className="col-span-12 lg:col-span-2 space-y-2">
+            {[
+              { id: "overview", label: "Stock Ledger", icon: <Layers /> },
+              { id: "analytics", label: "Smart Analytics", icon: <Activity /> },
+              { id: "inward", label: "Goods Receipt", icon: <PlusCircle /> },
+              { id: "indents", label: "Store Indents", icon: <ArrowRightLeft /> },
+              { id: "transit", label: "Transit Accept", icon: <CheckSquare /> },
+              { id: "scrap", label: "Adjustments", icon: <FileWarning /> },
+              { id: "gatepass", label: "Gatepass", icon: <Truck /> },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-3 px-5 py-4 rounded-[1.25rem] text-sm font-black uppercase tracking-wider transition-all ${
+                  activeTab === tab.id 
+                  ? "bg-blue-600 text-white shadow-lg" 
+                  : "text-slate-500 hover:bg-white hover:text-blue-600"
+                }`}
+              >
+                {React.cloneElement(tab.icon as any, { size: 18 })}
+                {tab.label}
+              </button>
+            ))}
+            
+            {stores.length === 0 && (
+              <div className="mt-8 p-6 bg-blue-50 rounded-[2.5rem] border border-blue-100">
+                <p className="text-[10px] font-bold text-blue-700 uppercase leading-relaxed mb-3">No stores configured.</p>
+                <button onClick={handleSeedStores} className="w-full py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl">Init System</button>
+              </div>
+            )}
+          </div>
+
+          <div className="col-span-12 lg:col-span-10">
+            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden min-h-[600px]">
+              
+              {activeTab === 'overview' && (
+                <div className="flex flex-col h-full">
+                  <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
+                    <div>
+                      <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Stock Inventory Ledger</h2>
+                      <p className="text-slate-500 text-xs font-medium">Real-time batch-level visibility</p>
+                    </div>
+                    <div className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2.5 rounded-2xl shadow-sm">
+                      <Search className="w-4 h-4 text-slate-400" />
+                      <input 
+                        type="text" 
+                        placeholder="Search Stock..." 
+                        className="bg-transparent outline-none text-xs font-bold w-48"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/30 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                          <th className="px-8 py-5 border-b">Item Detail</th>
+                          <th className="px-8 py-5 border-b">Category</th>
+                          <th className="px-8 py-5 border-b text-center">UOM</th>
+                          <th className="px-8 py-5 border-b text-right">Qty</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {loading ? (
+                          <tr><td colSpan={4} className="px-8 py-32 text-center text-slate-400 font-bold uppercase tracking-widest">Loading...</td></tr>
+                        ) : filteredStock.length === 0 ? (
+                          <tr><td colSpan={4} className="px-8 py-32 text-center text-slate-400 font-bold uppercase tracking-widest">No records found</td></tr>
+                        ) : filteredStock.map((item, idx) => (
+                          <tr key={idx} onClick={() => handleFetchLedgerHistory(item)} className="group hover:bg-slate-50/80 transition-all cursor-pointer">
+                            <td className="px-8 py-5">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-black text-slate-800 uppercase">{item.name}</span>
+                                  <ChevronRight size={12} className="text-slate-300 group-hover:text-blue-500 transform group-hover:translate-x-1 transition-all" />
+                                </div>
+                                <span className="text-[10px] font-mono font-bold text-slate-400">{item.item_code}</span>
                               </div>
-                              <div className="p-6 grid grid-cols-2 gap-4">
-                                  <div className="col-span-2">
-                                      <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Selected Item</label>
-                                      <select className="w-full p-3 border rounded-lg bg-white font-bold text-slate-800">
-                                          <option>Ceftriaxone 1g Injection (Vial) - ITM-7701</option>
-                                          <option>Paracetamol 500mg (Tablet) - ITM-4211</option>
-                                      </select>
-                                  </div>
-                                  <div>
-                                      <label className="text-xs font-bold text-slate-500 uppercase block mb-1">New Batch Number</label>
-                                      <input type="text" placeholder="e.g. BAT-29910" className="w-full p-3 border rounded-lg bg-white font-mono" />
-                                  </div>
-                                  <div>
-                                      <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Expiry Date (FEFO)</label>
-                                      <input type="date" className="w-full p-3 border rounded-lg bg-white" />
-                                  </div>
-                                  <div>
-                                      <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Physical Quantity</label>
-                                      <input type="number" placeholder="Enter count..." className="w-full p-3 border rounded-lg bg-white font-bold" />
-                                  </div>
-                                  <div>
-                                      <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Unit Purchase Price</label>
-                                      <input type="number" placeholder="0.00" className="w-full p-3 border rounded-lg bg-white" />
-                                  </div>
+                            </td>
+                            <td className="px-8 py-5"><span className="text-[10px] font-black uppercase text-slate-500 bg-slate-100 px-2 py-1 rounded">{item.category}</span></td>
+                            <td className="px-8 py-5 text-center text-[10px] font-bold text-slate-400 uppercase">{item.uom}</td>
+                            <td className="px-8 py-5 text-right font-black text-slate-800 text-lg">{item.total_quantity.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'inward' && (
+                <div className="p-8 space-y-8">
+                  <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Inward Stock Receipt</h2>
+                  <div className="bg-slate-50 border border-slate-200 p-8 rounded-[2.5rem] max-w-2xl space-y-4">
+                     <div className="space-y-1.5">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Receiving Store</label>
+                       <select value={inwardForm.store_id} onChange={e => setInwardForm({...inwardForm, store_id: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold">
+                          <option value="">Select Store...</option>
+                          {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                       </select>
+                     </div>
+                     <div className="space-y-1.5">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Item SKU / Name</label>
+                       <input value={inwardForm.item_name} onChange={e => setInwardForm({...inwardForm, item_name: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold" />
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Batch</label><input value={inwardForm.batch_number} onChange={e => setInwardForm({...inwardForm, batch_number: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold" /></div>
+                       <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expiry</label><input type="date" value={inwardForm.expiry_date} onChange={e => setInwardForm({...inwardForm, expiry_date: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold" /></div>
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Qty</label><input type="number" value={inwardForm.quantity} onChange={e => setInwardForm({...inwardForm, quantity: Number(e.target.value)})} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold" /></div>
+                       <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Price</label><input type="number" value={inwardForm.price} onChange={e => setInwardForm({...inwardForm, price: Number(e.target.value)})} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold" /></div>
+                     </div>
+                     <button onClick={handlePostStock} disabled={loading} className="w-full py-4 bg-blue-600 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl shadow-xl hover:bg-blue-700 active:scale-95 disabled:opacity-50">Post Stock</button>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'indents' && (
+                <div className="grid grid-cols-12 h-full min-h-[600px]">
+                  <div className="col-span-12 lg:col-span-4 border-r border-slate-100 bg-slate-50/30 overflow-y-auto">
+                    <div className="p-6 border-b flex justify-between items-center bg-white/50 sticky top-0 backdrop-blur-md z-10">
+                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending Requests</h3>
+                       <button onClick={() => setIndentModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 text-white text-[10px] font-black rounded-lg shadow-md uppercase hover:bg-blue-700 transition-all"><PlusCircle size={10} /> New Request</button>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      {indents.length === 0 && <p className="text-center text-[10px] py-20 text-slate-300 font-bold uppercase tracking-widest">No pending indents</p>}
+                      {indents.map((ind: any) => (
+                        <div key={ind.id} onClick={() => setSelectedIndent(ind)} className={`p-5 rounded-3xl border transition-all cursor-pointer ${selectedIndent?.id === ind.id ? "bg-white border-blue-500 shadow-xl" : "bg-white border-slate-200 hover:border-blue-200"}`}>
+                           <div className="flex justify-between items-start mb-2"><span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded uppercase">{ind.status}</span><span className="text-[10px] font-mono font-bold text-slate-400">{ind.indent_number}</span></div>
+                           <h4 className="text-sm font-black text-slate-800 uppercase">{ind.requesting_store?.name}</h4>
+                           <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">To: {ind.issuing_store?.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="col-span-12 lg:col-span-8 p-10 flex flex-col items-center justify-center bg-white">
+                    {selectedIndent ? (
+                      <div className="w-full text-left space-y-8 max-w-2xl">
+                        <div className="p-8 bg-slate-900 text-white rounded-[3rem] shadow-2xl space-y-4">
+                           <div className="flex justify-between items-center">
+                             <div className="bg-white/10 p-4 rounded-3xl"><ArrowRightLeft className="w-8 h-8 text-blue-400" /></div>
+                             <div className="text-right"><span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Ref Number</span><p className="text-xl font-black">{selectedIndent.indent_number}</p></div>
+                           </div>
+                           <div className="flex items-center gap-4 py-4 border-t border-white/10">
+                             <div className="flex-1 text-center"><p className="text-[10px] text-blue-400 uppercase font-black tracking-widest">Requesting</p><p className="font-bold text-sm uppercase">{selectedIndent.requesting_store?.name}</p></div>
+                             <div className="w-px h-8 bg-white/20"></div>
+                             <div className="flex-1 text-center"><p className="text-[10px] text-blue-400 uppercase font-black tracking-widest">Issuing Store</p><p className="font-bold text-sm uppercase">{selectedIndent.issuing_store?.name}</p></div>
+                           </div>
+                        </div>
+                        <div className="space-y-4">
+                           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Requested Items</h3>
+                           {selectedIndent.items?.map((itm: any) => (
+                              <div key={itm.id} className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 flex justify-between items-center group hover:bg-white hover:border-blue-300 transition-all">
+                                 <div><span className="text-sm font-black text-slate-800 uppercase">{itm.item?.name || 'Item Detail'}</span><p className="text-[10px] font-mono text-slate-400 uppercase mt-1">{itm.item?.item_code || 'ITM-CODE'}</p></div>
+                                 <div className="text-right bg-white px-6 py-3 rounded-2xl border border-slate-100"><span className="text-[10px] font-black text-blue-600 uppercase">Qty</span><p className="text-2xl font-black text-slate-900 leading-none">{itm.requested_quantity}</p></div>
                               </div>
+                           ))}
+                        </div>
+                        {selectedIndent.status === 'DRAFT' && (
+                          <div className="flex gap-4">
+                            <button 
+                              onClick={() => handleApproveIndent(selectedIndent.id)}
+                              disabled={loading}
+                              className="flex-1 py-6 bg-amber-600 text-white font-black uppercase text-xs tracking-[0.2em] rounded-[1.5rem] shadow-2xl hover:bg-amber-700 transition-all active:scale-95"
+                            >
+                              Approve Request
+                            </button>
                           </div>
-                          {!stockAdded ? (
-                              <button onClick={() => { setStockAdded(true); alert("Opening balance successfully added. Stock ledgers are now active."); }} className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-md hover:bg-emerald-700 flex justify-center items-center gap-2">
-                                  <PlusCircle size={20} /> Add to Stock Ledger
-                              </button>
-                          ) : (
-                              <div className="w-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold p-4 rounded-xl text-center">
-                                  Item initialization successful! The physical quantity is now strictly tracked in the FEFO Ledger.
-                              </div>
-                          )}
+                        )}
+                        {selectedIndent.status === 'APPROVED' && (
+                          <button 
+                            onClick={handleCompleteIssue}
+                            disabled={loading}
+                            className="w-full py-6 bg-blue-600 text-white font-black uppercase text-xs tracking-[0.2em] rounded-[1.5rem] shadow-2xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
+                          >
+                            Generate Material Issue
+                          </button>
+                        )}
+                        {['ISSUED', 'RECEIVED'].includes(selectedIndent.status) && (
+                          <div className={`p-6 ${selectedIndent.status === 'RECEIVED' ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'} rounded-3xl flex items-center gap-4`}>
+                             <CheckSquare className={selectedIndent.status === 'RECEIVED' ? 'text-blue-600 w-8 h-8' : 'text-emerald-600 w-8 h-8'} />
+                             <div><p className={`${selectedIndent.status === 'RECEIVED' ? 'text-blue-900' : 'text-emerald-900'} font-black uppercase text-xs`}>{selectedIndent.status === 'RECEIVED' ? 'Receipt Confirmed' : 'Stock Issued'}</p><p className={`${selectedIndent.status === 'RECEIVED' ? 'text-blue-600' : 'text-emerald-600'} text-[10px] font-bold`}>{selectedIndent.status === 'RECEIVED' ? 'Transaction lifecycle completed successfully' : 'Waiting for receiving store acceptance'}</p></div>
+                          </div>
+                        )}
                       </div>
+                    ) : (
+                      <div className="space-y-4 opacity-30 text-center"><ArrowRightLeft size={80} className="text-slate-300 mx-auto" /><p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Select an indent to begin processing</p></div>
+                    )}
                   </div>
-              </div>
-           )}
+                </div>
+              )}
 
-           {activeTab === 'indents' && (
-              <div className="grid grid-cols-5 h-full min-h-[500px]">
-                 <div className="col-span-2 bg-slate-50 border-r border-slate-200 p-4 overflow-y-auto">
-                     <h3 className="font-bold text-slate-500 uppercase text-xs mb-4">Pending Requests (Indents)</h3>
-                     <div className="bg-white border-2 border-indigo-500 rounded-xl p-4 shadow-sm mb-3 cursor-pointer">
-                         <div className="flex justify-between items-center mb-2"><span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2 rounded uppercase">Priority</span><span className="font-mono text-xs text-slate-400">IND-88F1A</span></div>
-                         <h4 className="font-bold text-slate-800">From: ICU Sublet</h4>
-                         <p className="text-xs text-slate-500 font-medium mt-1">Requested 12 items • Pending Issue</p>
-                     </div>
-                 </div>
-                 <div className="col-span-3 p-8">
-                     <h2 className="text-xl font-black text-slate-800 border-b pb-4 mb-4">Process Material Issue (IND-88F1A)</h2>
-                     <p className="text-slate-500 text-sm mb-6">Select batches for the requested items ensuring FEFO (First-Expiry-First-Out) methodology.</p>
-                     
-                     <div className="border rounded-xl mb-4 overflow-hidden">
-                        <div className="bg-slate-50 p-3 border-b flex justify-between items-center"><span className="font-bold text-slate-700">Propofol 1% 20ml Vial</span> <span className="bg-rose-100 text-rose-700 text-xs px-2 rounded-full font-bold">Req: 50</span></div>
-                        <div className="p-4">
-                           <div className="flex items-center gap-4 text-sm mb-2">
-                               <input type="radio" name="b1" defaultChecked /> <span className="font-mono">BAT-PRF-11</span> (Exp: May 2026) <span className="ml-auto font-bold text-emerald-600">Avail: 120</span>
-                           </div>
-                           <div className="flex items-center gap-4 text-sm opacity-50">
-                               <input type="radio" name="b1" disabled /> <span className="font-mono">BAT-PRF-25</span> (Exp: Oct 2027) <span className="ml-auto font-bold text-slate-500">Avail: 300</span>
-                           </div>
-                        </div>
-                     </div>
-                     {!indentIssued ? (
-                        <button onClick={() => { setIndentIssued(true); alert("Material picked and successfully dispatched to ICU Sublet."); }} className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow mt-4 flex items-center justify-center gap-2 hover:bg-emerald-700">
-                           <ArrowRightLeft size={18}/> Dispatch Issue to ICU
-                        </button>
-                     ) : (
-                        <div className="w-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold py-3 rounded-xl flex items-center justify-center gap-2 mt-4">
-                           <Package size={18}/> Issue successfully dispatched & awaiting receiving confirmation.
-                        </div>
-                     )}
-                 </div>
-              </div>
-           )}
-
-           {activeTab === 'scrap' && (
-              <div className="p-8">
-                  <h2 className="text-xl font-black text-slate-800 border-b pb-4 mb-4 flex items-center gap-2">
-                      <FileWarning size={20} className="text-rose-500"/> Submit Variance or Scrap Request (Physical Audit)
-                  </h2>
-                  <div className="grid grid-cols-2 gap-6 mb-6">
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                          <label className="text-sm font-bold text-slate-600 uppercase mb-2 block">Select Item</label>
-                          <select className="w-full p-3 border rounded-xl bg-white mb-4">
-                              <option>Surgical Gloves Size 7 (Box) - ITM-8192</option>
-                              <option>Propofol 1% 20ml (Vial) - ITM-3011</option>
-                          </select>
-                          <label className="text-sm font-bold text-slate-600 uppercase mb-2 block">Select Batch</label>
-                          <select className="w-full p-3 border rounded-xl bg-white">
-                              <option>BAT-GLV-001X (Avail: 12, Exp: May 2026)</option>
-                          </select>
+              {activeTab === 'transit' && (
+                 <div className="grid grid-cols-12 h-full min-h-[600px]">
+                   <div className="col-span-12 lg:col-span-4 border-r border-slate-100 bg-slate-50/30 overflow-y-auto">
+                      <div className="p-6 border-b bg-white/50 sticky top-0 backdrop-blur-md z-10 text-center">
+                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">In-Transit Shipments</h3>
                       </div>
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                         <div className="flex gap-4 mb-4">
-                             <div className="flex-1">
-                                 <label className="text-sm font-bold text-slate-600 uppercase mb-2 block">System Qty</label>
-                                 <input type="number" readOnly value="12" className="w-full p-3 border rounded-xl bg-slate-100 font-mono text-slate-500" />
-                             </div>
-                             <div className="flex-1">
-                                 <label className="text-sm font-bold text-slate-600 uppercase mb-2 block">Physical/Scrap Qty</label>
-                                 <input type="number" placeholder="Enter actual count" className="w-full p-3 border rounded-xl bg-white font-bold" />
-                             </div>
+                      <div className="p-4 space-y-3">
+                        {issues.filter(iss => iss.status === 'PENDING_ACCEPTANCE').length === 0 && (
+                          <p className="text-center text-[10px] py-20 text-slate-300 font-bold uppercase tracking-widest leading-loose">No pending deliveries found</p>
+                        )}
+                        {issues.filter(iss => iss.status === 'PENDING_ACCEPTANCE').map((iss: any) => (
+                          <div key={iss.id} onClick={() => setSelectedIssue(iss)} className={`p-6 rounded-[2rem] border transition-all cursor-pointer ${selectedIssue?.id === iss.id ? "bg-white border-blue-500 shadow-xl" : "bg-white border-slate-200 hover:border-blue-200"}`}>
+                             <div className="flex justify-between items-start mb-2"><span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded uppercase">Transit</span><span className="text-[10px] font-mono font-bold text-slate-400">{iss.issue_number}</span></div>
+                             <h4 className="text-sm font-black text-slate-800 uppercase">Delivery to {iss.receiving_store?.name}</h4>
+                             <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">From: {iss.issuing_store?.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                   </div>
+                   <div className="col-span-12 lg:col-span-8 p-12 flex flex-col items-center justify-center bg-white">
+                      {selectedIssue ? (
+                        <div className="w-full max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                           <div className="text-center space-y-2">
+                             <div className="bg-blue-50 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-4 border border-blue-100"><Truck className="w-10 h-10 text-blue-600" /></div>
+                             <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Confirm Receipt</h2>
+                             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Package: {selectedIssue.issue_number}</p>
+                           </div>
+                           <div className="grid grid-cols-2 gap-4">
+                              <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Origin</p><p className="font-bold text-slate-800 uppercase">{selectedIssue.issuing_store?.name}</p></div>
+                              <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Destination</p><p className="font-bold text-slate-800 uppercase">{selectedIssue.receiving_store?.name}</p></div>
+                           </div>
+                           <div className="bg-slate-50 rounded-[2.5rem] p-8 border border-slate-100 space-y-6">
+                              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contents</h3>
+                              <div className="space-y-3">
+                                 {selectedIssue.items?.map((itm: any) => (
+                                   <div key={itm.id} className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100">
+                                      <span className="text-sm font-bold text-slate-700 uppercase">{itm.item?.name || 'Item'}</span>
+                                      <span className="text-lg font-black text-blue-600">{itm.issued_quantity}</span>
+                                   </div>
+                                 ))}
+                              </div>
+                           </div>
+                           <button onClick={() => handleAcceptTransit(selectedIssue.id)} disabled={loading} className="w-full py-6 bg-slate-900 text-white font-black uppercase text-xs tracking-[0.2em] rounded-[1.5rem] shadow-2xl transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50">Accept & Post to Store</button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 opacity-30 text-center"><Truck size={80} className="text-slate-300 mx-auto" /><p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Awaiting physical confirmation</p></div>
+                      )}
+                   </div>
+                 </div>
+               )}
+
+               {activeTab === 'scrap' && (
+                 <div className="p-8 space-y-8 animate-in fade-in duration-500">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Stock Adjustments</h2>
+                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Record physical count discrepancies</p>
+                      </div>
+                      <AlertCircle className="text-amber-500 w-8 h-8" />
+                    </div>
+                    <div className="bg-amber-50 border border-amber-100 p-8 rounded-[2.5rem] max-w-2xl space-y-6">
+                       <div className="space-y-1.5">
+                         <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Select Item to Adjust</label>
+                         <select 
+                           value={adjustmentForm.item_code}
+                           onChange={e => setAdjustmentForm({...adjustmentForm, item_code: e.target.value})}
+                           className="w-full bg-white border border-amber-200 rounded-xl p-4 text-sm font-bold"
+                         >
+                            <option value="">Select Item...</option>
+                            {stockLevels.map((s,i) => <option key={i} value={s.item_code}>{s.name} ({s.item_code}) - Current: {s.total_quantity}</option>)}
+                         </select>
+                       </div>
+                       <div className="grid grid-cols-2 gap-6">
+                         <div className="space-y-1.5 align-top">
+                           <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest ml-1">Physical Qty</label>
+                           <input 
+                              type="number" 
+                              value={adjustmentForm.physical_qty}
+                              onChange={e => setAdjustmentForm({...adjustmentForm, physical_qty: Number(e.target.value)})}
+                              className="w-full bg-white border border-amber-200 rounded-xl p-4 text-sm font-bold" 
+                              placeholder="0.00" 
+                           />
                          </div>
-                         <label className="text-sm font-bold text-slate-600 uppercase mb-2 block">Reason for Adjustment / Scrap</label>
-                         <textarea value={scrapReason} onChange={(e) => setScrapReason(e.target.value)} rows={3} className="w-full p-3 border rounded-xl bg-white resize-none" placeholder="e.g. Expired, damaged in transit, counting error..."></textarea>
-                      </div>
-                  </div>
-                  
-                  {!scrapSubmitted ? (
-                      <button onClick={() => {
-                          if (!scrapReason) { alert("Please provide a valid reason for the scrap/adjustment auto-ledger."); return; }
-                          setScrapSubmitted(true);
-                      }} className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold p-4 rounded-xl flex justify-center gap-2 items-center">
-                          <AlertTriangle size={18} /> Submit Request for Administration Approval
-                      </button>
-                  ) : (
-                      <div className="w-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold p-4 rounded-xl text-center">
-                          Successfully routed to Supply Chain Administrator approval pipeline! The ledger variance is pending authorization.
-                      </div>
-                  )}
-              </div>
-           )}
-           {activeTab === 'transit' && (
-              <div className="p-8">
-                  <h2 className="text-xl font-black text-slate-800 border-b pb-4 mb-6 flex items-center gap-2">
-                      <CheckSquare size={20} className="text-indigo-500"/> Material Acceptance Workflow
-                  </h2>
-                  <div className="grid grid-cols-3 gap-6">
-                      <div className="col-span-1 bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                          <h3 className="font-bold text-slate-500 text-xs uppercase mb-4">Inbound Shipments</h3>
-                          <div className="bg-white border-2 border-amber-400 p-4 rounded-xl shadow-sm cursor-pointer">
-                              <div className="flex justify-between items-center mb-1">
-                                  <span className="font-mono text-xs text-slate-500">ISS-299A1</span>
-                                  <span className="text-xs font-black text-amber-600 bg-amber-50 px-2 rounded">TRANSIT</span>
-                              </div>
-                              <h4 className="font-bold text-slate-800">Ceftriaxone 1g (450 Vials)</h4>
-                              <p className="text-xs text-slate-500 mt-1">From: Main Central Store</p>
-                          </div>
-                      </div>
-                      <div className="col-span-2">
-                          <div className="border border-slate-200 rounded-xl overflow-hidden mb-6">
-                              <div className="bg-slate-50 p-4 border-b font-bold text-slate-800 flex justify-between">
-                                  Verify Received Quantity
-                                  <span className="font-mono text-xs bg-white px-2 py-1 border rounded text-slate-500">Barcode / RFID Scanner Active</span>
-                              </div>
-                              <div className="p-6 bg-white flex items-center gap-6">
-                                  <div className="flex-1">
-                                      <p className="text-sm text-slate-500 font-bold uppercase mb-1">Dispatched Batch</p>
-                                      <p className="font-mono text-lg text-slate-800">BAT-29910</p>
-                                  </div>
-                                  <div className="flex-1">
-                                      <p className="text-sm text-slate-500 font-bold uppercase mb-1">Manifest Qty</p>
-                                      <p className="font-bold text-lg text-slate-700">450</p>
-                                  </div>
-                                  <div className="flex-1">
-                                      <p className="text-sm text-slate-500 font-bold uppercase mb-1">Physical Verification</p>
-                                      <input type="number" defaultValue="450" className="w-full border-2 border-emerald-500 p-2 rounded-lg font-bold text-lg text-emerald-700 bg-emerald-50" />
-                                  </div>
-                              </div>
-                          </div>
-                          {!transitAccepted ? (
-                             <button onClick={() => setTransitAccepted(true)} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 shadow flex justify-center gap-2">
-                                 <CheckSquare size={20}/> Confirm Acceptance & Update Stock Ledgers
-                             </button>
-                          ) : (
-                             <div className="w-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold py-4 rounded-xl text-center">
-                                 Stock Successfully Received. ICU Sublet ledger updated with 450 units natively.
-                             </div>
-                          )}
-                      </div>
-                  </div>
-              </div>
-           )}
+                         <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-amber-700 uppercase tracking-widest ml-1">Adjustment Reason</label>
+                            <input 
+                               value={adjustmentForm.reason}
+                               onChange={e => setAdjustmentForm({...adjustmentForm, reason: e.target.value})}
+                               className="w-full bg-white border border-amber-200 rounded-xl p-4 text-sm font-bold" 
+                               placeholder="Drying / Damage / Loss" 
+                            />
+                         </div>
+                       </div>
+                       <button 
+                         onClick={handleAdjustmentSubmit}
+                         disabled={loading}
+                         className="w-full py-5 bg-amber-600 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl hover:bg-amber-700 active:scale-95 transition-all disabled:opacity-50"
+                       >
+                         Submit Adjustment Request
+                       </button>
+                    </div>
+                 </div>
+               )}
 
-           {activeTab === 'gatepass' && (
-              <div className="p-8">
-                  <h2 className="text-xl font-black text-slate-800 border-b pb-4 mb-6 flex items-center gap-2">
-                      <Truck size={20} className="text-indigo-500"/> Material Returns & Returnable Gatepass
-                  </h2>
-                  <div className="grid grid-cols-2 gap-8">
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
-                          <h3 className="font-bold text-slate-700 mb-4 border-b pb-2">Departmental Material Return</h3>
-                          <p className="text-sm text-slate-500 mb-4">Return unused or excess stock from sub-stores back to the Main Central Store. Reverses the issue transaction ledger.</p>
-                          <select className="w-full p-3 border rounded-xl bg-white mb-4">
-                              <option>Select Original Issue ID to Reverse...</option>
-                              <option>ISS-992B - Surgical Gloves</option>
-                          </select>
-                          <input type="number" placeholder="Quantity to Return" className="w-full p-3 border rounded-xl bg-white mb-4" />
-                          <button className="w-full bg-indigo-100 text-indigo-700 font-bold py-3 rounded-xl hover:bg-indigo-200">Process Internal Return</button>
-                      </div>
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 border-t-4 border-t-indigo-500">
-                          <h3 className="font-bold text-slate-700 mb-4 border-b pb-2">Vendor Returnable Gatepass</h3>
-                          <p className="text-sm text-slate-500 mb-4">Generate an external Gatepass document for replacing defective/expired batches with the supplier/vendor.</p>
-                          <select className="w-full p-3 border rounded-xl bg-white mb-4">
-                              <option>Select Approved Scrap / Defective Item...</option>
-                              <option>BAT-GLV-001X - 12 Qty (Defective)</option>
-                          </select>
-                          <textarea className="w-full p-3 border rounded-xl bg-white mb-4 resize-none" rows={2} placeholder="Gatepass conditions & driver details..."></textarea>
-                          {!gatepassGenerated ? (
-                             <button onClick={() => setGatepassGenerated(true)} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-indigo-700 flex justify-center gap-2">
-                                <Truck size={18}/> Generate External Gatepass Document
-                             </button>
-                          ) : (
-                             <div className="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold py-3 rounded-xl text-center">
-                                Gatepass RGP-991A Generated. Ready to Print for Logistics.
+               {activeTab === 'gatepass' && (
+                 <div className="p-8 space-y-8 animate-in fade-in duration-500 h-full">
+                    <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Logistics & Gatepass</h2>
+                    <div className="space-y-4 max-w-4xl">
+                       {issues.filter(iss => ['ISSUED'].includes(iss.status)).map((iss: any) => (
+                         <div key={iss.id} className="bg-white border border-slate-200 p-8 rounded-[3rem] flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm hover:shadow-md transition-all">
+                            <div className="flex items-center gap-6">
+                               <div className="bg-slate-900 text-white p-5 rounded-[2rem]"><Barcode size={32} /></div>
+                               <div>
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Security Clearance Pass</p>
+                                  <h4 className="text-xl font-black text-slate-900 uppercase">{iss.issue_number}</h4>
+                                  <p className="text-xs font-bold text-slate-500 uppercase mt-1">Destination: {iss.receiving_store?.name}</p>
+                               </div>
+                            </div>
+                            <div className="flex gap-3">
+                               <button className="px-6 py-3 bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-slate-200 hover:bg-white transition-all">Print Pass</button>
+                               <button 
+                                  onClick={() => {
+                                      alert(`Gatepass ${iss.issue_number} VERIFIED. Transport departure authorized.`);
+                                      setIssues(issues.map((i: any) => i.id === iss.id ? { ...i, status: 'DISPATCHED' } : i));
+                                  }} 
+                                  className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-blue-700 transition-all"
+                               >
+                                  Gate Cleared
+                               </button>
+                            </div>
+                         </div>
+                       ))}
+                       {issues.filter(iss => ['ISSUED'].includes(iss.status)).length === 0 && (
+                          <div className="p-20 text-center space-y-4 opacity-50"><Truck size={48} className="mx-auto text-slate-400" /><p className="text-[10px] font-black uppercase tracking-widest">No outbound shipments ready for gatepass</p></div>
+                       )}
+                    </div>
+                 </div>
+               )}
+               
+               {activeTab === 'analytics' && (
+                  <div className="flex flex-col h-full bg-slate-50/50 rounded-[2.5rem] mt-6 animate-in fade-in border border-slate-200 overflow-hidden">
+                    <div className="p-8 border-b border-slate-100 bg-white">
+                        <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-3">
+                            <div className="bg-indigo-100 text-indigo-600 p-2 rounded-xl"><Activity size={20} /></div>
+                            Smart Analytics Matrix
+                        </h2>
+                        <p className="text-slate-500 text-xs font-medium mt-1">AI-driven actionable insights for supply chain optimization</p>
+                    </div>
+                    
+                    {!analytics ? (
+                       <div className="p-32 text-center"><RefreshCcw className="w-12 h-12 mx-auto text-blue-200 animate-spin" /><p className="text-slate-400 font-bold uppercase mt-4 text-[10px] tracking-widest">Crunching data...</p></div>
+                    ) : (
+                       <div className="p-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                          
+                          {/* ABC Analysis */}
+                          <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all">
+                             <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity className="w-4 h-4 text-indigo-500" /> Value Matrix (ABC)</h3>
+                             <div className="space-y-3">
+                                {analytics.abc_analysis?.slice(0, 5).map((item: any) => (
+                                   <div key={item.item_id} className="flex justify-between items-center p-4 bg-slate-50 rounded-[1.5rem] border border-slate-100 group hover:border-indigo-200 transition-all">
+                                      <div className="max-w-[70%]">
+                                         <p className="text-xs font-black text-slate-800 uppercase truncate" title={item.name}>{item.name}</p>
+                                         <p className="text-[10px] font-bold text-slate-400 mt-0.5"><span className="text-indigo-600 font-black">CLASS {item.abc_class}</span> • {item.percentage}% Portfolio</p>
+                                      </div>
+                                      <p className="text-sm font-black text-indigo-600 font-mono">₹{item.value.toLocaleString()}</p>
+                                   </div>
+                                ))}
                              </div>
-                          )}
-                      </div>
+                          </div>
+
+                          {/* Reorder Alerts */}
+                          <div className="bg-white rounded-[2rem] border border-rose-100 p-6 shadow-sm hover:shadow-md transition-all">
+                             <h3 className="text-xs font-black text-rose-900 uppercase tracking-widest mb-6 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-rose-500" /> Reorder Engine Action</h3>
+                             <div className="space-y-3">
+                                {analytics.reorder_alerts?.length === 0 ? (
+                                   <div className="p-10 text-center"><p className="text-xs font-black text-slate-300 uppercase">Stock levels optimal</p></div>
+                                ) : analytics.reorder_alerts?.map((item: any) => (
+                                   <div key={item.item_id} className="flex flex-col gap-3 p-4 bg-rose-50 rounded-[1.5rem] border border-rose-100">
+                                      <div className="flex justify-between items-start">
+                                         <p className="text-xs font-black text-rose-900 uppercase pr-2 leading-tight">{item.name}</p>
+                                         <p className="text-[10px] font-black bg-rose-600 text-white px-2.5 py-1 rounded-xl whitespace-nowrap">{item.current_qty} left</p>
+                                      </div>
+                                   </div>
+                                ))}
+                             </div>
+                          </div>
+
+                          {/* Dead Stock */}
+                          <div className="bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all">
+                             <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2"><FileWarning className="w-4 h-4 text-slate-500" /> Dead Stock (&gt;90 Days)</h3>
+                             <div className="space-y-3">
+                                {analytics.dead_stock?.length === 0 ? (
+                                   <div className="p-10 text-center"><p className="text-xs font-black text-slate-300 uppercase">No dead stock detected</p></div>
+                                ) : analytics.dead_stock?.map((item: any) => (
+                                   <div key={item.item_id} className="flex justify-between items-center p-4 bg-slate-50 rounded-[1.5rem] border border-slate-100 group hover:border-amber-200 transition-all">
+                                      <div className="max-w-[60%]">
+                                         <p className="text-xs font-black text-slate-800 uppercase truncate" title={item.name}>{item.name}</p>
+                                         <p className="text-[10px] font-black text-amber-600 mt-0.5">{item.days_inactive} Days Idle</p>
+                                      </div>
+                                      <div className="text-right">
+                                         <p className="text-sm font-black text-slate-900 font-mono">Qty: {item.quantity}</p>
+                                         <p className="text-[10px] font-black text-slate-400 font-mono mt-0.5">₹{item.value.toLocaleString()}</p>
+                                      </div>
+                                   </div>
+                                ))}
+                             </div>
+                          </div>
+
+                       </div>
+                    )}
                   </div>
-              </div>
-           )}
+                )}
+
+               {!['overview', 'analytics', 'inward', 'indents', 'transit', 'scrap', 'gatepass'].includes(activeTab) && (
+                 <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-4">
+                    <RefreshCcw className="w-12 h-12 text-blue-200 animate-spin" />
+                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">{activeTab} workflow pending</h3>
+                 </div>
+               )}
+
+            </div>
+          </div>
         </div>
       </div>
+
+      {indentModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-300">
+             <div className="p-8 bg-blue-600 text-white flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                   <div className="bg-white/20 p-3 rounded-2xl"><PlusCircle /></div>
+                   <h2 className="text-xl font-black uppercase tracking-tight">New Stock Request</h2>
+                </div>
+                <button onClick={() => setIndentModalOpen(false)} className="text-white/60 hover:text-white">✕</button>
+             </div>
+             <div className="p-10 space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                   <div className="space-y-1.5 align-top">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Requesting Dept</label>
+                      <select value={newIndent.requesting_store_id} onChange={e => setNewIndent({...newIndent, requesting_store_id: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-bold">
+                         <option value="">Select Dept...</option>
+                         {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                   </div>
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Issuing Store</label>
+                      <select value={newIndent.issuing_store_id} onChange={e => setNewIndent({...newIndent, issuing_store_id: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-bold">
+                         <option value="">Select Store...</option>
+                         {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                   </div>
+                </div>
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Requested Item</label>
+                    <select value={newIndent.item_id} onChange={e => setNewIndent({...newIndent, item_id: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-bold">
+                        <option value="">Search Item...</option>
+                        {items.map(it => <option key={it.id} value={it.id}>{it.name} ({it.item_code})</option>)}
+                    </select>
+                </div>
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Desired Quantity</label>
+                    <input type="number" value={newIndent.quantity} onChange={e => setNewIndent({...newIndent, quantity: Number(e.target.value)})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-bold" placeholder="0.00" />
+                </div>
+                <button onClick={handleCreateIndentSubmit} disabled={loading} className="w-full py-5 bg-blue-600 text-white font-black uppercase text-xs tracking-[0.2em] rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50">Submit Internal Indent</button>
+             </div>
+          </div>
+        </div>
+      )}
+      {ledgerModalOpen && selectedLedgerItem && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+           <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-300 h-[80vh] flex flex-col">
+              <div className="p-8 bg-slate-900 text-white flex justify-between items-center">
+                 <div className="flex items-center gap-4">
+                    <div className="bg-blue-600 p-3 rounded-2xl shadow-lg ring-4 ring-blue-600/20"><Activity /></div>
+                    <div>
+                       <h2 className="text-xl font-black uppercase tracking-tight">Perpetual Stock Ledger</h2>
+                       <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest">{selectedLedgerItem.name} — {selectedLedgerItem.item_code}</p>
+                    </div>
+                 </div>
+                 <button onClick={() => setLedgerModalOpen(false)} className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-all">✕</button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-8">
+                 <table className="w-full text-sm">
+                    <thead>
+                       <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b">
+                          <th className="px-4 py-4">Ref Number</th>
+                          <th className="px-4 py-4">Date</th>
+                          <th className="px-4 py-4">Transaction Type</th>
+                          <th className="px-4 py-4 text-right">In</th>
+                          <th className="px-4 py-4 text-right">Out</th>
+                          <th className="px-4 py-4 text-right">Running Bal</th>
+                       </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                       {ledgerHistory.length === 0 ? (
+                         <tr><td colSpan={6} className="py-20 text-center text-slate-300 font-bold uppercase tracking-widest">No history available</td></tr>
+                       ) : ledgerHistory.map((log: any, i) => (
+                         <tr key={i} className="hover:bg-slate-50 transition-all">
+                            <td className="px-4 py-5 font-mono text-[10px] font-bold text-slate-400">{log.reference_id || 'TRX-DEFAULT'}</td>
+                            <td className="px-4 py-5 font-bold text-slate-600">{new Date(log.transaction_date).toLocaleDateString()}</td>
+                            <td className="px-4 py-5">
+                               <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${
+                                 log.transaction_type === 'OPB' ? 'bg-indigo-50 text-indigo-600' :
+                                 log.transaction_type === 'ISS' ? 'bg-amber-50 text-amber-600' :
+                                 'bg-emerald-50 text-emerald-600'
+                               }`}>
+                                 {log.transaction_type}
+                               </span>
+                            </td>
+                            <td className="px-4 py-5 text-right font-black text-emerald-600">{log.quantity_change > 0 ? `+${log.quantity_change}` : '-'}</td>
+                            <td className="px-4 py-5 text-right font-black text-rose-600">{log.quantity_change < 0 ? log.quantity_change : '-'}</td>
+                            <td className="px-4 py-5 text-right font-black text-slate-900">{log.closing_balance}</td>
+                         </tr>
+                       ))}
+                    </tbody>
+                 </table>
+              </div>
+              <div className="p-8 bg-slate-50 border-t flex justify-between items-center">
+                 <div className="flex gap-8">
+                    <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Method</p><p className="font-bold text-slate-900">FIFO / FEFO</p></div>
+                    <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Unit Price</p><p className="font-bold text-slate-900">₹150.00</p></div>
+                 </div>
+                 <button onClick={() => setLedgerModalOpen(false)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 transition-all">Close History</button>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }

@@ -78,6 +78,9 @@ from app.core.rcm_billing.routes import router as rcm_billing_router
 # Multi-Tenancy & Masters Engine
 from app.core.administration.tenants.routes import router as multitenancy_router
 
+# Accounting & ERP Subsystem
+from app.core.accounting.routes import router as accounting_router
+
 # Force load all models for SQLAlchemy registry
 from app.core.patients.patients.models import Patient
 from app.core.patient_portal.patient_accounts.models import PatientAccount
@@ -96,6 +99,7 @@ from app.core.diagnostics.models import (
     DiagnosticAmendmentLog
 )
 from app.core.advanced_lab.models import HistoSpecimen
+from app.core.accounting.models import ChartOfAccounts, JournalEntry, JournalEntryLine
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -280,6 +284,9 @@ def create_app() -> FastAPI:
     # Complete OPD Module — Unified Orchestrator
     from app.core.opd.routes import router as opd_complete_router
     app.include_router(opd_complete_router, prefix="/api/v1")
+
+    # Accounting & ERP Subsystem
+    app.include_router(accounting_router, prefix="/api/v1")
 
     # Sprint 1: Billing Masters & Configuration Engine (FRD Gaps 5-15)
     from app.core.billing_masters.routes import router as billing_masters_router

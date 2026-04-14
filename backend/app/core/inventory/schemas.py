@@ -56,3 +56,9 @@ class IssueCreate(BaseModel):
 
     class Config:
         from_attributes = True
+
+class PhysicalAdjustment(BaseModel):
+    item_id: UUID4
+    store_id: UUID4
+    physical_quantity: float
+    reason: str

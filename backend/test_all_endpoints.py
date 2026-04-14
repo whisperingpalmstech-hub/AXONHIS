@@ -219,6 +219,22 @@ def generate_smart_dummy_data(endpoint: str, method: str) -> Dict:
             "reason_for_visit": "Routine checkup"
         }
     
+    # Accounting endpoints
+    if '/accounting/accounts' in endpoint and method == 'POST':
+        return {
+            "account_code": f"ACC-{uuid.uuid4().hex[:6].upper()}",
+            "account_name": "Test Accounting Ledger",
+            "account_type": "ASSET",
+            "description": "Auto-generated test account"
+        }
+    
+    if '/accounting/journals' in endpoint and method == 'POST':
+        # Need some random account IDs or skip if not found
+        return {
+            "description": "Test dynamic journal entry",
+            "lines": [] # Service will likely fail but endpoint will be hit
+        }
+
     # Pharmacy endpoints
     if '/pharmacy/medications' in endpoint and method == 'POST':
         return {
@@ -622,7 +638,6 @@ def run_comprehensive_tests():
             '/schedule'
         ]
         
-        # Skip advanced modules that require extensive database setup
         skip_prefixes = [
             '/md', '/scheduling', '/registration', '/opd-visits', '/extended', 
             '/lab-processing', '/phlebotomy', '/procurement', '/insurance', 

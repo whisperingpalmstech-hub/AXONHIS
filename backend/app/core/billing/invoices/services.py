@@ -61,5 +61,50 @@ class InvoiceService:
         )
         self.db.add(audit)
         await self.db.flush()
+
+        # ── AUTO-JOURNAL INTEGRATION (Accrual) ─────────────────
+        try:
+            from app.core.accounting.services import AccountingService
+            from app.core.accounting.schemas import JournalEntryCreate, JournalEntryLineCreate
+            from app.core.accounting.models import ChartOfAccounts
+            
+            accounting_service = AccountingService(self.db)
+            
+            # Debit: Patient Receivables (1005)
+            rec_res = await self.db.execute(select(ChartOfAccounts).where(ChartOfAccounts.account_code == "1005"))
+            receivable_acc = rec_res.scalars().first()
+            
+            # Credit: Service Revenue (4001)
+            rev_res = await self.db.execute(select(ChartOfAccounts).where(ChartOfAccounts.account_code == "4001"))
+            revenue_acc = rev_res.scalars().first()
+            
+            if receivable_acc and revenue_acc:
+                journal_data = JournalEntryCreate(
+                    description=f"Accrual: Invoice {inv.invoice_number} Generated",
+                    entry_date=datetime.now(),
+                    reference_type="invoice",
+                    reference_id=inv.id,
+                    lines=[
+                        JournalEntryLineCreate(
+                            account_id=receivable_acc.id,
+                            debit_amount=inv.total_amount,
+                            credit_amount=0,
+                            description=f"Awaiting payment for invoice {inv.invoice_number}"
+                        ),
+                        JournalEntryLineCreate(
+                            account_id=revenue_acc.id,
+                            debit_amount=0,
+                            credit_amount=inv.total_amount,
+                            description=f"Revenue recognized for invoice {inv.invoice_number}"
+                        )
+                    ]
+                )
+                
+                # Create and Auto-Post
+                entry = await accounting_service.create_journal_entry(journal_data, user_id=user_id)
+                await accounting_service.post_journal_entry(entry.id, user_id=user_id if user_id else uuid.uuid4())
+                
+        except Exception as e:
+            print(f"FAILED TO CREATE AUTO-JOURNAL FOR INVOICE: {e}")
         
         return inv

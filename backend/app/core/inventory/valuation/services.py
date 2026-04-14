@@ -36,9 +36,9 @@ class ValuationService:
         valuation_number = f"VAL-{datetime.now().strftime('%Y%m%d')}-{(max_id or 0) + 1:04d}"
         
         # Get inventory items
-        from app.core.inventory.models import InventoryItem, BatchRecord
-        query = select(InventoryItem, BatchRecord).join(
-            BatchRecord, InventoryItem.id == BatchRecord.item_id
+        from app.core.inventory.models import InvItem, BatchRecord
+        query = select(InvItem, BatchRecord).join(
+            BatchRecord, InvItem.id == BatchRecord.item_id
         )
         
         if request.store_id:

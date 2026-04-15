@@ -179,3 +179,12 @@ class WalkInSalesService:
             # Table may not be migrated yet — return empty list gracefully
             return []
 
+    async def get_patient_sales(self, patient_id: uuid.UUID):
+        from sqlalchemy.orm import selectinload
+        try:
+            q = select(PharmacyWalkInSale).options(selectinload(PharmacyWalkInSale.items), selectinload(PharmacyWalkInSale.payment)).where(PharmacyWalkInSale.patient_id == patient_id).order_by(PharmacyWalkInSale.sale_date.desc())
+            res = await self.db.execute(q)
+            return list(res.scalars().all())
+        except Exception:
+            return []
+

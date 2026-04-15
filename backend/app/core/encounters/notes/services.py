@@ -12,7 +12,6 @@ class NoteService:
     async def add_note(self, encounter_id: uuid.UUID, author_id: uuid.UUID, data: EncounterNoteCreate, org_id: uuid.UUID = None) -> EncounterNote:
         note = EncounterNote(
             encounter_id=encounter_id,
-            org_id=org_id,
             note_type=data.note_type,
             content=data.content,
             created_by=author_id

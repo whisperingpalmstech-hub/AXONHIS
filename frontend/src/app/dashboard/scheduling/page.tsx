@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "@/i18n";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Calendar, Clock, User, Users, AlertTriangle, Check, X,
   Activity, BarChart3, Zap, Settings, Plus, ChevronDown,
@@ -51,6 +52,7 @@ const MODALITY_ICONS: Record<string, string> = {
 
 export default function EnterpriseSchedulingPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const TABS = [
     { id: "calendar", label: t("scheduling.doctorCalendar"), icon: <Calendar size={16} /> },
     { id: "bookings", label: t("scheduling.bookings"), icon: <Clock size={16} /> },
@@ -63,6 +65,8 @@ export default function EnterpriseSchedulingPage() {
   const [activeTab, setActiveTab] = useState<TabId>("calendar");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const urlPatientId = searchParams.get("patient_id") || "";
 
   // Calendar state
   const [calendars, setCalendars] = useState<DoctorCalendar[]>([]);
@@ -93,6 +97,7 @@ export default function EnterpriseSchedulingPage() {
   const [showOverbookModal, setShowOverbookModal] = useState(false);
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
+  const [bookingSuccess, setBookingSuccess] = useState<SlotBooking | null>(null);
 
   // Doctors & Patients from DB
   const [doctors, setDoctors] = useState<UserRecord[]>([]);
@@ -101,9 +106,9 @@ export default function EnterpriseSchedulingPage() {
   // New calendar form
   const [newCal, setNewCal] = useState({ doctor_id: "", department: "", default_slot_duration_min: 15, max_patients_per_slot: 1, allow_teleconsultation: true, allow_overbooking: false, max_overbook_count: 2, buffer_between_slots_min: 5 });
   // New cyclic schedule form
-  const [newCyclic, setNewCyclic] = useState({ day_of_week: "mon", start_time: "09:00", end_time: "17:00", slot_duration_min: 15, appointment_type: "in_person", max_patients_per_slot: 1, effective_from: new Date().toISOString().split("T")[0], effective_until: "" });
+  const [newCyclic, setNewCyclic] = useState({ selectedDays: ["mon","tue","wed","thu","fri","sat"] as string[], start_time: "09:00", end_time: "17:00", slot_duration_min: 15, appointment_type: "in_person", max_patients_per_slot: 1, effective_from: new Date().toISOString().split("T")[0], effective_until: "" });
   // Booking form
-  const [bookForm, setBookForm] = useState({ patient_id: "", department: "", appointment_type: "in_person", reason: "" });
+  const [bookForm, setBookForm] = useState({ patient_id: urlPatientId, department: "", appointment_type: "in_person", reason: "" });
   // New resource form
   const [newResource, setNewResource] = useState({ modality_type: "mri", name: "", location: "", slot_duration_min: 30, buffer_min: 10, operating_start: "08:00", operating_end: "20:00" });
   // Config forms
@@ -111,7 +116,20 @@ export default function EnterpriseSchedulingPage() {
   const [newFollowUp, setNewFollowUp] = useState({ department: "", diagnosis_code: "", follow_up_days: 14, max_follow_ups: 3, is_active: true });
 
   // ── Load data ──
-  useEffect(() => { loadCalendars(); loadDoctorsAndPatients(); }, []);
+  useEffect(() => {
+    loadCalendars();
+    loadDoctorsAndPatients();
+    if (urlPatientId) {
+      setBookForm(prev => ({ ...prev, patient_id: urlPatientId }));
+    }
+  }, [urlPatientId]);
+
+  // Auto-select first calendar if only one exists
+  useEffect(() => {
+    if (calendars.length === 1 && !selectedCalendar) {
+      setSelectedCalendar(calendars[0]);
+    }
+  }, [calendars]);
 
   const loadDoctorsAndPatients = async () => {
     try {
@@ -146,7 +164,53 @@ export default function EnterpriseSchedulingPage() {
 
   const loadSlots = async () => {
     if (!selectedCalendar) return;
-    try { const s = await schedulingApi.getDoctorSlots(selectedCalendar.doctor_id, selectedDate); setSlots(s); } catch {}
+    setLoading(true);
+    try {
+      let s = await schedulingApi.getDoctorSlots(selectedCalendar.doctor_id, selectedDate);
+      if (s.length === 0) {
+        // Step 1: Check if cyclic schedules exist for this calendar
+        let cyclics: CyclicSchedule[] = [];
+        try {
+          cyclics = await schedulingApi.listCyclicSchedules(selectedCalendar.id);
+        } catch {}
+
+        // Step 2: If no cyclic schedules, auto-create Mon-Sat 9am-5pm
+        if (cyclics.length === 0) {
+          const days = ["mon", "tue", "wed", "thu", "fri", "sat"];
+          for (const day of days) {
+            try {
+              await schedulingApi.createCyclicSchedule({
+                calendar_id: selectedCalendar.id,
+                doctor_id: selectedCalendar.doctor_id,
+                day_of_week: day,
+                start_time: "09:00",
+                end_time: "17:00",
+                slot_duration_min: selectedCalendar.default_slot_duration_min || 15,
+                appointment_type: "in_person",
+                max_patients_per_slot: selectedCalendar.max_patients_per_slot || 1,
+                effective_from: new Date().toISOString().split("T")[0],
+                effective_until: null,
+              });
+            } catch {}
+          }
+        }
+
+        // Step 3: Auto-generate slots for 7 days from selected date
+        try {
+          const end = new Date(selectedDate);
+          end.setDate(end.getDate() + 7);
+          await schedulingApi.generateSlots({
+            calendar_id: selectedCalendar.id,
+            doctor_id: selectedCalendar.doctor_id,
+            start_date: selectedDate,
+            end_date: end.toISOString().split("T")[0],
+          });
+          s = await schedulingApi.getDoctorSlots(selectedCalendar.doctor_id, selectedDate);
+        } catch {}
+      }
+      setSlots(s);
+    } catch {}
+    setLoading(false);
   };
 
   const loadBookings = async () => {
@@ -170,10 +234,17 @@ export default function EnterpriseSchedulingPage() {
   const loadAnalytics = async () => {
     const today = new Date();
     const from = new Date(today); from.setDate(from.getDate() - 30);
+    const future = new Date(today); future.setDate(future.getDate() + 30);
     try {
-      const summary = await schedulingApi.getAnalyticsSummary(from.toISOString().split("T")[0], today.toISOString().split("T")[0]);
+      // Compute analytics for today and relevant dates
+      await schedulingApi.computeAnalytics(today.toISOString().split("T")[0]).catch(() => {});
+      // Also compute for a range of upcoming dates to capture future bookings
+      for (let d = new Date(today); d <= future; d.setDate(d.getDate() + 7)) {
+        await schedulingApi.computeAnalytics(d.toISOString().split("T")[0]).catch(() => {});
+      }
+      const summary = await schedulingApi.getAnalyticsSummary(from.toISOString().split("T")[0], future.toISOString().split("T")[0]);
       setAnalyticsSummary(summary);
-      const data = await schedulingApi.getAnalytics(from.toISOString().split("T")[0], today.toISOString().split("T")[0]);
+      const data = await schedulingApi.getAnalytics(from.toISOString().split("T")[0], future.toISOString().split("T")[0]);
       setAnalyticsData(data);
     } catch {}
   };
@@ -190,13 +261,23 @@ export default function EnterpriseSchedulingPage() {
   };
 
   const createCyclicSchedule = async () => {
-    if (!selectedCalendar) return;
+    if (!selectedCalendar || newCyclic.selectedDays.length === 0) return;
     setLoading(true);
     try {
-      await schedulingApi.createCyclicSchedule({
-        ...newCyclic, calendar_id: selectedCalendar.id, doctor_id: selectedCalendar.doctor_id,
-        effective_until: newCyclic.effective_until || null,
-      });
+      for (const day of newCyclic.selectedDays) {
+        await schedulingApi.createCyclicSchedule({
+          day_of_week: day,
+          start_time: newCyclic.start_time,
+          end_time: newCyclic.end_time,
+          slot_duration_min: newCyclic.slot_duration_min,
+          appointment_type: newCyclic.appointment_type,
+          max_patients_per_slot: newCyclic.max_patients_per_slot,
+          effective_from: newCyclic.effective_from,
+          effective_until: newCyclic.effective_until || null,
+          calendar_id: selectedCalendar.id,
+          doctor_id: selectedCalendar.doctor_id,
+        });
+      }
       setShowCyclicModal(false);
       const schedules = await schedulingApi.listCyclicSchedules(selectedCalendar.id);
       setCyclicSchedules(schedules);
@@ -222,12 +303,12 @@ export default function EnterpriseSchedulingPage() {
     if (!selectedSlot) return;
     setLoading(true);
     try {
-      await schedulingApi.createBooking({
+      const result = await schedulingApi.createBooking({
         slot_id: selectedSlot.id, doctor_id: selectedSlot.doctor_id,
         ...bookForm, booking_date: selectedSlot.slot_date,
       });
       setShowBookModal(false);
-      setSelectedSlot(null);
+      setBookingSuccess(result);
       loadSlots();
     } catch (e: any) { setError(e.message); }
     setLoading(false);
@@ -315,6 +396,222 @@ export default function EnterpriseSchedulingPage() {
         <div className="p-3 mb-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-200 flex items-center gap-2">
           <AlertTriangle size={16} /> {error}
           <button onClick={() => setError("")} className="ml-auto"><X size={14} /></button>
+        </div>
+      )}
+
+      {/* ═════════ QUICK BOOK WIZARD (when patient_id is in URL) ═════════ */}
+      {urlPatientId && !showBookModal && (
+        <div className="mb-6 bg-gradient-to-br from-indigo-50 via-white to-violet-50 border-2 border-indigo-100 rounded-3xl p-8 shadow-lg">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-500/30">
+              <Zap size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-indigo-900">Quick Book Appointment</h2>
+              <p className="text-sm text-indigo-600">
+                Booking for: <strong>{getPatientName(urlPatientId)}</strong>
+              </p>
+            </div>
+            <button onClick={() => { const url = new URL(window.location.href); url.searchParams.delete("patient_id"); window.history.replaceState({}, "", url.toString()); window.location.reload(); }} className="ml-auto text-sm text-slate-400 hover:text-red-500 transition-colors">
+              <X size={20} /> 
+            </button>
+          </div>
+
+          {/* Step 1: Select Doctor */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-bold text-indigo-900 mb-2 block">① Select Doctor</label>
+              {calendars.length === 0 ? (
+                <p className="text-amber-600 text-sm bg-amber-50 p-3 rounded-xl">No doctor calendars found. Please create one in the Configuration tab first.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {calendars.map(cal => (
+                    <button
+                      key={cal.id}
+                      onClick={() => { setSelectedCalendar(cal); schedulingApi.listCyclicSchedules(cal.id).then(setCyclicSchedules).catch(() => {}); }}
+                      className={`text-left p-4 rounded-2xl border-2 transition-all ${
+                        selectedCalendar?.id === cal.id
+                          ? "border-indigo-500 bg-indigo-50 ring-4 ring-indigo-100 shadow-md"
+                          : "border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold ${selectedCalendar?.id === cal.id ? "bg-indigo-600" : "bg-slate-400"}`}>
+                          <Stethoscope size={20} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-sm">{getDoctorName(cal.doctor_id)}</div>
+                          <div className="text-xs text-slate-500">{cal.department}</div>
+                        </div>
+                        {selectedCalendar?.id === cal.id && <Check size={20} className="ml-auto text-indigo-600" />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Step 2: Select Date & Slot */}
+            {selectedCalendar && (
+              <div>
+                <label className="text-sm font-bold text-indigo-900 mb-2 block">② Select Date & Time</label>
+                <div className="flex items-center gap-3 mb-3">
+                  <button onClick={prevDay} className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50"><ArrowLeft size={16} /></button>
+                  <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
+                    className="input-field w-auto font-semibold text-lg" />
+                  <button onClick={nextDay} className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50"><ArrowRight size={16} /></button>
+                  <span className="ml-auto text-xs text-slate-400">Pick a green slot below</span>
+                </div>
+
+                {slots.length === 0 ? (
+                  <div className="text-center py-8 bg-white rounded-2xl border border-dashed border-slate-300">
+                    <Clock size={32} className="mx-auto mb-2 text-slate-300" />
+                    <p className="text-slate-500 text-sm font-medium">No slots available for this date</p>
+                    <p className="text-slate-400 text-xs mt-1">Try generating slots or pick another date</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                    {slots.map(slot => (
+                      <button
+                        key={slot.id}
+                        disabled={slot.status !== "available"}
+                        onClick={() => {
+                          setSelectedSlot(slot);
+                          setBookForm(prev => ({ ...prev, patient_id: urlPatientId, department: selectedCalendar?.department || "" }));
+                        }}
+                        className={`p-3 rounded-xl border-2 text-center transition-all ${
+                          selectedSlot?.id === slot.id
+                            ? "border-indigo-600 bg-indigo-100 ring-4 ring-indigo-100 shadow-md scale-105"
+                            : slot.status === "available"
+                              ? "border-emerald-200 bg-emerald-50 hover:border-emerald-400 hover:shadow-sm cursor-pointer"
+                              : slot.status === "booked"
+                                ? "border-blue-200 bg-blue-50 opacity-60 cursor-not-allowed"
+                                : "border-slate-200 bg-slate-100 opacity-40 cursor-not-allowed"
+                        }`}
+                      >
+                        <div className="font-bold text-sm">{formatTime(slot.start_time)}</div>
+                        <div className="text-[10px] opacity-60">{formatTime(slot.end_time)}</div>
+                        {selectedSlot?.id === slot.id && <Check size={14} className="mx-auto mt-1 text-indigo-600" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 3: Confirm */}
+            {selectedSlot && (
+              <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 space-y-4">
+                <label className="text-sm font-bold text-indigo-900 block">③ Confirm Appointment</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="bg-indigo-50 p-3 rounded-xl">
+                    <div className="text-[10px] text-indigo-400 uppercase font-bold">Patient</div>
+                    <div className="font-bold text-indigo-900">{getPatientName(urlPatientId)}</div>
+                  </div>
+                  <div className="bg-indigo-50 p-3 rounded-xl">
+                    <div className="text-[10px] text-indigo-400 uppercase font-bold">Doctor</div>
+                    <div className="font-bold text-indigo-900">{getDoctorName(selectedCalendar?.doctor_id || "")}</div>
+                  </div>
+                  <div className="bg-indigo-50 p-3 rounded-xl">
+                    <div className="text-[10px] text-indigo-400 uppercase font-bold">Date</div>
+                    <div className="font-bold text-indigo-900">{selectedDate}</div>
+                  </div>
+                  <div className="bg-indigo-50 p-3 rounded-xl">
+                    <div className="text-[10px] text-indigo-400 uppercase font-bold">Time</div>
+                    <div className="font-bold text-indigo-900">{formatTime(selectedSlot.start_time)} – {formatTime(selectedSlot.end_time)}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="input-label">Appointment Type</label>
+                    <select className="input-field" value={bookForm.appointment_type} onChange={e => setBookForm(p => ({ ...p, appointment_type: e.target.value }))}>
+                      <option value="in_person">In-Person</option>
+                      <option value="teleconsultation">Teleconsultation</option>
+                      <option value="follow_up">Follow-Up</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="input-label">Reason (optional)</label>
+                    <input className="input-field" value={bookForm.reason} onChange={e => setBookForm(p => ({ ...p, reason: e.target.value }))} placeholder="e.g. General checkup" />
+                  </div>
+                </div>
+                <button
+                  onClick={bookSlot}
+                  disabled={loading}
+                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-lg hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-500/25 flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  {loading ? <Loader2 size={24} className="animate-spin" /> : <Check size={24} />}
+                  CONFIRM APPOINTMENT
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═════════ BOOKING SUCCESS SCREEN ═════════ */}
+      {bookingSuccess && (
+        <div className="mb-6 bg-gradient-to-br from-emerald-50 via-white to-green-50 border-2 border-emerald-200 rounded-3xl p-8 shadow-lg">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl shadow-emerald-500/30">
+              <Check size={40} className="text-white" />
+            </div>
+            <h2 className="text-2xl font-black text-emerald-900">Appointment Booked!</h2>
+            <p className="text-emerald-600 mt-1">The appointment has been confirmed successfully</p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
+              <div className="text-[10px] text-emerald-400 uppercase font-bold mb-1">Patient</div>
+              <div className="font-bold text-emerald-900 text-sm">{getPatientName(bookingSuccess.patient_id)}</div>
+            </div>
+            <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
+              <div className="text-[10px] text-emerald-400 uppercase font-bold mb-1">Doctor</div>
+              <div className="font-bold text-emerald-900 text-sm">{getDoctorName(bookingSuccess.doctor_id)}</div>
+            </div>
+            <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
+              <div className="text-[10px] text-emerald-400 uppercase font-bold mb-1">Date</div>
+              <div className="font-bold text-emerald-900 text-sm">{bookingSuccess.booking_date}</div>
+            </div>
+            <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
+              <div className="text-[10px] text-emerald-400 uppercase font-bold mb-1">Status</div>
+              <div className="font-bold text-emerald-900 text-sm flex items-center gap-2">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                {bookingSuccess.status?.toUpperCase() || "CONFIRMED"}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6">
+            <h3 className="font-bold text-emerald-800 text-sm mb-2">What happens next?</h3>
+            <ul className="text-sm text-emerald-700 space-y-1">
+              <li>✓ Appointment is <strong>CONFIRMED</strong> — patient can check in on the day</li>
+              <li>✓ Doctor will see this appointment in their calendar</li>
+              <li>✓ Staff can <strong>Check In</strong>, mark <strong>No Show</strong>, or <strong>Cancel</strong> from the Bookings tab</li>
+              <li>✓ View patient details and history from the Patient Profile</li>
+            </ul>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-3">
+            <button
+              onClick={() => { router.push(`/dashboard/patients/${bookingSuccess.patient_id}`); }}
+              className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-lg"
+            >
+              <User size={18} /> View Patient Profile
+            </button>
+            <button
+              onClick={() => { setBookingSuccess(null); setActiveTab("bookings"); loadBookings(); }}
+              className="flex-1 py-3 bg-white border-2 border-indigo-200 text-indigo-700 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-50 transition-all"
+            >
+              <Clock size={18} /> View All Bookings
+            </button>
+            <button
+              onClick={() => { setBookingSuccess(null); setSelectedSlot(null); }}
+              className="flex-1 py-3 bg-white border-2 border-emerald-200 text-emerald-700 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-50 transition-all"
+            >
+              <Plus size={18} /> Book Another
+            </button>
+          </div>
         </div>
       )}
 
@@ -516,6 +813,9 @@ export default function EnterpriseSchedulingPage() {
                     {["confirmed", "checked_in"].includes(b.status) && (
                       <button onClick={() => updateBookingStatus(b.id, "cancelled")} className="text-[10px] bg-red-100 text-red-700 px-2 py-1 rounded-lg hover:bg-red-200">Cancel</button>
                     )}
+                    <button onClick={() => router.push(`/dashboard/patients/${b.patient_id}`)} className="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded-lg hover:bg-blue-200 flex items-center gap-1">
+                      <User size={10} /> Profile
+                    </button>
                     {b.qr_code_data && (
                       <button className="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-lg" title="QR Slip">
                         <QrCode size={12} />
@@ -744,15 +1044,48 @@ export default function EnterpriseSchedulingPage() {
       {/* ═════════ MODAL: Cyclic Schedule ═════════ */}
       {showCyclicModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4">
-            <h2 className="font-bold text-lg flex items-center gap-2"><Repeat size={18} /> New Cyclic Schedule</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="input-label">Day of Week</label>
-                <select className="input-field" value={newCyclic.day_of_week} onChange={e => setNewCyclic(p => ({ ...p, day_of_week: e.target.value }))}>
-                  {["mon","tue","wed","thu","fri","sat","sun"].map(d => <option key={d} value={d}>{d.toUpperCase()}</option>)}
-                </select>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-5">
+            <h2 className="font-bold text-lg flex items-center gap-2"><Repeat size={18} className="text-indigo-600" /> Set Doctor Availability</h2>
+            
+            {/* Day Selection */}
+            <div>
+              <label className="input-label mb-2">Select Days</label>
+              <div className="flex gap-2 mb-2">
+                {["mon","tue","wed","thu","fri","sat","sun"].map(d => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setNewCyclic(p => ({
+                      ...p,
+                      selectedDays: p.selectedDays.includes(d)
+                        ? p.selectedDays.filter(x => x !== d)
+                        : [...p.selectedDays, d]
+                    }))}
+                    className={`w-12 h-12 rounded-xl font-bold text-sm transition-all ${
+                      newCyclic.selectedDays.includes(d)
+                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-105"
+                        : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    }`}
+                  >
+                    {d.toUpperCase()}
+                  </button>
+                ))}
               </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setNewCyclic(p => ({ ...p, selectedDays: ["mon","tue","wed","thu","fri","sat","sun"] }))} className="text-xs text-indigo-600 font-bold hover:underline">All Week</button>
+                <button type="button" onClick={() => setNewCyclic(p => ({ ...p, selectedDays: ["mon","tue","wed","thu","fri"] }))} className="text-xs text-indigo-600 font-bold hover:underline">Weekdays</button>
+                <button type="button" onClick={() => setNewCyclic(p => ({ ...p, selectedDays: ["mon","tue","wed","thu","fri","sat"] }))} className="text-xs text-indigo-600 font-bold hover:underline">Mon–Sat</button>
+                <button type="button" onClick={() => setNewCyclic(p => ({ ...p, selectedDays: ["sat","sun"] }))} className="text-xs text-indigo-600 font-bold hover:underline">Weekend</button>
+                <button type="button" onClick={() => setNewCyclic(p => ({ ...p, selectedDays: [] }))} className="text-xs text-red-500 font-bold hover:underline">Clear</button>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">{newCyclic.selectedDays.length} day(s) selected</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="input-label">Start Time</label><input type="time" className="input-field" value={newCyclic.start_time} onChange={e => setNewCyclic(p => ({ ...p, start_time: e.target.value }))} /></div>
+              <div><label className="input-label">End Time</label><input type="time" className="input-field" value={newCyclic.end_time} onChange={e => setNewCyclic(p => ({ ...p, end_time: e.target.value }))} /></div>
+              <div><label className="input-label">Slot Duration (min)</label><input type="number" className="input-field" value={newCyclic.slot_duration_min} onChange={e => setNewCyclic(p => ({ ...p, slot_duration_min: +e.target.value }))} /></div>
+              <div><label className="input-label">Patients/Slot</label><input type="number" className="input-field" value={newCyclic.max_patients_per_slot} onChange={e => setNewCyclic(p => ({ ...p, max_patients_per_slot: +e.target.value }))} /></div>
               <div>
                 <label className="input-label">Appointment Type</label>
                 <select className="input-field" value={newCyclic.appointment_type} onChange={e => setNewCyclic(p => ({ ...p, appointment_type: e.target.value }))}>
@@ -760,17 +1093,12 @@ export default function EnterpriseSchedulingPage() {
                   <option value="teleconsultation">Teleconsultation</option>
                 </select>
               </div>
-              <div><label className="input-label">Start Time</label><input type="time" className="input-field" value={newCyclic.start_time} onChange={e => setNewCyclic(p => ({ ...p, start_time: e.target.value }))} /></div>
-              <div><label className="input-label">End Time</label><input type="time" className="input-field" value={newCyclic.end_time} onChange={e => setNewCyclic(p => ({ ...p, end_time: e.target.value }))} /></div>
-              <div><label className="input-label">Slot Duration (min)</label><input type="number" className="input-field" value={newCyclic.slot_duration_min} onChange={e => setNewCyclic(p => ({ ...p, slot_duration_min: +e.target.value }))} /></div>
-              <div><label className="input-label">Patients/Slot</label><input type="number" className="input-field" value={newCyclic.max_patients_per_slot} onChange={e => setNewCyclic(p => ({ ...p, max_patients_per_slot: +e.target.value }))} /></div>
               <div><label className="input-label">Effective From</label><input type="date" className="input-field" value={newCyclic.effective_from} onChange={e => setNewCyclic(p => ({ ...p, effective_from: e.target.value }))} /></div>
-              <div><label className="input-label">Effective Until</label><input type="date" className="input-field" value={newCyclic.effective_until} onChange={e => setNewCyclic(p => ({ ...p, effective_until: e.target.value }))} /></div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setShowCyclicModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={createCyclicSchedule} disabled={loading} className="btn-primary flex items-center gap-1">
-                {loading ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Create
+              <button onClick={createCyclicSchedule} disabled={loading || newCyclic.selectedDays.length === 0} className="btn-primary flex items-center gap-1">
+                {loading ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Set Availability ({newCyclic.selectedDays.length} days)
               </button>
             </div>
           </div>

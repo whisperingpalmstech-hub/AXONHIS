@@ -51,7 +51,7 @@ class StockLedger(Base):
     quantity_change = Column(Numeric(12, 2), nullable=False)
     closing_balance = Column(Numeric(12, 2), nullable=False) 
     reference_id = Column(String(100), nullable=True)
-    performed_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=True)
+    performed_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
 
     item = relationship("InvItem")
     store = relationship("Store")

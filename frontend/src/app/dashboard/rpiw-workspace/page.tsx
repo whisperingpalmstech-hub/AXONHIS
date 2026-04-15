@@ -16,14 +16,20 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const rpiwApi = {
   getWorkspaceConfig: async (roleCode: string) => {
-    const res = await fetch(`${API}/api/v1/rpiw/workspace/${roleCode}`);
+    const token = localStorage.getItem("access_token");
+    const headers = { Authorization: `Bearer ${token}` };
+    const res = await fetch(`${API}/api/v1/rpiw/workspace/${roleCode}`, { headers });
+    if (!res.ok) throw new Error("Failed to load config");
     return res.json();
   },
   getActivityLogs: async (roleCode?: string) => {
+    const token = localStorage.getItem("access_token");
+    const headers = { Authorization: `Bearer ${token}` };
     const url = roleCode
       ? `${API}/api/v1/rpiw/activity-logs?role_code=${roleCode}&limit=20`
       : `${API}/api/v1/rpiw/activity-logs?limit=20`;
-    const res = await fetch(url);
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error("Failed to load logs");
     return res.json();
   },
 };

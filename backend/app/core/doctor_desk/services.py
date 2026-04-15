@@ -408,3 +408,16 @@ class AdvancedEMRService:
     async def get_vitals(self, visit_id: uuid.UUID) -> List[EMRConsultationVitals]:
         q = select(EMRConsultationVitals).where(EMRConsultationVitals.visit_id == visit_id)
         return list((await self.db.execute(q)).scalars().all())
+
+    # --- By Patient ID Helpers ---
+    async def get_complaints_by_patient(self, patient_id: uuid.UUID) -> List[ClinicalComplaint]:
+        q = select(ClinicalComplaint).where(ClinicalComplaint.patient_id == patient_id).order_by(desc(ClinicalComplaint.created_at))
+        return list((await self.db.execute(q)).scalars().all())
+
+    async def get_vitals_by_patient(self, patient_id: uuid.UUID) -> List[EMRConsultationVitals]:
+        q = select(EMRConsultationVitals).where(EMRConsultationVitals.patient_id == patient_id).order_by(desc(EMRConsultationVitals.created_at))
+        return list((await self.db.execute(q)).scalars().all())
+
+    async def get_diagnoses_by_patient(self, patient_id: uuid.UUID) -> List[DiagnosisRecord]:
+        q = select(DiagnosisRecord).where(DiagnosisRecord.patient_id == patient_id).order_by(desc(DiagnosisRecord.created_at))
+        return list((await self.db.execute(q)).scalars().all())

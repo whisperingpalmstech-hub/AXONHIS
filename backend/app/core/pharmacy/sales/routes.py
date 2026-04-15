@@ -43,3 +43,8 @@ async def populate_kit(req: KitAddRequest, db: DBSession, _: CurrentUser):
 async def list_sales(db: DBSession, _: CurrentUser, limit: int = 50):
     svc = WalkInSalesService(db)
     return await svc.get_recent_sales(limit)
+
+@router.get("/pharmacy/sales/patient/{patient_id}", response_model=List[SaleOut])
+async def get_patient_sales(patient_id: uuid.UUID, db: DBSession, _: CurrentUser):
+    svc = WalkInSalesService(db)
+    return await svc.get_patient_sales(patient_id)

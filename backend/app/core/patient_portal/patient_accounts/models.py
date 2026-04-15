@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from enum import StrEnum
 from sqlalchemy import String, ForeignKey, DateTime
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, backref
 
 from app.database import Base
 
@@ -26,4 +26,4 @@ class PatientAccount(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationship to Core Patient model
-    patient = relationship("Patient", backref="account", uselist=False)
+    patient = relationship("Patient", backref=backref("account", uselist=False, cascade="all, delete-orphan"), uselist=False)

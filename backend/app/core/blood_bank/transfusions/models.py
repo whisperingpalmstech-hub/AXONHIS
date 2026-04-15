@@ -28,7 +28,7 @@ class Transfusion(Base):
         UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="SET NULL"), nullable=True, index=True
     )
     blood_unit_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("blood_units.id", ondelete="RESTRICT"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("blood_units.id", ondelete="CASCADE"), nullable=False, index=True
     )
     transfusion_start_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False

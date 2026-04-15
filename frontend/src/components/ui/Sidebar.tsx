@@ -105,7 +105,7 @@ const NAV_GROUPS: NavGroup[] = [
     section: "Patients",
     icon: Icon.patients,
     children: [
-      { label: "Patient Registry", href: "/dashboard/patients" },
+      { label: "Patient Registration", href: "/dashboard/patients" },
       { label: "Encounters", href: "/dashboard/encounters" },
       { label: "Scheduling", href: "/dashboard/scheduling" },
     ],
@@ -304,7 +304,7 @@ function isItemVisible(item: { roles?: UserRole[] }, userRole: UserRole): boolea
 /* ─── Sidebar Component ──────────────────────────── */
 // Label → i18n key mapping for sidebar navigation
 const LABEL_I18N_MAP: Record<string, string> = {
-  "Dashboard": "nav.dashboard", "Patients": "nav.patients", "Patient Management": "nav.patients", "Patient Registry": "nav.patientRegistry",
+  "Dashboard": "nav.dashboard", "Patients": "nav.patients", "Patient Management": "nav.patients", "Patient Registration": "nav.patientRegistry",
   "Encounters": "nav.encounters", "Scheduling": "nav.scheduling", "Clinical Workspace": "nav.clinicalOps",
   "Doctor Desk": "nav.doctorDesk", "Outpatient (OPD)": "nav.opdVisits", "OPD Visits": "nav.opdVisits",
   "Smart Queue": "nav.smartQueue", "Nursing Triage": "nav.nursingTriage",

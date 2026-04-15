@@ -45,7 +45,7 @@ class LinenInventoryLedger(Base):
     __tablename__ = "linen_inventory_ledger"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    category_id = Column(UUID(as_uuid=True), ForeignKey("linen_categories.id", ondelete="RESTRICT"), nullable=False)
+    category_id = Column(UUID(as_uuid=True), ForeignKey("linen_categories.id", ondelete="CASCADE"), nullable=False)
     department_id = Column(String(50), nullable=False, index=True) # E.g., 'WARD-ICU', 'CSSD-MAIN' or 'LAUNDRY-MAIN'
     
     clean_quantity = Column(Integer, default=0, nullable=False)

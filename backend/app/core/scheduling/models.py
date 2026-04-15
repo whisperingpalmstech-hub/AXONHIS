@@ -160,7 +160,7 @@ class SlotBooking(Base):
 
     # Relationships
     slot = relationship("CalendarSlot", back_populates="bookings")
-    patient = relationship("Patient", backref="slot_bookings")
+    patient = relationship("Patient", backref=__import__('sqlalchemy.orm', fromlist=['backref']).backref("slot_bookings", cascade="all, delete-orphan"))
     doctor = relationship("User", foreign_keys=[doctor_id], backref="slot_bookings_as_doctor")
     reminders = relationship("AppointmentReminder", back_populates="booking", cascade="all, delete-orphan")
 

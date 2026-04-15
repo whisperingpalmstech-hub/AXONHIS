@@ -25,4 +25,4 @@ class PatientDocument(Base):
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationship to Core Patient model
-    patient = relationship("Patient", backref="documents")
+    patient = relationship("Patient", backref=__import__('sqlalchemy.orm', fromlist=['backref']).backref("documents", cascade="all, delete-orphan"))

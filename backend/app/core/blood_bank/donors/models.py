@@ -48,7 +48,7 @@ class BloodCollection(Base):
     )
     org_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
     donor_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("blood_donors.id", ondelete="RESTRICT"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("blood_donors.id", ondelete="CASCADE"), nullable=False, index=True
     )
     collection_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     collection_location: Mapped[str] = mapped_column(String(255), nullable=False)

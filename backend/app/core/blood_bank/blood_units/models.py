@@ -30,7 +30,7 @@ class BloodUnit(Base):
         UUID(as_uuid=True), ForeignKey("blood_components.id", ondelete="SET NULL"), nullable=True, index=True
     )
     collection_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("blood_collections.id", ondelete="RESTRICT"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("blood_collections.id", ondelete="CASCADE"), nullable=False, index=True
     )
     collection_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expiry_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

@@ -8,7 +8,7 @@ class PharmacyInventoryBatch(Base):
     __tablename__ = "pharmacy_inventory_batches"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    drug_id = Column(UUID(as_uuid=True), ForeignKey("medications.id", ondelete="RESTRICT"), nullable=False, index=True)
+    drug_id = Column(UUID(as_uuid=True), ForeignKey("medications.id", ondelete="CASCADE"), nullable=False, index=True)
     store_id = Column(String(50), nullable=False, index=True) # E.g. "MAIN", "ICU", "WARD"
     batch_number = Column(String(100), nullable=False, index=True)
     expiry_date = Column(Date, nullable=False, index=True)

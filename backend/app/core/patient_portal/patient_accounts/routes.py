@@ -26,8 +26,23 @@ async def register(data: PatientAccountCreate, db: DBSession) -> PatientAccountO
 async def search_patient(query: str, db: DBSession) -> dict:
     from app.core.patients.patients.models import Patient
     from sqlalchemy import or_
+    import uuid
     try:
-        stmt = select(Patient).where(or_(Patient.email == query, Patient.primary_phone == query))
+        query_uuid = None
+        try:
+            query_uuid = uuid.UUID(query)
+        except ValueError:
+            pass
+
+        conditions = [
+            Patient.email == query, 
+            Patient.primary_phone == query, 
+            Patient.patient_uuid == query
+        ]
+        if query_uuid:
+            conditions.append(Patient.id == query_uuid)
+
+        stmt = select(Patient).where(or_(*conditions))
         result = await db.execute(stmt)
         patient = result.scalars().first()
         

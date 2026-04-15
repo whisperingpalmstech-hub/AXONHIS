@@ -18,7 +18,7 @@ class OrderTemplate(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     order_type: Mapped[str] = mapped_column(String(30), nullable=False)
     created_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     is_public: Mapped[bool] = mapped_column(default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -56,7 +56,7 @@ class OrderSet(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     clinical_context: Mapped[str | None] = mapped_column(String(200), nullable=True)  # ER, ICU, General
     created_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     is_public: Mapped[bool] = mapped_column(default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

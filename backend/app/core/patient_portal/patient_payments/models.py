@@ -33,5 +33,5 @@ class PatientPayment(Base):
     payment_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
-    patient = relationship("Patient", backref="portal_payments")
+    patient = relationship("Patient", backref=__import__('sqlalchemy.orm', fromlist=['backref']).backref("portal_payments", cascade="all, delete-orphan"))
     invoice = relationship("Invoice", backref="portal_payments")

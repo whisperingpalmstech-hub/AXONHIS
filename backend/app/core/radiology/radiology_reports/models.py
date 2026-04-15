@@ -23,7 +23,7 @@ class RadiologyReport(Base):
     report_text: Mapped[str] = mapped_column(Text, nullable=False)
     clinical_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     conclusion: Mapped[str | None] = mapped_column(Text, nullable=True)
-    reported_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    reported_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     reported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     status: Mapped[str] = mapped_column(String(30), default="draft") # draft, provisional, validation_pending, final, amended
 
@@ -36,7 +36,7 @@ class RadiologyValidation(Base):
     __tablename__ = "radiology_validations"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     report_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("radiology_reports.id", ondelete="CASCADE"), nullable=False, index=True)
-    validated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    validated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     validated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     electronic_signature: Mapped[str] = mapped_column(String(255), nullable=False)
     comments: Mapped[str | None] = mapped_column(Text)
@@ -47,7 +47,7 @@ class RadiologyAmendmentLog(Base):
     __tablename__ = "radiology_amendment_logs"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     report_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("radiology_reports.id", ondelete="CASCADE"), nullable=False, index=True)
-    amended_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    amended_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     amended_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     reason: Mapped[str] = mapped_column(Text, nullable=False)
     previous_report_text: Mapped[str] = mapped_column(Text, nullable=False)

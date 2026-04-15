@@ -60,6 +60,15 @@ class OrderService:
             .order_by(Order.created_at.desc())
         )
         return list(result.scalars().all())
+
+    async def list_by_patient(self, patient_id: uuid.UUID) -> list[Order]:
+        result = await self.db.execute(
+            select(Order)
+            .where(Order.patient_id == patient_id)
+            .options(selectinload(Order.items))
+            .order_by(Order.created_at.desc())
+        )
+        return list(result.scalars().all())
     async def approve(self, order: Order, approved_by: uuid.UUID, notes: str | None = None) -> Order:
         """Approve an order — triggers task generation and billing."""
         if order.status != OrderStatus.PENDING_APPROVAL:

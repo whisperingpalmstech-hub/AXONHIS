@@ -25,7 +25,7 @@ class UserUpdate(BaseModel):
 
 class UserOut(BaseModel):
     id: uuid.UUID
-    email: EmailStr
+    email: str  # Use str instead of EmailStr to accept internal domains like .local
     first_name: str
     last_name: str
     full_name: str

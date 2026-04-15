@@ -26,7 +26,8 @@ export default function PatientRegister() {
         setPatientId(result.patient_id);
         setStep(2);
       } else {
-        setError(result.detail || "Patient not found in HIS. Please contact the hospital.");
+        const errDetail = typeof result.detail === 'string' ? result.detail : (Array.isArray(result.detail) ? result.detail[0].msg : "Patient not found in HIS. Please contact the hospital.");
+        setError(errDetail);
       }
     } catch (err) {
       setError("Search failed. Please ensure you are entering a valid email or ID registered at the hospital.");
@@ -56,7 +57,8 @@ export default function PatientRegister() {
         setSuccess("Account created successfully! Redirecting to login...");
         setTimeout(() => router.push("/login"), 2000);
       } else {
-        setError(result.detail || "Registration failed.");
+        const errDetail = typeof result.detail === 'string' ? result.detail : (Array.isArray(result.detail) ? result.detail[0].msg : "Registration failed.");
+        setError(errDetail);
       }
     } catch (err) {
       setError("Registration failed. Account might already exist.");
@@ -85,22 +87,24 @@ export default function PatientRegister() {
           </p>
         </div>
 
-        {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold mb-6 flex items-center gap-2 border border-red-100">
-            <span className="w-2 h-2 rounded-full bg-red-600"></span>
-            {error}
-          </div>
-        )}
+        <div className="min-h-[4rem] mb-2">
+          {error && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold flex items-center gap-2 border border-red-100">
+              <span className="w-2 h-2 rounded-full bg-red-600"></span>
+              {error}
+            </div>
+          )}
 
-        {success && (
-          <div className="bg-emerald-50 text-emerald-600 p-4 rounded-xl text-sm font-semibold mb-6 flex items-center gap-2 border border-emerald-100">
-            <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-            {success}
-          </div>
-        )}
+          {success && (
+            <div className="bg-emerald-50 text-emerald-600 p-4 rounded-xl text-sm font-semibold flex items-center gap-2 border border-emerald-100">
+              <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+              {success}
+            </div>
+          )}
+        </div>
 
         {step === 1 ? (
-          <form onSubmit={handleSearch} className="space-y-5">
+          <form key="search-form" onSubmit={handleSearch} className="space-y-5">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-1.5">Registered Email or Patient ID</label>
               <div className="relative">
@@ -128,7 +132,7 @@ export default function PatientRegister() {
             </button>
           </form>
         ) : (
-          <form onSubmit={handleRegister} className="space-y-5">
+          <form key="registration-form" onSubmit={handleRegister} className="space-y-5">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-1.5">Create Password</label>
               <div className="relative">

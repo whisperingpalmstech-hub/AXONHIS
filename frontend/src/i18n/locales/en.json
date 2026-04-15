@@ -78,7 +78,7 @@
         "Testcatalog,samples&": "Test catalog, samples",
         "Inventory,prescripti": "Inventory, prescriptions",
         "Invoices,payments&in": "Invoices, payments & insurance",
-        "PatientRegistry": "Patient Registry",
+        "PatientRegistry": "Patient Registration",
         "Encounters": "Encounters",
         "OrderManagement": "Order Management",
         "TaskQueue": "Task Queue",
@@ -107,7 +107,7 @@
     "nav": {
         "dashboard": "Dashboard",
         "patients": "Patients",
-        "patientRegistry": "Patient Registry",
+        "patientRegistry": "Patient Registration",
         "patientRegistration": "Patient Registration",
         "clinicalOps": "Clinical Workspace",
         "doctorDesk": "Doctor Desk",
@@ -200,7 +200,7 @@
         "cssd": "CSSD"
     },
     "patients": {
-        "title": "Patient Registry",
+        "title": "Patient Registration",
         "manageRecords": "Manage patient records and identities.",
         "registration": "Enterprise Patient Registration",
         "registrationSub": "AI-powered smart registration with OCR, voice commands, face recognition, and duplicate detection.",
@@ -1198,7 +1198,7 @@
         "laserSuite": "LASER SUITE",
         "blockOt": "Block Operating Theatre",
         "selectLivePatient": "Select Live Patient *",
-        "corePatientRegistry": "— Core Patient Registry —",
+        "corePatientRegistry": "— Core Patient Registration —",
         "selectOtRoom": "Select OT Room *",
         "availableSuites": "— Available Suites —",
         "primarySurgeon": "Primary Surgeon *",

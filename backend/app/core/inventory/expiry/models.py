@@ -24,8 +24,8 @@ class ExpiryTracking(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="CASCADE"), nullable=False, index=True)
-    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="RESTRICT"), nullable=False, index=True)
-    store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="RESTRICT"), nullable=True, index=True)
+    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="CASCADE"), nullable=False, index=True)
+    store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="CASCADE"), nullable=True, index=True)
     expiry_date = Column(DateTime(timezone=True), nullable=False, index=True)
     quantity = Column(Numeric(12, 2), nullable=False)
     status = Column(String(50), nullable=False, default="active")  # 'active', 'near_expiry', 'expired', 'consumed', 'disposed'
@@ -60,7 +60,7 @@ class ReturnToSupplier(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     return_number = Column(String(100), unique=True, nullable=False, index=True)
-    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="RESTRICT"), nullable=False)
+    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="CASCADE"), nullable=False)
     supplier_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     return_quantity = Column(Numeric(12, 2), nullable=False)
     return_reason = Column(Text, nullable=False)
@@ -78,8 +78,8 @@ class DiscountSale(Base):
     __tablename__ = "inv_discount_sales"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="RESTRICT"), nullable=False)
-    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="RESTRICT"), nullable=False)
+    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="CASCADE"), nullable=False)
+    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="CASCADE"), nullable=False)
     original_price = Column(Numeric(12, 2), nullable=False)
     discount_percentage = Column(Numeric(5, 2), nullable=False)
     discounted_price = Column(Numeric(12, 2), nullable=False)

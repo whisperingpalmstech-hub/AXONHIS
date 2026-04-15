@@ -70,7 +70,7 @@ class IpdAdmissionRecord(Base):
     visit_id = Column(String, nullable=True)
 
     bed_uuid = Column(
-        UUID(as_uuid=True), ForeignKey("beds.id", ondelete="RESTRICT"), nullable=False
+        UUID(as_uuid=True), ForeignKey("beds.id", ondelete="CASCADE"), nullable=False
     )
     admitting_doctor = Column(String, nullable=False)
 

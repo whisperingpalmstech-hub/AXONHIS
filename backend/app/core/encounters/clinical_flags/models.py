@@ -15,4 +15,4 @@ class ClinicalFlag(Base):
     flag_description = Column(String(500), nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
-    patient = relationship("Patient", backref="clinical_flags")
+    patient = relationship("Patient", backref=__import__('sqlalchemy.orm', fromlist=['backref']).backref("clinical_flags", cascade="all, delete-orphan"))

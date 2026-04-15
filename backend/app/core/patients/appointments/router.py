@@ -13,8 +13,8 @@ async def schedule_appointment(patient_id: uuid.UUID, data: AppointmentCreate, d
     service = AppointmentService(db)
     return await service.schedule_appointment(patient_id, data)
 
-@router.get("/{patient_id}", response_model=list[AppointmentOut])
-async def list_appointments(patient_id: uuid.UUID, db: DBSession, _: CurrentUser) -> list[AppointmentOut]:
+@router.get("/", response_model=list[AppointmentOut])
+async def list_appointments(patient_id: uuid.UUID = Query(...), db: DBSession = None, _: CurrentUser = None) -> list[AppointmentOut]:
     service = AppointmentService(db)
     return await service.list_patient_appointments(patient_id)
 

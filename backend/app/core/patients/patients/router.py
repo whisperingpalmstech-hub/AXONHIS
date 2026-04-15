@@ -57,6 +57,15 @@ async def update_patient(patient_id: uuid.UUID, data: PatientUpdate, db: DBSessi
         raise HTTPException(status_code=404, detail="Patient not found")
     return await service.update_patient(patient, data)
 
+@router.delete("/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_patient(patient_id: uuid.UUID, db: DBSession, user: CurrentUser):
+    service = PatientService(db, user)
+    patient = await service.get_patient_by_id(patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    await db.delete(patient)
+    await db.flush()
+
 @router.post("/detect-duplicates", status_code=status.HTTP_200_OK)
 async def detect_duplicates(data: DuplicateCheckRequest, db: DBSession, user: CurrentUser):
     """Check for duplicate records during registration workflow. Accepts JSON body."""

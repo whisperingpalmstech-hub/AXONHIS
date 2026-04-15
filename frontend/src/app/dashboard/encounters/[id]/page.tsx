@@ -298,6 +298,26 @@ export default function DoctorWorkspace() {
     if (!newLab.test_name) { alert("Enter test name."); return; }
     setSavingLab(true);
     try {
+      // 1. Create Core CPOE Order
+      await fetch(`${API}/api/v1/orders/`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          encounter_id: id,
+          patient_id: encounter.patient_id,
+          order_type: "LAB_ORDER",
+          priority: newLab.urgency.toUpperCase(),
+          items: [{
+            item_type: "lab_test",
+            item_name: newLab.test_name,
+            quantity: 1,
+            unit_price: 50.0 // Default placeholder price
+          }],
+          notes: newLab.notes
+        })
+      });
+
+      // 2. Save Clinical Note
       const content = `LAB ORDER:\nTest: ${newLab.test_name}\nUrgency: ${newLab.urgency}\nNotes: ${newLab.notes || "None"}`;
       await fetch(`${API}/api/v1/encounters/${id}/notes/`, {
         method: "POST",
@@ -339,6 +359,30 @@ export default function DoctorWorkspace() {
       }
 
       setSavingMed(true);
+      
+      // 2. Create Core CPOE Order
+      await fetch(`${API}/api/v1/orders/`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          encounter_id: id,
+          patient_id: encounter.patient_id,
+          order_type: "MEDICATION_ORDER",
+          priority: "ROUTINE",
+          items: [{
+            item_type: "medication",
+            item_name: newMed.medication_name,
+            quantity: 1,
+            dose: newMed.dosage,
+            frequency: newMed.frequency,
+            route: newMed.route,
+            unit_price: 20.0 // Default placeholder price
+          }],
+          notes: newMed.notes
+        })
+      });
+
+      // 3. Save Clinical Note
       const content = `MEDICATION ORDER:\nMedicine: ${newMed.medication_name}\nDosage: ${newMed.dosage}\nFrequency: ${newMed.frequency}\nRoute: ${newMed.route}\nNotes: ${newMed.notes || "None"}\nCDSS Status: ${safetyData.status}`;
       
       await fetch(`${API}/api/v1/encounters/${id}/notes/`, {

@@ -73,7 +73,7 @@ class LISTestOrder(Base):
         String(50), unique=True, nullable=False, index=True
     )
     patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id", ondelete="RESTRICT"),
+        UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"),
         nullable=False, index=True
     )
     visit_id: Mapped[uuid.UUID | None] = mapped_column(

@@ -43,5 +43,5 @@ class PortalAppointment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
-    patient = relationship("Patient", backref="portal_appointments_list")
+    patient = relationship("Patient", backref=__import__('sqlalchemy.orm', fromlist=['backref']).backref("portal_appointments_list", cascade="all, delete-orphan"))
     doctor = relationship("User", foreign_keys=[doctor_id], backref="portal_doctor_appointments")

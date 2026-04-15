@@ -70,7 +70,7 @@ class InsuranceClaim(Base):
     __tablename__ = "insurance_claims"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     invoice_id = Column(UUID(as_uuid=True), ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False, index=True)
-    provider_id = Column(UUID(as_uuid=True), ForeignKey("insurance_providers.id", ondelete="RESTRICT"), nullable=False)
+    provider_id = Column(UUID(as_uuid=True), ForeignKey("insurance_providers.id", ondelete="CASCADE"), nullable=False)
     
     claim_number = Column(String(100), unique=True, index=True)
     claim_amount = Column(Numeric(12, 2), nullable=False)

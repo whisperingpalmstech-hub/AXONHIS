@@ -8,10 +8,10 @@ from app.database import Base
 class BillingEntry(Base):
     __tablename__ = "billing_entries"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="RESTRICT"), nullable=False, index=True)
-    encounter_id = Column(UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="RESTRICT"), nullable=False, index=True)
-    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id", ondelete="RESTRICT"), nullable=True, index=True)
-    service_id = Column(UUID(as_uuid=True), ForeignKey("billing_services.id", ondelete="RESTRICT"), nullable=False, index=True)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
+    encounter_id = Column(UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="CASCADE"), nullable=False, index=True)
+    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), nullable=True, index=True)
+    service_id = Column(UUID(as_uuid=True), ForeignKey("billing_services.id", ondelete="CASCADE"), nullable=False, index=True)
     quantity = Column(Numeric(12, 2), nullable=False, default=1)
     unit_price = Column(Numeric(12, 2), nullable=False)
     total_price = Column(Numeric(12, 2), nullable=False)

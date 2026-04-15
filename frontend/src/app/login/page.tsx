@@ -154,6 +154,16 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => router.push("/forgot-password")}
+                  className="text-xs text-[var(--accent-primary)] hover:underline font-medium"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+
               <button
                 type="submit"
                 className="btn-primary w-full"
@@ -187,9 +197,6 @@ export default function LoginPage() {
         <div className="flex justify-center mt-6">
           <LanguageSelector />
         </div>
-        <p className="text-center text-xs text-[var(--text-secondary)] mt-4">
-          © 2026 Whispering Palms Tech Hub
-        </p>
       </div>
     </div>
   );

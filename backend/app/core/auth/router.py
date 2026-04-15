@@ -20,6 +20,7 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response, status
+from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
 from app.config import settings
@@ -180,6 +181,56 @@ async def update_preferences(data: dict, db: DBSession, user: CurrentUser) -> di
     """Update user preferences (like preferred_language)."""
     # Just acknowledging it for now, can be persisted in profile table later
     return {"message": "Preferences updated successfully"}
+
+
+# ── Forgot Password ──────────────────────────────────────────────────────
+import secrets
+import time
+
+_reset_tokens: dict[str, dict] = {}  # token -> {"user_id": ..., "expires": ...}
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+async def forgot_password(data: ForgotPasswordRequest, db: DBSession) -> dict:
+    """Check if email exists and generate a password reset token."""
+    service = AuthService(db)
+    user = await service.get_user_by_email(data.email)
+    if not user:
+        raise HTTPException(status_code=404, detail="This email is not registered in the system.")
+
+    token = secrets.token_urlsafe(32)
+    _reset_tokens[token] = {"user_id": str(user.id), "expires": time.time() + 3600}
+    return {
+        "message": "Email verified successfully.",
+        "reset_token": token,
+    }
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+async def reset_password(data: ResetPasswordRequest, db: DBSession) -> dict:
+    """Reset password using a valid reset token."""
+    token_data = _reset_tokens.get(data.token)
+    if not token_data or token_data["expires"] < time.time():
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    service = AuthService(db)
+    user = await service.get_user_by_id(uuid.UUID(token_data["user_id"]))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await service.reset_password(user, data.new_password)
+    del _reset_tokens[data.token]
+    return {"message": "Password has been reset successfully"}
 
 # ── Sessions ──────────────────────────────────────────────────────────────
 

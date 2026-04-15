@@ -13,8 +13,8 @@ class StockTransfer(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transfer_number = Column(String(100), unique=True, nullable=False, index=True)
-    from_store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="RESTRICT"), nullable=False, index=True)
-    to_store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="RESTRICT"), nullable=False, index=True)
+    from_store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="CASCADE"), nullable=False, index=True)
+    to_store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="CASCADE"), nullable=False, index=True)
     indent_id = Column(UUID(as_uuid=True), ForeignKey("inv_store_indents.id", ondelete="SET NULL"), nullable=True, index=True)
     status = Column(String(50), nullable=False, default="pending")  # 'pending', 'approved', 'in_transit', 'received', 'rejected', 'cancelled'
     requested_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
@@ -33,8 +33,8 @@ class StockTransferItem(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     transfer_id = Column(UUID(as_uuid=True), ForeignKey("inv_stock_transfers.id", ondelete="CASCADE"), nullable=False, index=True)
-    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="RESTRICT"), nullable=False)
-    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="RESTRICT"), nullable=False)
+    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="CASCADE"), nullable=False)
+    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="CASCADE"), nullable=False)
     requested_quantity = Column(Numeric(12, 2), nullable=False)
     approved_quantity = Column(Numeric(12, 2), nullable=True)
     shipped_quantity = Column(Numeric(12, 2), nullable=False, default=0)
@@ -51,8 +51,8 @@ class MovementReport(Base):
     report_type = Column(String(50), nullable=False)  # 'inter_store', 'receipt', 'issue', 'consumption'
     from_store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="SET NULL"), nullable=True)
     to_store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="SET NULL"), nullable=True)
-    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="RESTRICT"), nullable=False)
-    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="RESTRICT"), nullable=False)
+    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="CASCADE"), nullable=False)
+    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="CASCADE"), nullable=False)
     quantity = Column(Numeric(12, 2), nullable=False)
     movement_date = Column(DateTime(timezone=True), nullable=False)
     reference_type = Column(String(50), nullable=True)  # 'indent', 'issue', 'adjustment', 'scrap'

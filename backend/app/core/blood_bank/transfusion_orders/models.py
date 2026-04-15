@@ -38,7 +38,7 @@ class TransfusionOrder(Base):
         UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="SET NULL"), nullable=True, index=True
     )
     requested_component_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("blood_components.id", ondelete="RESTRICT"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("blood_components.id", ondelete="CASCADE"), nullable=False, index=True
     )
     units_requested: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     priority: Mapped[str] = mapped_column(String(50), default=TransfusionPriority.ROUTINE, nullable=False)
@@ -72,7 +72,7 @@ class BloodAllocation(Base):
         UUID(as_uuid=True), ForeignKey("transfusion_orders.id", ondelete="CASCADE"), nullable=False, index=True
     )
     blood_unit_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("blood_units.id", ondelete="RESTRICT"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("blood_units.id", ondelete="CASCADE"), nullable=False, index=True
     )
     allocated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False

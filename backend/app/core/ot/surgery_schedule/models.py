@@ -33,10 +33,10 @@ class SurgerySchedule(Base):
         UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="CASCADE"), nullable=False, index=True
     )
     procedure_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("surgical_procedures.id", ondelete="RESTRICT"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("surgical_procedures.id", ondelete="CASCADE"), nullable=False, index=True
     )
     operating_room_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("operating_rooms.id", ondelete="RESTRICT"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("operating_rooms.id", ondelete="CASCADE"), nullable=False, index=True
     )
     scheduled_start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     scheduled_end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

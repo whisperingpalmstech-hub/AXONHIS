@@ -102,7 +102,7 @@ class CSSDDispatch(Base):
     __tablename__ = "cssd_dispatches"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    set_id = Column(UUID(as_uuid=True), ForeignKey("cssd_instrument_sets.id", ondelete="RESTRICT"), nullable=False)
+    set_id = Column(UUID(as_uuid=True), ForeignKey("cssd_instrument_sets.id", ondelete="CASCADE"), nullable=False)
     cycle_id = Column(UUID(as_uuid=True), ForeignKey("cssd_sterilization_cycles.id", ondelete="SET NULL"), nullable=True)
     destination_department = Column(String(100), nullable=False)  # e.g. 'OT-1', 'ER'
     dispatched_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

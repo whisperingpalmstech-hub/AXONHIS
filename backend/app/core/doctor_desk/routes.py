@@ -325,3 +325,18 @@ async def add_consultation_vitals(data: EMRConsultationVitalsCreate, db: DBSessi
 async def get_consultation_vitals(visit_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     svc = AdvancedEMRService(db)
     return await svc.get_vitals(visit_id)
+
+@router.get("/advanced/vitals/patient/{patient_id}", response_model=List[EMRConsultationVitalsOut])
+async def get_patient_vitals(patient_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    svc = AdvancedEMRService(db)
+    return await svc.get_vitals_by_patient(patient_id)
+
+@router.get("/advanced/complaints/patient/{patient_id}", response_model=List[ClinicalComplaintOut])
+async def get_patient_complaints(patient_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    svc = AdvancedEMRService(db)
+    return await svc.get_complaints_by_patient(patient_id)
+
+@router.get("/advanced/diagnoses/patient/{patient_id}", response_model=List[DiagnosisRecordOut])
+async def get_patient_diagnoses(patient_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    svc = AdvancedEMRService(db)
+    return await svc.get_diagnoses_by_patient(patient_id)

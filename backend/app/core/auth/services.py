@@ -321,6 +321,14 @@ class AuthService:
         await self.db.flush()
         return True
 
+    async def reset_password(self, user: User, new_password: str) -> None:
+        """Force-reset password without verifying old password (for forgot-password flow)."""
+        user.password_hash = hash_password(new_password)
+        user.failed_login_attempts = 0
+        user.locked_until = None
+        user.status = UserStatus.ACTIVE
+        await self.db.flush()
+
     # ── Role Management ───────────────────────────────────────────────────
 
     async def get_all_roles(self) -> list[Role]:

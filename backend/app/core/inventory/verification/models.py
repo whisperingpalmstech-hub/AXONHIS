@@ -13,7 +13,7 @@ class VerificationSchedule(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     schedule_number = Column(String(100), unique=True, nullable=False, index=True)
-    store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="RESTRICT"), nullable=True, index=True)
+    store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="CASCADE"), nullable=True, index=True)
     verification_type = Column(String(50), nullable=False)  # 'full', 'partial', 'category_based'
     scheduled_date = Column(DateTime(timezone=True), nullable=False)
     status = Column(String(50), nullable=False, default="scheduled")  # 'scheduled', 'in_progress', 'completed', 'cancelled'
@@ -29,8 +29,8 @@ class VerificationItem(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     schedule_id = Column(UUID(as_uuid=True), ForeignKey("inv_verification_schedules.id", ondelete="CASCADE"), nullable=False, index=True)
-    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="RESTRICT"), nullable=False)
-    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="RESTRICT"), nullable=False)
+    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="CASCADE"), nullable=False)
+    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="CASCADE"), nullable=False)
     expected_quantity = Column(Numeric(12, 2), nullable=False)
     verified_quantity = Column(Numeric(12, 2), nullable=True)
     variance = Column(Numeric(12, 2), nullable=True)

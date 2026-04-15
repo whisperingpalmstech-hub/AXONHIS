@@ -3,7 +3,7 @@ from typing import Optional
 import uuid
 from sqlalchemy import Column, String, DateTime, Text, JSON, ForeignKey, Index, Numeric
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 
 from app.database import Base
 
@@ -31,7 +31,7 @@ class MdLongitudinalRecordIndex(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
-    patient = relationship("Patient", backref="longitudinal_records")
+    patient = relationship("Patient", backref=backref("longitudinal_records", cascade="all, delete-orphan"))
     encounter = relationship("MdEncounter", backref="longitudinal_records")
 
     __table_args__ = (
@@ -59,7 +59,7 @@ class MdPatientTimeline(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    patient = relationship("Patient", backref="timeline_events")
+    patient = relationship("Patient", backref=backref("timeline_events", cascade="all, delete-orphan"))
     encounter = relationship("MdEncounter", backref="timeline_events")
 
     __table_args__ = (
@@ -85,7 +85,7 @@ class MdRecordSearchCache(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    patient = relationship("Patient", backref="search_cache")
+    patient = relationship("Patient", backref=backref("search_cache", cascade="all, delete-orphan"))
 
     __table_args__ = (
         Index('idx_cache_patient_key', 'patient_id', 'search_key'),

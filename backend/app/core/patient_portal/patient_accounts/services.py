@@ -35,12 +35,12 @@ class PatientAccountService:
             return False
 
     @staticmethod
-    async def get_account_by_id(db: AsyncSession, patient_id: uuid.UUID) -> dict | None:
+    async def get_account_by_id(db: AsyncSession, account_id: uuid.UUID) -> dict | None:
         from app.core.patients.patients.models import Patient
         query = (
             select(PatientAccount, Patient.first_name, Patient.last_name)
             .join(Patient, PatientAccount.patient_id == Patient.id)
-            .where(PatientAccount.patient_id == patient_id)
+            .where(PatientAccount.id == account_id)
         )
         result = await db.execute(query)
         row = result.first()

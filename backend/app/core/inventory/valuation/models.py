@@ -13,7 +13,7 @@ class StockValuation(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     valuation_number = Column(String(100), unique=True, nullable=False, index=True)
-    store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="RESTRICT"), nullable=True, index=True)
+    store_id = Column(UUID(as_uuid=True), ForeignKey("inv_stores.id", ondelete="CASCADE"), nullable=True, index=True)
     valuation_method = Column(String(50), nullable=False)  # 'fifo', 'lifo', 'moving_average', 'weighted_average'
     valuation_date = Column(DateTime(timezone=True), nullable=False, index=True)
     total_value = Column(Numeric(12, 2), nullable=False)
@@ -28,8 +28,8 @@ class StockValuationItem(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     valuation_id = Column(UUID(as_uuid=True), ForeignKey("inv_stock_valuations.id", ondelete="CASCADE"), nullable=False, index=True)
-    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="RESTRICT"), nullable=False)
-    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="RESTRICT"), nullable=False)
+    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="CASCADE"), nullable=False)
+    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="CASCADE"), nullable=False)
     quantity = Column(Numeric(12, 2), nullable=False)
     unit_cost = Column(Numeric(12, 2), nullable=False)
     total_cost = Column(Numeric(12, 2), nullable=False)
@@ -54,8 +54,8 @@ class StockAdjustment(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     adjustment_number = Column(String(100), unique=True, nullable=False, index=True)
-    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="RESTRICT"), nullable=False)
-    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="RESTRICT"), nullable=False)
+    item_id = Column(UUID(as_uuid=True), ForeignKey("inv_items.id", ondelete="CASCADE"), nullable=False)
+    batch_record_id = Column(UUID(as_uuid=True), ForeignKey("inv_batch_records.id", ondelete="CASCADE"), nullable=False)
     adjustment_type = Column(String(50), nullable=False)  # 'positive', 'negative'
     quantity = Column(Numeric(12, 2), nullable=False)
     reason = Column(Text, nullable=False)

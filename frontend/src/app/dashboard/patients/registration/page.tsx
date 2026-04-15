@@ -7,7 +7,7 @@ import {
   Droplets, Activity, Weight, Heart, FileText, Phone, Mail, Shield,
   Mic, MicOff, Camera, CreditCard, Upload, Bell, MapPin, ScanLine,
   Sparkles, Globe, QrCode, Send, X, ChevronDown, Loader2, Brain,
-  Eye, Fingerprint, Zap
+  Eye, Fingerprint, Zap, Edit, UserCheck, Calendar
 } from "lucide-react";
 import {
   registrationApi,
@@ -29,6 +29,34 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9500";
 export default function EnterpriseRegistrationPage() {
   const router = useRouter();
   const { t } = useTranslation();
+
+  // ── Fix: Patch DOM methods to prevent browser-extension-induced React crashes ──
+  useEffect(() => {
+    const origRemoveChild = Node.prototype.removeChild;
+    // @ts-ignore
+    Node.prototype.removeChild = function <T extends Node>(child: T): T {
+      if (child.parentNode !== this) {
+        console.warn("[DOM Patch] removeChild: node is not a child — suppressed");
+        return child;
+      }
+      return origRemoveChild.call(this, child) as T;
+    };
+
+    const origInsertBefore = Node.prototype.insertBefore;
+    // @ts-ignore
+    Node.prototype.insertBefore = function <T extends Node>(newNode: T, refNode: Node | null): T {
+      if (refNode && refNode.parentNode !== this) {
+        console.warn("[DOM Patch] insertBefore: ref node is not a child — suppressed");
+        return newNode;
+      }
+      return origInsertBefore.call(this, newNode, refNode) as T;
+    };
+
+    return () => {
+      Node.prototype.removeChild = origRemoveChild;
+      Node.prototype.insertBefore = origInsertBefore;
+    };
+  }, []);
 
   // ── Core form state ──
   const [formData, setFormData] = useState({
@@ -72,6 +100,9 @@ export default function EnterpriseRegistrationPage() {
   // ── Feature 4: Face Recognition ──
   const [faceResult, setFaceResult] = useState<FaceCheckInResult | null>(null);
   const faceInputRef = useRef<HTMLInputElement>(null);
+  const [facePhotoFile, setFacePhotoFile] = useState<File | null>(null);
+  const [facePhotoPreview, setFacePhotoPreview] = useState<string | null>(null);
+  const faceEnrollRef = useRef<HTMLInputElement>(null);
 
   // ── Feature 5: Duplicate Detection ──
   const [duplicateResult, setDuplicateResult] = useState<DuplicateCheckResult | null>(null);
@@ -91,8 +122,27 @@ export default function EnterpriseRegistrationPage() {
   const [notifSent, setNotifSent] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    // Validate DOB: no future dates
+    if (name === "date_of_birth" && value) {
+      const selected = new Date(value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selected > today) {
+        setError("Date of birth cannot be in the future.");
+        return;
+      }
+    }
+    // Validate emergency phone: only digits, max 10
+    if (name === "emergency_contact_phone") {
+      setFormData(prev => ({ ...prev, [name]: value.replace(/\D/g, '').substring(0, 10) }));
+      return;
+    }
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  // Today's date for max DOB constraint
+  const todayStr = new Date().toISOString().split('T')[0];
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Feature 5: Auto Duplicate Detection
@@ -152,25 +202,83 @@ export default function EnterpriseRegistrationPage() {
     setAiLoading(false);
   };
 
+  // ── AI Input Focus Fix ──
+  const aiInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (activeMode === "ai" && aiSession && aiInputRef.current) {
+      aiInputRef.current.focus();
+    }
+  }, [aiSession?.current_step, activeMode]);
+
   const submitAIStep = async () => {
     if (!aiSession || !aiAnswer.trim()) return;
-    setAiLoading(true);
     const fieldMap = ["name", "dob", "gender", "mobile", "email", "reason_for_visit"];
     const fieldName = fieldMap[aiSession.current_step - 1] || "unknown";
+
+    // Validate name: must have at least 2 characters
+    if (fieldName === "name" && aiAnswer.trim().length < 2) {
+      setError("Please enter at least a first name (minimum 2 characters).");
+      return;
+    }
+
+    // Validate DOB: no future dates
+    if (fieldName === "dob" && aiAnswer.trim().toLowerCase() !== "skip") {
+      const dobDate = new Date(aiAnswer.trim());
+      if (isNaN(dobDate.getTime())) {
+        setError("Please enter a valid date (YYYY-MM-DD format).");
+        return;
+      }
+      if (dobDate > new Date()) {
+        setError("Date of birth cannot be in the future.");
+        return;
+      }
+    }
+
+    if (fieldName === "mobile" && aiAnswer.trim().toLowerCase() !== "skip") {
+      const numericAnswer = aiAnswer.replace(/\D/g, '');
+      if (numericAnswer.length !== 10) {
+        setError("Please enter exactly 10 digits for the phone number.");
+        return;
+      }
+    }
+
+    // Validate email format
+    if (fieldName === "email" && aiAnswer.trim().toLowerCase() !== "skip") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(aiAnswer.trim())) {
+        setError("Please enter a valid email address.");
+        return;
+      }
+    }
+
+    setAiLoading(true);
+    setError("");
     try {
       const result = await registrationApi.aiStep(aiSession.id, fieldName, aiAnswer.trim());
       setAiSession(result);
-      setAiAnswer("");
+
       // Auto-populate form
       if (fieldName === "name") {
         const parts = aiAnswer.trim().split(/\s+/);
-        setFormData(p => ({ ...p, first_name: parts[0] || "", last_name: parts.slice(1).join(" ") || "" }));
-      } else if (fieldName === "dob") setFormData(p => ({ ...p, date_of_birth: aiAnswer.trim() }));
-      else if (fieldName === "gender") setFormData(p => ({ ...p, gender: aiAnswer.trim() }));
-      else if (fieldName === "mobile") setFormData(p => ({ ...p, primary_phone: aiAnswer.trim() }));
-      else if (fieldName === "email") setFormData(p => ({ ...p, email: aiAnswer.trim() }));
-      else if (fieldName === "reason_for_visit") setFormData(p => ({ ...p, reason_for_visit: aiAnswer.trim() }));
-    } catch (e: any) { setError(e.message); }
+        const firstName = parts[0] || "";
+        const lastName = parts.slice(1).join(" ") || firstName;
+        setFormData(p => ({ ...p, first_name: firstName, last_name: lastName }));
+      } else if (fieldName === "dob") {
+        setFormData(p => ({ ...p, date_of_birth: aiAnswer.trim() }));
+      } else if (fieldName === "gender") {
+        setFormData(p => ({ ...p, gender: aiAnswer.trim() }));
+      } else if (fieldName === "mobile") {
+        setFormData(p => ({ ...p, primary_phone: aiAnswer.trim() }));
+      } else if (fieldName === "email") {
+        setFormData(p => ({ ...p, email: aiAnswer.trim() }));
+      } else if (fieldName === "reason_for_visit") {
+        setFormData(p => ({ ...p, reason_for_visit: aiAnswer.trim() }));
+      }
+
+      setAiAnswer("");
+    } catch (e: any) {
+      setError(e.message);
+    }
     setAiLoading(false);
   };
 
@@ -258,8 +366,57 @@ export default function EnterpriseRegistrationPage() {
   // ═══════════════════════════════════════════════════════════════════════════
   // Main form submit (manual mode)
   // ═══════════════════════════════════════════════════════════════════════════
+  // Handle face photo for enrollment during registration
+  const handleFaceEnroll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFacePhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setFacePhotoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // ── Strict Validations ──
+    if (!formData.first_name.trim() || formData.first_name.trim().length < 2) {
+      setError("First name must be at least 2 characters."); return;
+    }
+    if (!formData.last_name.trim() || formData.last_name.trim().length < 2) {
+      setError("Last name must be at least 2 characters."); return;
+    }
+    if (!formData.date_of_birth) {
+      setError("Date of birth is required."); return;
+    }
+    const dobDate = new Date(formData.date_of_birth);
+    if (dobDate > new Date()) {
+      setError("Date of birth cannot be in the future."); return;
+    }
+    if (dobDate.getFullYear() < 1900) {
+      setError("Date of birth year must be 1900 or later."); return;
+    }
+    if (!formData.gender) {
+      setError("Gender is required."); return;
+    }
+    if (!formData.primary_phone || formData.primary_phone.length !== 10) {
+      setError("Phone number must be exactly 10 digits."); return;
+    }
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setError("Please enter a valid email address."); return;
+    }
+    if (formData.emergency_contact_phone && formData.emergency_contact_phone.length > 0 && formData.emergency_contact_phone.length !== 10) {
+      setError("Emergency contact phone must be exactly 10 digits."); return;
+    }
+
+    // ── Strict Duplicate Blocking ──
+    if (duplicateResult?.has_duplicates && duplicateResult.matches.some(m => m.confidence_score >= 90)) {
+      setError("A patient with the same name and date of birth already exists. Duplicate registration is not allowed.");
+      return;
+    }
+    if (duplicateResult?.has_duplicates && !window.confirm("A similar patient record was found. Are you absolutely sure this is a new patient?")) {
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -302,6 +459,10 @@ export default function EnterpriseRegistrationPage() {
       promises.push(
         registrationApi.generateHealthCard(patient.id).then(card => setHealthCard(card)).catch(() => {})
       );
+      // Enroll face photo if captured
+      if (facePhotoFile) {
+        promises.push(registrationApi.faceEnroll(patient.id, facePhotoFile).catch(() => {}));
+      }
       // Send Notifications
       const channels = Object.entries(notifChannels).filter(([, v]) => v).map(([k]) => k);
       if (channels.length > 0) {
@@ -439,12 +600,20 @@ export default function EnterpriseRegistrationPage() {
               )}
             </div>
           </div>
-          <button
-            onClick={() => createdPatientId && router.push(`/dashboard/patients/${createdPatientId}`)}
-            className="btn-primary mt-4 flex items-center gap-2"
-          >
-            View Patient Profile <ArrowRight size={16} />
-          </button>
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => createdPatientId && router.push(`/dashboard/patients/${createdPatientId}`)}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <ArrowLeft size={16} /> View Patient Profile
+            </button>
+            <button
+              onClick={() => createdPatientId && router.push(`/dashboard/scheduling?patient_id=${createdPatientId}`)}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Calendar size={16} /> Book Appointment <ArrowRight size={16} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -468,59 +637,96 @@ export default function EnterpriseRegistrationPage() {
               </div>
               <div className="p-6">
                 {aiSession ? (
-                  <div className="space-y-4">
-                    {/* Progress bar */}
-                    <div className="w-full bg-slate-100 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all"
-                        style={{ width: `${(aiSession.current_step / aiSession.total_steps) * 100}%` }}
-                      />
-                    </div>
-                    {/* Collected data */}
-                    {Object.keys(aiSession.collected_data).length > 0 && (
-                      <div className="bg-slate-50 rounded-xl p-3 space-y-1">
-                        {Object.entries(aiSession.collected_data).map(([k, v]) => (
-                          <div key={k} className="flex items-center gap-2 text-sm">
-                            <Check size={14} className="text-green-500" />
-                            <span className="text-slate-500 capitalize">{k.replace(/_/g, " ")}:</span>
-                            <strong>{v}</strong>
-                          </div>
-                        ))}
+                  <div className="space-y-6" translate="no">
+                    {/* 1. Progress Bar (Always Present) */}
+                    <div className="px-1">
+                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-indigo-500 h-full transition-all duration-700 ease-out"
+                          style={{ width: `${(aiSession.current_step / aiSession.total_steps) * 100}%` }}
+                        />
                       </div>
-                    )}
-                    {/* Current question */}
-                    {aiSession.next_question ? (
-                      <>
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                          <p className="text-blue-800 font-medium flex items-center gap-2">
-                            <Sparkles size={16} className="text-purple-500" />
-                            {aiSession.next_question}
-                          </p>
+                    </div>
+
+                    {/* 2. Collected Data Area (Stable Container) */}
+                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 min-h-[40px]">
+                      {Object.keys(aiSession.collected_data).length === 0 ? (
+                        <p className="text-xs text-slate-400 italic">Information will appear here as you answer...</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {Object.entries(aiSession.collected_data).map(([k, v]) => (
+                            <div key={`cdata-${k}`} className="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-100 text-sm shadow-sm group">
+                              <div className="w-5 h-5 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500 flex-shrink-0">
+                                <Check size={12} />
+                              </div>
+                              <div className="truncate flex-1">
+                                <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">{k.replace(/_/g, " ")}</span>
+                                <span className="font-semibold text-slate-700">{String(v)}</span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <div className="flex gap-2">
-                          <input
-                            value={aiAnswer}
-                            onChange={e => setAiAnswer(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && submitAIStep()}
-                            className="input-field flex-1"
-                            placeholder="Type your answer..."
-                            autoFocus
-                          />
-                          <button onClick={submitAIStep} disabled={aiLoading} className="btn-primary flex items-center gap-2">
-                            {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-                            Next
+                      )}
+                    </div>
+
+                    {/* 3. Main Action Area */}
+                    <div className="relative min-h-[160px]">
+                      {aiSession.next_question ? (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                          <div className="bg-white border-2 border-indigo-50 rounded-2xl p-6 shadow-sm">
+                            <h3 className="text-indigo-900 font-bold text-lg flex items-center gap-3">
+                              <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Sparkles size={20} /></div>
+                              {aiSession.next_question}
+                            </h3>
+                          </div>
+
+                          <div className="flex flex-col md:flex-row gap-3">
+                            <input
+                              ref={aiInputRef}
+                              key={`ai-input-${aiSession.current_step}`}
+                              value={aiAnswer}
+                              onChange={e => setAiAnswer(e.target.value)}
+                              onKeyDown={e => e.key === "Enter" && submitAIStep()}
+                              className="input-field flex-1 py-4 px-6 text-lg"
+                              placeholder="Type your answer..."
+                              autoComplete="off"
+                            />
+                            <div className="flex gap-2">
+                              <button onClick={() => { setAiAnswer("skip"); submitAIStep(); }} type="button" disabled={aiLoading} className="btn-secondary px-6">
+                                Skip
+                              </button>
+                              <button
+                                onClick={submitAIStep}
+                                type="button"
+                                disabled={aiLoading}
+                                className="btn-primary px-8 flex items-center gap-2"
+                              >
+                                {aiLoading ? <Loader2 size={20} className="animate-spin" /> : <ArrowRight size={20} />}
+                                Next
+                              </button>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => setAiSession(prev => prev ? { ...prev, current_step: Math.max(1, prev.current_step - 1) } : prev)}
+                            type="button"
+                            disabled={aiLoading || aiSession.current_step <= 1}
+                            className={`text-slate-400 hover:text-indigo-600 text-sm font-bold flex items-center gap-2 transition-colors ${aiSession.current_step <= 1 ? "invisible" : "visible"}`}
+                          >
+                            <ArrowLeft size={16} /> Go back
                           </button>
                         </div>
-                      </>
-                    ) : aiSession.status === "pending_review" ? (
-                      <div className="text-center space-y-3">
-                        <p className="text-green-700 font-semibold">✅ All questions answered! Review and complete registration.</p>
-                        <button onClick={completeAISession} disabled={aiLoading} className="btn-primary mx-auto flex items-center gap-2">
-                          {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                          Complete Registration
-                        </button>
-                      </div>
-                    ) : null}
+                      ) : aiSession.status === "pending_review" ? (
+                        <div className="bg-indigo-900 text-white rounded-3xl p-10 text-center shadow-2xl animate-in zoom-in-95">
+                          <Check size={40} className="mx-auto mb-4" />
+                          <h2 className="text-2xl font-black mb-2">Information Complete</h2>
+                          <button onClick={completeAISession} disabled={aiLoading} className="w-full py-4 bg-white text-indigo-900 rounded-2xl font-black text-lg mt-6 shadow-xl flex items-center justify-center gap-3">
+                            {aiLoading ? <Loader2 size={24} className="animate-spin text-indigo-600" /> : <UserCheck size={24} />}
+                            COMPLETE REGISTRATION
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -709,9 +915,15 @@ export default function EnterpriseRegistrationPage() {
                       <h2 className="text-lg font-semibold">{t("patients.demographics")}</h2>
                     </div>
                     <div className="card-body grid grid-cols-2 gap-4">
-                      <div><label className="input-label">{t("patients.firstName")} *</label><input name="first_name" className="input-field" required value={formData.first_name} onChange={handleChange} /></div>
-                      <div><label className="input-label">{t("patients.lastName")} *</label><input name="last_name" className="input-field" required value={formData.last_name} onChange={handleChange} /></div>
-                      <div><label className="input-label">{t("patients.dateOfBirth")} *</label><input type="date" name="date_of_birth" className="input-field" required value={formData.date_of_birth} onChange={handleChange} /></div>
+                      <div><label className="input-label">{t("patients.firstName")} *</label><input name="first_name" className="input-field" required minLength={2} value={formData.first_name} onChange={handleChange} placeholder="Min 2 characters" /></div>
+                      <div><label className="input-label">{t("patients.lastName")} *</label><input name="last_name" className="input-field" required minLength={2} value={formData.last_name} onChange={handleChange} placeholder="Min 2 characters" /></div>
+                      <div>
+                        <label className="input-label">{t("patients.dateOfBirth")} *</label>
+                        <input type="date" name="date_of_birth" className="input-field" required value={formData.date_of_birth} onChange={handleChange} max={todayStr} min="1900-01-01" />
+                        {formData.date_of_birth && new Date(formData.date_of_birth) > new Date() && (
+                          <p className="text-red-500 text-xs mt-1">⚠ Date of birth cannot be in the future</p>
+                        )}
+                      </div>
                       <div>
                         <label className="input-label">{t("patients.gender")} *</label>
                         <select name="gender" className="input-field" value={formData.gender} onChange={handleChange} required>
@@ -721,12 +933,41 @@ export default function EnterpriseRegistrationPage() {
                           <option value="Other">{t("patients.other")}</option>
                         </select>
                       </div>
-                      <div><label className="input-label flex items-center gap-1"><Phone size={13} /> {t("patients.phone")} *</label><input type="tel" name="primary_phone" className="input-field" value={formData.primary_phone} onChange={handleChange} placeholder="+91 98765 43210" /></div>
+                      <div>
+                        <label className="input-label flex items-center gap-1"><Phone size={13} /> {t("patients.phone")} *</label>
+                        <input type="tel" pattern="^[0-9]{10}$" title="Enter exactly 10 digits for the phone number" name="primary_phone" className="input-field" required value={formData.primary_phone} onChange={(e) => setFormData({...formData, primary_phone: e.target.value.replace(/\D/g, '').substring(0, 10)})} placeholder="9876543210" minLength={10} maxLength={10} />
+                        {formData.primary_phone && formData.primary_phone.length > 0 && formData.primary_phone.length < 10 && (
+                          <p className="text-amber-500 text-xs mt-1">{formData.primary_phone.length}/10 digits entered</p>
+                        )}
+                      </div>
                       <div><label className="input-label flex items-center gap-1"><Mail size={13} /> {t("patients.email")}</label><input type="email" name="email" className="input-field" value={formData.email} onChange={handleChange} placeholder="patient@example.com" /></div>
                       <div><label className="input-label">{t("patients.emergencyContact")}</label><input name="emergency_contact_name" className="input-field" value={formData.emergency_contact_name} onChange={handleChange} /></div>
-                      <div><label className="input-label">{t("patients.emergencyPhone")}</label><input type="tel" name="emergency_contact_phone" className="input-field" value={formData.emergency_contact_phone} onChange={handleChange} /></div>
+                      <div>
+                        <label className="input-label">{t("patients.emergencyPhone")}</label>
+                        <input type="tel" pattern="^[0-9]{10}$" title="Enter exactly 10 digits" name="emergency_contact_phone" className="input-field" value={formData.emergency_contact_phone} onChange={handleChange} maxLength={10} placeholder="10-digit number" />
+                        {formData.emergency_contact_phone && formData.emergency_contact_phone.length > 0 && formData.emergency_contact_phone.length < 10 && (
+                          <p className="text-amber-500 text-xs mt-1">{formData.emergency_contact_phone.length}/10 digits</p>
+                        )}
+                      </div>
+                      {/* Face Photo Capture for Registration */}
+                      <div className="col-span-2">
+                        <label className="input-label flex items-center gap-1"><Camera size={13} /> Face Photo (for future check-in)</label>
+                        <input ref={faceEnrollRef} type="file" className="hidden" accept="image/*" capture="user" onChange={handleFaceEnroll} />
+                        <div className="flex items-center gap-3">
+                          <button type="button" onClick={() => faceEnrollRef.current?.click()} className="btn-secondary text-sm flex items-center gap-2 py-2">
+                            <Camera size={14} /> {facePhotoPreview ? "Change Photo" : "Capture Face Photo"}
+                          </button>
+                          {facePhotoPreview && (
+                            <div className="flex items-center gap-2">
+                              <img src={facePhotoPreview} alt="Face" className="w-12 h-12 rounded-full object-cover border-2 border-green-400" />
+                              <span className="text-xs text-green-600 flex items-center gap-1"><Check size={12} /> Photo captured</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="card-body border-t border-[var(--border)] flex justify-end">
+                    <div className="card-body border-t border-[var(--border)] flex justify-end gap-3">
+                      <button type="submit" className="btn-secondary flex items-center gap-2 border-green-200 text-green-700 hover:bg-green-50"><Check size={16} /> Register Now</button>
                       <button type="button" onClick={() => setActiveStep(2)} className="btn-primary flex items-center gap-2">{t("common.next")} <ArrowRight size={16} /></button>
                     </div>
                   </div>
@@ -775,7 +1016,10 @@ export default function EnterpriseRegistrationPage() {
                     </div>
                     <div className="flex justify-between">
                       <button type="button" onClick={() => setActiveStep(1)} className="btn-secondary flex items-center gap-2"><ArrowLeft size={16} /> {t("common.back")}</button>
-                      <button type="button" onClick={() => setActiveStep(3)} className="btn-primary flex items-center gap-2">{t("common.next")} <ArrowRight size={16} /></button>
+                      <div className="flex gap-3">
+                        <button type="submit" className="btn-secondary flex items-center gap-2 border-green-200 text-green-700 hover:bg-green-50"><Check size={16} /> Register Now</button>
+                        <button type="button" onClick={() => setActiveStep(3)} className="btn-primary flex items-center gap-2">{t("common.next")} <ArrowRight size={16} /></button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -839,7 +1083,7 @@ export default function EnterpriseRegistrationPage() {
                       <button
                         type="submit"
                         className="btn-primary flex items-center gap-2 px-8"
-                        disabled={loading || success || (duplicateResult?.matches?.some(d => d.confidence_score > 80) ?? false)}
+                        disabled={loading || success || (duplicateResult?.matches?.some(d => d.confidence_score >= 90) ?? false)}
                       >
                         {loading ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                         {loading ? "Processing..." : "Complete Registration"}
@@ -876,8 +1120,8 @@ export default function EnterpriseRegistrationPage() {
                   ) : (
                     <div className="space-y-3">
                       <p className="text-sm font-medium text-amber-800">{duplicateResult.ai_recommendation}</p>
-                      {duplicateResult.matches.slice(0, 3).map((m, i) => (
-                        <div key={i} className="bg-white border border-amber-200 rounded-lg p-3 text-sm shadow-sm">
+                      {duplicateResult.matches.slice(0, 3).map((m) => (
+                        <div key={m.patient_id} className="bg-white border border-amber-200 rounded-lg p-3 text-sm shadow-sm">
                           <div className="flex justify-between items-start mb-1">
                             <strong>{m.first_name} {m.last_name}</strong>
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${m.confidence_score >= 70 ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>

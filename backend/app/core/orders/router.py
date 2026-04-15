@@ -43,6 +43,16 @@ async def create_order(data: OrderCreate, db: DBSession, user: CurrentUser) -> O
     return OrderOut.model_validate(loaded)
 
 
+@router.get("/", response_model=list[OrderOut])
+async def list_patient_orders(
+    patient_id: uuid.UUID = Query(..., description="Patient ID to fetch orders for"),
+    db: DBSession = None,
+    _: CurrentUser = None
+) -> list[OrderOut]:
+    orders = await OrderService(db).list_by_patient(patient_id)
+    return [OrderOut.model_validate(o) for o in orders]
+
+
 @router.get("/encounter/{encounter_id}", response_model=list[OrderOut])
 async def list_orders(encounter_id: uuid.UUID, db: DBSession, _: CurrentUser) -> list[OrderOut]:
     orders = await OrderService(db).list_by_encounter(encounter_id)

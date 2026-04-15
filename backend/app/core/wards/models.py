@@ -55,9 +55,9 @@ class BedAssignment(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
-    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="RESTRICT"), nullable=False)
-    encounter_id = Column(UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="RESTRICT"), nullable=False)
-    bed_id = Column(UUID(as_uuid=True), ForeignKey("beds.id", ondelete="RESTRICT"), nullable=False)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
+    encounter_id = Column(UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="CASCADE"), nullable=False)
+    bed_id = Column(UUID(as_uuid=True), ForeignKey("beds.id", ondelete="CASCADE"), nullable=False)
     assigned_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     assigned_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     status = Column(String(20), default="active", nullable=False) # active, transferred, discharged
@@ -70,10 +70,10 @@ class BedTransfer(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id = Column(UUID(as_uuid=True), index=True, nullable=True) # Cross-tenant isolation
-    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="RESTRICT"), nullable=False)
-    encounter_id = Column(UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="RESTRICT"), nullable=False)
-    from_bed_id = Column(UUID(as_uuid=True), ForeignKey("beds.id", ondelete="RESTRICT"), nullable=False)
-    to_bed_id = Column(UUID(as_uuid=True), ForeignKey("beds.id", ondelete="RESTRICT"), nullable=False)
+    patient_id = Column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="CASCADE"), nullable=False)
+    encounter_id = Column(UUID(as_uuid=True), ForeignKey("encounters.id", ondelete="CASCADE"), nullable=False)
+    from_bed_id = Column(UUID(as_uuid=True), ForeignKey("beds.id", ondelete="CASCADE"), nullable=False)
+    to_bed_id = Column(UUID(as_uuid=True), ForeignKey("beds.id", ondelete="CASCADE"), nullable=False)
     transfer_reason = Column(String(255))
     transferred_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     transferred_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

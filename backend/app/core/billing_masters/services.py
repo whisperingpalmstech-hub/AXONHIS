@@ -575,6 +575,12 @@ class DepositService:
         ).order_by(BillingDeposit.collected_at.desc())
         return list((await self.db.execute(stmt)).scalars().all())
 
+    async def list_all_deposits(self, org_id: uuid.UUID) -> List[BillingDeposit]:
+        stmt = select(BillingDeposit).where(
+            BillingDeposit.org_id == org_id
+        ).order_by(BillingDeposit.collected_at.desc())
+        return list((await self.db.execute(stmt)).scalars().all())
+
 
 # ════════════════════════════════════════════════════════════════
 #  CREDIT / DEBIT NOTE SERVICE

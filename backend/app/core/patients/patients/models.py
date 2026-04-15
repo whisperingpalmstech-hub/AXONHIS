@@ -46,3 +46,11 @@ class Patient(Base):
 
     def __repr__(self):
         return f"<Patient(patient_uuid='{self.patient_uuid}', name='{self.first_name} {self.last_name}')>"
+
+# Fix SQLAlchemy "failed to locate a name" Registry Error
+from app.core.patients.identifiers.models import PatientIdentifier
+from app.core.patients.contacts.models import PatientContact
+from app.core.patients.guardians.models import PatientGuardian
+from app.core.patients.insurance.models import PatientInsurance
+from app.core.patients.consents.models import PatientConsent
+from app.core.patients.appointments.models import Appointment

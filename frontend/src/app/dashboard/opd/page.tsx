@@ -4,6 +4,7 @@ import { useTranslation } from "@/i18n";
 import { api } from "@/lib/api";
 import { opdApi, type PreRegistration, type Deposit, type ConsentDocument, type ProFormaBill, type OPDAnalytics, type PatientJourney, type WaitlistEntry } from "@/lib/opd-api";
 import { opdVisitsApi, type OpdVisit } from "@/lib/opd-visits-api";
+import { schedulingApi } from "@/lib/scheduling-api";
 import {
   Users, Calendar, ClipboardList, Stethoscope, CreditCard, FileText,
   BarChart3, Activity, Search, Plus, ArrowRight, CheckCircle2, Clock,
@@ -26,6 +27,7 @@ export default function OPDCommandCenter() {
 
   const [patients, setPatients] = useState<PatientRecord[]>([]);
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
+  const [slotsMap, setSlotsMap] = useState<Record<string, any[]>>({});
 
   // Data states
   const [preRegs, setPreRegs] = useState<PreRegistration[]>([]);
@@ -61,8 +63,28 @@ export default function OPDCommandCenter() {
 
   const loadBaseData = async () => {
     try {
-      const p = await api.get<any>("/patients"); setPatients(Array.isArray(p) ? p : p?.items || []);
-      const d = await api.get<any>("/auth/users"); setDoctors(Array.isArray(d) ? d : d?.items || []);
+      const [p, d, v, a] = await Promise.all([
+        api.get<any>("/patients").catch(() => []),
+        api.get<any>("/auth/users").catch(() => []),
+        opdVisitsApi.listVisits().catch(() => []),
+        opdApi.computeAnalytics(new Date().toISOString().split("T")[0]).catch(() => null)
+      ]);
+      setPatients(Array.isArray(p) ? p : p?.items || []);
+      const docs = Array.isArray(d) ? d : d?.items || [];
+      setDoctors(docs);
+      setVisits(v || []);
+      setAnalytics(a);
+
+      const topDocs = docs.slice(0, 5);
+      const slotPromises = topDocs.map((doc: any) => 
+        schedulingApi.getDoctorSlots(doc.id, new Date().toISOString().split("T")[0])
+          .then((res: any) => ({ id: doc.id, slots: res }))
+          .catch(() => ({ id: doc.id, slots: [] }))
+      );
+      const resolvedSlots = await Promise.all(slotPromises);
+      const sMap: Record<string, any[]> = {};
+      resolvedSlots.forEach(rs => { sMap[rs.id] = rs.slots });
+      setSlotsMap(sMap);
     } catch (e) { console.error(e); }
   };
 
@@ -256,10 +278,10 @@ export default function OPDCommandCenter() {
           <div className="space-y-6">
             <div className="grid grid-cols-4 gap-4">
               {[
-                { label: "Today's Appointments", value: "42", icon: Calendar, color: "from-violet-500 to-purple-600", sub: "12 confirmed" },
-                { label: "Walk-in Patients", value: "18", icon: Users, color: "from-emerald-500 to-teal-500", sub: "6 waiting" },
-                { label: "Teleconsultations", value: "8", icon: Smartphone, color: "from-blue-500 to-cyan-500", sub: "3 active" },
-                { label: "No-Show Prediction", value: "4", icon: Brain, color: "from-amber-500 to-orange-500", sub: "AI flagged" },
+                { label: "Today's Appointments", value: analytics ? analytics.total_visits : waitlist.length, icon: Calendar, color: "from-violet-500 to-purple-600", sub: `${waitlist.length} pending in waitlist` },
+                { label: "Walk-in Patients", value: visits.filter(v => v.visit_source === 'walk_in').length, icon: Users, color: "from-emerald-500 to-teal-500", sub: `${visits.filter(v => v.status === 'in_queue').length} in queue` },
+                { label: "Teleconsultations", value: visits.filter(v => v.visit_source === 'teleconsultation' || v.visit_type === 'telemedicine').length, icon: Smartphone, color: "from-blue-500 to-cyan-500", sub: "Active virtually" },
+                { label: "No-Show Prediction", value: analytics ? analytics.no_show_count : 0, icon: Brain, color: "from-amber-500 to-orange-500", sub: "AI flagged" },
               ].map((card, i) => (
                 <div key={i} className={`bg-gradient-to-br ${card.color} text-white p-5 rounded-2xl shadow-lg`}>
                   <div className="flex justify-between items-start">
@@ -329,28 +351,42 @@ export default function OPDCommandCenter() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(doctors.length > 0 ? doctors.slice(0, 5) : [{ id: "1", full_name: "Dr. Sample" }]).map((doc, i) => (
-                      <tr key={doc.id} className="border-b hover:bg-slate-50 transition-colors">
-                        <td className="py-3 px-4 font-semibold text-slate-800">{doc.full_name}</td>
-                        {[...Array(12)].map((_, si) => {
-                          const states = ["booked", "available", "booked", "available", "overbooked", "available", "booked", "available", "available", "booked", "blocked", "available"];
-                          const st = states[(si + i) % states.length];
-                          const colors: Record<string, string> = {
-                            available: "bg-emerald-100 border-emerald-300 text-emerald-700",
-                            booked: "bg-blue-100 border-blue-300 text-blue-700",
-                            overbooked: "bg-amber-100 border-amber-300 text-amber-700",
-                            blocked: "bg-slate-200 border-slate-300 text-slate-500",
-                          };
-                          return (
-                            <td key={si} className="py-2 px-1 text-center">
-                              <div className={`px-1 py-1.5 rounded-lg border text-[10px] font-bold uppercase cursor-pointer hover:shadow-md transition-all ${colors[st]}`}>
-                                {st === "available" ? "●" : st === "booked" ? "■" : st === "overbooked" ? "▲" : "—"}
-                              </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
+                    {(doctors.length > 0 ? doctors.slice(0, 5) : [{ id: "1", full_name: "Dr. Sample" }]).map((doc, i) => {
+                      const slots = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "14:00", "14:30", "15:00", "15:30", "16:00"];
+                      const docBookings = waitlist.filter(w => w.doctor_id === doc.id);
+                      return (
+                        <tr key={doc.id} className="border-b hover:bg-slate-50 transition-colors">
+                          <td className="py-3 px-4 font-semibold text-slate-800">{doc.full_name}</td>
+                          {slots.map((time, si) => {
+                            const allDoctorSlots = slotsMap[doc.id] || [];
+                            const slot = allDoctorSlots.find((s: any) => s.start_time && s.start_time.startsWith(time));
+                            
+                            let st = "—";
+                            if (slot) {
+                               st = "available";
+                               if (slot.status === 'booked' || slot.current_bookings > 0) st = "booked";
+                               if (slot.status === 'blocked') st = "blocked";
+                               if (slot.current_bookings > slot.max_bookings) st = "overbooked";
+                            }
+                            
+                            const colors: Record<string, string> = {
+                              available: "bg-emerald-100 border-emerald-300 text-emerald-700",
+                              booked: "bg-blue-100 border-blue-300 text-blue-700",
+                              overbooked: "bg-amber-100 border-amber-300 text-amber-700",
+                              blocked: "bg-slate-200 border-slate-300 text-slate-500",
+                              "—": "bg-slate-50 border-slate-200 text-slate-400 text-opacity-50"
+                            };
+                            return (
+                              <td key={si} className="py-2 px-1 text-center">
+                                <div className={`px-1 py-1.5 rounded-lg border text-[10px] font-bold uppercase cursor-pointer hover:shadow-md transition-all ${colors[st]}`}>
+                                  {st === "available" ? "●" : st === "booked" ? "■" : st === "overbooked" ? "▲" : st === "blocked" ? "X" : "—"}
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

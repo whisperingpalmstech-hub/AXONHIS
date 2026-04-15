@@ -27,3 +27,10 @@ class Encounter(Base):
     diagnoses = relationship("EncounterDiagnosis", back_populates="encounter", cascade="all, delete-orphan")
     notes = relationship("EncounterNote", back_populates="encounter", cascade="all, delete-orphan")
     timeline_events = relationship("EncounterTimeline", back_populates="encounter", cascade="all, delete-orphan")
+
+# Fix SQLAlchemy "failed to locate a name" Registry Error
+from app.core.patients.patients.models import Patient
+from app.core.auth.models import User
+from app.core.encounters.diagnoses.models import EncounterDiagnosis
+from app.core.encounters.notes.models import EncounterNote
+from app.core.encounters.timeline.models import EncounterTimeline

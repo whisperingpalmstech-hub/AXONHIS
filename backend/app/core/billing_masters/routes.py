@@ -241,6 +241,10 @@ async def calculate_service_price(data: PriceCalculationRequest, user: CurrentUs
 async def collect_deposit(data: DepositCreate, user: CurrentUser, db: AsyncSession = Depends(get_db)):
     return await DepositService(db).collect_deposit(data, user.id, user.org_id)
 
+@router.get("/deposits", response_model=List[DepositOut])
+async def list_all_deposits(user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    return await DepositService(db).list_all_deposits(user.org_id)
+
 @router.get("/deposits/{patient_id}", response_model=List[DepositOut])
 async def list_patient_deposits(patient_id: uuid.UUID, user: CurrentUser, db: AsyncSession = Depends(get_db)):
     return await DepositService(db).list_patient_deposits(patient_id, user.org_id)

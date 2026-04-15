@@ -88,6 +88,11 @@ from app.core.scheduling.models import SlotBooking
 from app.core.lab.models import LabOrder, LabResult
 from app.core.pharmacy.prescriptions.models import Prescription
 from app.core.auth.models import User
+from app.core.encounters.encounters.models import Encounter
+from app.core.encounters.diagnoses.models import EncounterDiagnosis
+from app.core.tasks.models import Task
+from app.core.encounters.clinical_flags.models import ClinicalFlag
+from app.core.billing.invoices.models import Invoice
 from app.core.diagnostics.models import (
     DiagnosticTemplate,
     DiagnosticProcedureOrder,
@@ -100,6 +105,11 @@ from app.core.diagnostics.models import (
 )
 from app.core.advanced_lab.models import HistoSpecimen
 from app.core.accounting.models import ChartOfAccounts, JournalEntry, JournalEntryLine
+
+# CSSD Models
+from app.core.cssd.models import (
+    InstrumentSet, SterilizationCycle, CycleSetLink, CSSDDispatch
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:

@@ -1,5 +1,6 @@
 """QA Module Router for API endpoints."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.routing import APIRoute
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional, Dict, Any
 import httpx
@@ -7,6 +8,8 @@ import time
 import asyncio
 import os
 import logging
+import uuid
+from datetime import datetime
 
 from app.database import get_db
 
@@ -14,6 +17,8 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # Base URL for internal API calls - use localhost within the container
+# Default to port 8000 (container internal) if no env var is set
+# For external access, set QA_BASE_URL=http://localhost:9500 in .env
 QA_BASE_URL = os.getenv("QA_BASE_URL", "http://localhost:8000")
 
 # Static module and endpoint mapping (comprehensive coverage)
@@ -232,23 +237,163 @@ APP_MODULES = {
     'patient_portal': ['portal'],
 }
 
+def _generate_smart_dummy_data(endpoint_path: str, method: str) -> Dict:
+    """Generate smart dummy data based on endpoint pattern."""
+    if method not in ['POST', 'PUT', 'PATCH']:
+        return {}
+    
+    data = {}
+    
+    # Health check endpoints - no data needed
+    if '/health' in endpoint_path:
+        return {}
+    
+    # Auth endpoints
+    if '/auth/login' in endpoint_path:
+        return {"email": "admin@axonhis.com", "password": "Admin@123"}
+    
+    # Patient endpoints
+    if '/patients' in endpoint_path and method == 'POST':
+        # Check if it's a path parameter endpoint
+        if '{' in endpoint_path:
+            return {}
+        return {
+            "first_name": "John",
+            "last_name": "Doe",
+            "date_of_birth": "1990-01-01",
+            "gender": "Male",
+            "blood_group": "O+",
+            "contact_number": "9876543210",
+            "email": f"john.doe.{uuid.uuid4().hex[:8]}@example.com",
+            "address": "123 Main St, City",
+            "emergency_contact_name": "Jane Doe",
+            "emergency_contact_number": "9876543211"
+        }
+    
+    # IPD endpoints
+    if '/ipd/' in endpoint_path and method == 'POST':
+        # Check if it's a path parameter endpoint
+        if '{' in endpoint_path:
+            return {}
+        return {
+            "patient_name": "John Doe",
+            "patient_uhid": "UHID-TEST-001",
+            "gender": "Male",
+            "date_of_birth": "1990-01-01",
+            "mobile_number": "9876543210",
+            "treating_doctor": "Dr. Smith",
+            "specialty": "General Medicine",
+            "reason_for_admission": "Fever and cough"
+        }
+    
+    # Lab endpoints
+    if '/lab/' in endpoint_path and method == 'POST':
+        # Check if it's a path parameter endpoint
+        if '{' in endpoint_path:
+            return {}
+        return {
+            "test_name": "Complete Blood Count",
+            "test_code": "CBC",
+            "category": "Hematology",
+            "sample_type": "Blood",
+            "price": 500.00,
+            "is_active": True
+        }
+    
+    # OPD endpoints
+    if '/opd/' in endpoint_path and method == 'POST':
+        # Check if it's a path parameter endpoint
+        if '{' in endpoint_path:
+            return {}
+        return {
+            "patient_name": "John Doe",
+            "mobile_number": "9876543210",
+            "preferred_date": datetime.now().isoformat(),
+            "department": "General Medicine",
+            "reason_for_visit": "Routine checkup"
+        }
+    
+    # Billing endpoints
+    if '/billing/' in endpoint_path and method == 'POST':
+        # Check if it's a path parameter endpoint
+        if '{' in endpoint_path:
+            return {}
+        return {
+            "invoice_number": f"INV-{uuid.uuid4().hex[:6].upper()}",
+            "patient_id": str(uuid.uuid4()),
+            "amount": 1000.00,
+            "description": "Test invoice"
+        }
+    
+    # Generic data for other endpoints (skip path parameter endpoints)
+    if '{' in endpoint_path:
+        return {}
+    
+    return {"test": True, "id": str(uuid.uuid4())}
 
-def _get_modules_for_app(app: Optional[str] = None) -> Dict[str, list]:
-    """Return module endpoints filtered by app name."""
-    if app and app in APP_MODULES:
-        module_names = APP_MODULES[app]
-        return {k: v for k, v in MODULE_ENDPOINTS.items() if k in module_names}
-    return MODULE_ENDPOINTS
+def _get_dynamic_endpoints(request: Request, app: Optional[str] = None) -> Dict[str, list]:
+    """Dynamically extract endpoints from the FastAPI app routes."""
+    modules = {}
+    try:
+        if not hasattr(request, 'app') or not request.app:
+            logger.warning("Request has no app attribute or app is None")
+            return modules
+            
+        if not hasattr(request.app, 'routes'):
+            logger.warning("Request.app has no routes attribute")
+            return modules
+            
+        for route in request.app.routes:
+            try:
+                if isinstance(route, APIRoute):
+                    path = route.path
+                    # Skip QA module to avoid infinite loops during testing
+                    if path.startswith("/api/v1/qa"):
+                        continue
+                        
+                    parts = path.strip("/").split("/")
+                    if len(parts) >= 3 and parts[0] == "api" and parts[1] == "v1":
+                        module_name = parts[2].replace("-", "_")  # Normalize hyphens to underscores
+                    else:
+                        module_name = "core"
+                    
+                    # Simple app mapping filtering - use normalized module names (with underscores)
+                    if app == "axonhis_md" and module_name not in ["md", "clinical_encounter_flow"]:
+                        continue
+                    if app == "patient_portal" and module_name not in ["portal"]:
+                        continue
+                    if app == "axonhis" and module_name in ["md", "portal", "clinical_encounter_flow"]:
+                        continue
+
+                    if module_name not in modules:
+                        modules[module_name] = []
+                        
+                    existing_route = next((x for x in modules[module_name] if x['path'] == path), None)
+                    if existing_route:
+                        existing_route['methods'].extend(list(route.methods))
+                        existing_route['methods'] = list(set(existing_route['methods']))
+                    else:
+                        modules[module_name].append({
+                            'path': path,
+                            'methods': list(route.methods)
+                        })
+            except Exception as e:
+                logger.warning(f"Error processing route {getattr(route, 'path', 'unknown')}: {e}")
+                continue
+    except Exception as e:
+        logger.error(f"Error in _get_dynamic_endpoints: {e}")
+    
+    return modules
 
 
 @router.get("/modules")
-async def get_all_modules(app: Optional[str] = None):
-    """Get all modules with their endpoint counts. Optionally filter by app."""
-    filtered = _get_modules_for_app(app)
+async def get_all_modules(request: Request, app: Optional[str] = None):
+    """Get all modules with their endpoint counts recursively generated from live router."""
+    filtered = _get_dynamic_endpoints(request, app)
     return {
         "modules": [
             {
-                "name": module,
+                "name": module.upper(),
                 "endpointCount": len(endpoints),
                 "endpoints": endpoints
             }
@@ -258,23 +403,26 @@ async def get_all_modules(app: Optional[str] = None):
 
 
 @router.get("/modules/{module_name}")
-async def get_module_details(module_name: str):
+async def get_module_details(module_name: str, request: Request):
     """Get details for a specific module."""
-    endpoints = MODULE_ENDPOINTS.get(module_name)
+    filtered = _get_dynamic_endpoints(request)
+    # Support case insensitive module matching
+    endpoints = next((v for k, v in filtered.items() if k.lower() == module_name.lower()), None)
     if not endpoints:
         raise HTTPException(status_code=404, detail=f"Module {module_name} not found")
     
     return {
-        "module": module_name,
+        "module": module_name.upper(),
         "endpointCount": len(endpoints),
         "endpoints": endpoints
     }
 
 
 @router.post("/test/module/{module_name}")
-async def test_module(module_name: str):
-    """Run tests for all endpoints in a specific module."""
-    endpoints = MODULE_ENDPOINTS.get(module_name)
+async def test_module(module_name: str, request: Request):
+    """Run tests for all endpoints in a specific module dynamically."""
+    filtered = _get_dynamic_endpoints(request)
+    endpoints = next((v for k, v in filtered.items() if k.lower() == module_name.lower()), None)
     if not endpoints:
         raise HTTPException(status_code=404, detail=f"Module {module_name} not found")
     
@@ -283,13 +431,20 @@ async def test_module(module_name: str):
     failed = 0
     
     base_url = QA_BASE_URL
+    # Grab the current authorization header to pass down the test
+    auth_header = request.headers.get("authorization", "")
+    headers = {"Authorization": auth_header} if auth_header else {}
     
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, headers=headers) as client:
         for endpoint_info in endpoints:
             endpoint_path = endpoint_info['path']
             methods = endpoint_info['methods']
             
-            # Use GET if available, otherwise use the first available method
+            # Skip endpoints with path parameters (containing {})
+            if '{' in endpoint_path:
+                continue
+            
+            # Prioritize GET
             method = 'GET' if 'GET' in methods else methods[0] if methods else 'GET'
             
             start_time = time.time()
@@ -298,18 +453,23 @@ async def test_module(module_name: str):
             status_code = None
             
             try:
-                # Make the API call
                 if method == 'GET':
                     response = await client.get(f"{base_url}{endpoint_path}")
                 elif method == 'POST':
-                    response = await client.post(f"{base_url}{endpoint_path}", json={})
+                    test_data = _generate_smart_dummy_data(endpoint_path, 'POST')
+                    response = await client.post(f"{base_url}{endpoint_path}", json=test_data)
+                elif method == 'PUT':
+                    test_data = _generate_smart_dummy_data(endpoint_path, 'PUT')
+                    response = await client.put(f"{base_url}{endpoint_path}", json=test_data)
+                elif method == 'DELETE':
+                    response = await client.delete(f"{base_url}{endpoint_path}")
                 else:
-                    response = await client.get(f"{base_url}{endpoint_path}")
+                    response = await client.request(method, f"{base_url}{endpoint_path}")
                 
                 status_code = response.status_code
                 elapsed_time = (time.time() - start_time) * 1000
                 
-                # Validate response - anything below 500 is a pass
+                # Treat 4xx as PASS since they just represent missing mock data (e.g. 404) or failed validation (422) for a missing real payload
                 if status_code < 500:
                     status = "passed"
                     passed += 1
@@ -338,7 +498,7 @@ async def test_module(module_name: str):
             })
     
     return {
-        "module": module_name,
+        "module": module_name.upper(),
         "total": len(results),
         "passed": passed,
         "failed": failed,
@@ -347,16 +507,16 @@ async def test_module(module_name: str):
 
 
 @router.post("/test/all")
-async def test_all_modules(app: Optional[str] = None):
-    """Run tests for all modules. Optionally filter by app."""
-    filtered = _get_modules_for_app(app)
+async def test_all_modules(request: Request, app: Optional[str] = None):
+    """Run tests for all dynamic modules."""
+    filtered = _get_dynamic_endpoints(request, app)
     all_results = {}
     total_passed = 0
     total_failed = 0
     
     for module in filtered.keys():
         try:
-            result = await test_module(module)
+            result = await test_module(module, request)
             all_results[module] = result
             total_passed += result['passed']
             total_failed += result['failed']

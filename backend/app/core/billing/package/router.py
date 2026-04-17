@@ -9,6 +9,8 @@ from app.core.billing.package.schemas import (
     PackageInclusionV2Create, PackageExclusionCreate, PackageApprovalRequest, PackageApprovalResponse
 )
 from app.core.billing.package.services import PackageService
+from app.core.billing_masters.models import PackageMaster as Package
+from app.core.billing.package.models import PackageInclusionV2, PackageExclusion, PackagePricing
 
 router = APIRouter()
 
@@ -29,7 +31,6 @@ async def list_packages(
     db: AsyncSession = Depends(get_db)
 ):
     """List all packages."""
-    from app.core.billing.package.models import Package
     from sqlalchemy import select
     
     query = select(Package).where(Package.is_active == is_active)

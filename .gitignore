@@ -36,3 +36,7 @@ Thumbs.db
 # Alembic
 backend/alembic/versions/*.pyc
 .aider*
+# Claw Code local artifacts
+.claw/settings.local.json
+.claw/sessions/
+.clawhip/

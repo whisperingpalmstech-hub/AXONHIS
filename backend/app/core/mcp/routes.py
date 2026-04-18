@@ -30,6 +30,29 @@ async def list_mcp_tools(db: AsyncSession = Depends(get_db)):
         raise HTTPException(500, f"Failed to list tools: {str(e)}")
 
 
+@router.post("/tools/chain")
+async def execute_tool_chain(
+    tool_calls: list,
+    db: AsyncSession = Depends(get_db)
+):
+    """Execute a chain of MCP tools"""
+    try:
+        from app.core.mcp.client import MCPClient
+        
+        client = MCPClient(db)
+        results = await client.execute_tool_chain(tool_calls)
+        
+        return {
+            "success": True,
+            "results": results
+        }
+    except Exception as e:
+        import traceback
+        err = traceback.format_exc()
+        logger.error(f"Error executing tool chain: {err}")
+        raise HTTPException(500, f"Tool chain execution failed: {err}")
+
+
 @router.post("/tools/{tool_name}")
 async def call_mcp_tool(
     tool_name: str,
@@ -50,24 +73,3 @@ async def call_mcp_tool(
     except Exception as e:
         logger.error(f"Error calling MCP tool {tool_name}: {str(e)}")
         raise HTTPException(500, f"Tool execution failed: {str(e)}")
-
-
-@router.post("/tools/chain")
-async def execute_tool_chain(
-    tool_calls: list,
-    db: AsyncSession = Depends(get_db)
-):
-    """Execute a chain of MCP tools"""
-    try:
-        from app.core.mcp.client import MCPClient
-        
-        client = MCPClient(db)
-        results = await client.execute_tool_chain(tool_calls)
-        
-        return {
-            "success": True,
-            "results": results
-        }
-    except Exception as e:
-        logger.error(f"Error executing tool chain: {str(e)}")
-        raise HTTPException(500, f"Tool chain execution failed: {str(e)}")

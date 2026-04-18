@@ -100,6 +100,9 @@ export default function InventoryDashboard() {
       setStores(Array.isArray(storesData) ? storesData : []);
       setStockLevels(Array.isArray(stockData) ? stockData : []);
       setExpiryAlerts(Array.isArray(expiryData) ? expiryData : []);
+      setIndents(Array.isArray(indentsData) ? indentsData : []);
+      setItems(Array.isArray(itemsData) ? itemsData : []);
+      setIssues(Array.isArray(issuesData) ? issuesData : []);
       if (analyticsData) {
         setAnalytics(analyticsData);
         const realValue = analyticsData.abc_analysis.reduce((acc: number, curr: any) => acc + curr.value, 0);

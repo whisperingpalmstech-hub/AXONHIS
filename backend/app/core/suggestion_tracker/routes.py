@@ -133,8 +133,19 @@ async def get_acceptance_stats(
     
     service = SuggestionTrackerService(db)
     
-    start_dt = datetime.fromisoformat(start_date) if start_date else None
-    end_dt = datetime.fromisoformat(end_date) if end_date else None
+    start_dt = None
+    if start_date and isinstance(start_date, str) and start_date.strip():
+        try:
+            start_dt = datetime.fromisoformat(start_date)
+        except ValueError:
+            pass
+            
+    end_dt = None
+    if end_date and isinstance(end_date, str) and end_date.strip():
+        try:
+            end_dt = datetime.fromisoformat(end_date)
+        except ValueError:
+            pass
     
     stats = await service.get_acceptance_stats(
         suggestion_type=suggestion_type,

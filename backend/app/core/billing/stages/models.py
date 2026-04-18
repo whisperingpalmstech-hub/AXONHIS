@@ -12,7 +12,7 @@ class BillStage(Base):
     __tablename__ = "billing_bill_stages_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="CASCADE"), nullable=False, index=True)
+    bill_id = Column(UUID(as_uuid=True), ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False, index=True)
     stage_type = Column(String(50), nullable=False)  # 'interim', 'intermediate', 'final'
     previous_stage_id = Column(UUID(as_uuid=True), ForeignKey("billing_bill_stages_v2.id", ondelete="SET NULL"), nullable=True)
     is_active = Column(Boolean, default=True)
@@ -25,7 +25,7 @@ class BillStageTransition(Base):
     __tablename__ = "billing_bill_stage_transitions_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="CASCADE"), nullable=False, index=True)
+    bill_id = Column(UUID(as_uuid=True), ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False, index=True)
     from_stage = Column(String(50), nullable=True)
     to_stage = Column(String(50), nullable=False)
     reason = Column(Text, nullable=True)
@@ -38,7 +38,7 @@ class PartialPayment(Base):
     __tablename__ = "billing_partial_payments_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="CASCADE"), nullable=False, index=True)
+    bill_id = Column(UUID(as_uuid=True), ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False, index=True)
     amount = Column(Numeric(12, 2), nullable=False)
     payment_method = Column(String(50), nullable=False)  # 'cash', 'card', 'upi', 'neft', 'cheque'
     payment_reference = Column(String(200), nullable=True)
@@ -52,7 +52,7 @@ class BillHold(Base):
     __tablename__ = "billing_bill_holds_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="CASCADE"), nullable=False, index=True)
+    bill_id = Column(UUID(as_uuid=True), ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False, index=True)
     hold_reason = Column(Text, nullable=False)
     hold_type = Column(String(50), nullable=False)  # 'partial_payment', 'cancellation', 'refund_pending'
     is_active = Column(Boolean, default=True)
@@ -67,7 +67,7 @@ class RefundRequest(Base):
     __tablename__ = "billing_refund_requests_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="CASCADE"), nullable=False, index=True)
+    bill_id = Column(UUID(as_uuid=True), ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False, index=True)
     refund_amount = Column(Numeric(12, 2), nullable=False)
     refund_method = Column(String(50), nullable=False)  # 'cash', 'card', 'upi', 'neft', 'cheque'
     reason = Column(Text, nullable=False)
@@ -84,7 +84,7 @@ class CreditNote(Base):
     __tablename__ = "billing_credit_notes_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="SET NULL"), nullable=True, index=True)
+    bill_id = Column(UUID(as_uuid=True), ForeignKey("invoices.id", ondelete="SET NULL"), nullable=True, index=True)
     note_number = Column(String(100), unique=True, nullable=False, index=True)
     amount = Column(Numeric(12, 2), nullable=False)
     reason = Column(Text, nullable=False)
@@ -101,7 +101,7 @@ class DebitNote(Base):
     __tablename__ = "billing_debit_notes_v2"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    bill_id = Column(UUID(as_uuid=True), ForeignKey("billing_bills.id", ondelete="SET NULL"), nullable=True, index=True)
+    bill_id = Column(UUID(as_uuid=True), ForeignKey("invoices.id", ondelete="SET NULL"), nullable=True, index=True)
     note_number = Column(String(100), unique=True, nullable=False, index=True)
     amount = Column(Numeric(12, 2), nullable=False)
     reason = Column(Text, nullable=False)

@@ -131,12 +131,12 @@ class SuggestionSearchResponse(BaseModel):
 
 
 class SuggestionAcceptanceStats(BaseModel):
-    suggestion_type: str
-    suggestion_source: str
+    suggestion_type: Optional[str] = None
+    suggestion_source: Optional[str] = None
     total_suggested: int
     total_accepted: int
     total_rejected: int
     total_modified: int
-    acceptance_rate: float
-    avg_confidence: float
-    avg_relevance: float
+    acceptance_rate: Optional[float] = None
+    avg_confidence: Optional[float] = None
+    avg_relevance: Optional[float] = None

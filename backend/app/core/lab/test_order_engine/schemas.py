@@ -155,6 +155,7 @@ class PhlebotomyWorklistItem(BaseModel):
     order_number: str
     patient_id: UUID
     patient_name: Optional[str] = None
+    patient_uhid: Optional[str] = None
     test_name: str
     test_code: str
     sample_type: str

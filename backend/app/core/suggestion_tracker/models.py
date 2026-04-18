@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship
 import enum
 
 from app.database import Base
-
+from app.core.axonhis_md.models import MdPatient, MdEncounter
 
 class SuggestionStatus(str, enum.Enum):
     SUGGESTED = "SUGGESTED"

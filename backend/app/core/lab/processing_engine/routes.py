@@ -259,16 +259,17 @@ async def add_comment(req: AddCommentRequest, db: AsyncSession = Depends(get_db)
     return _s(c, CommentOut)
 
 
+@router.get("/comments/library")
+@router.get("/comments/library/{department}")
+async def get_comment_library(department: Optional[str] = None):
+    """Return predefined comment templates for a department."""
+    return CommentService.get_comment_library(department or "GENERAL")
+
+
 @router.get("/comments/{result_id}", response_model=list[CommentOut])
 async def get_comments(result_id: str, db: AsyncSession = Depends(get_db)):
     items = await CommentService.get_comments(db, result_id)
     return [_s(i, CommentOut) for i in items]
-
-
-@router.get("/comments/library/{department}")
-async def get_comment_library(department: str):
-    """Return predefined comment templates for a department."""
-    return CommentService.get_comment_library(department)
 
 
 # ── Audit ─────────────────────────────────────────────────────────────────────

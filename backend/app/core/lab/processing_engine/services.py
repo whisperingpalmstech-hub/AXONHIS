@@ -103,8 +103,9 @@ class WorklistService:
         wl = ProcessingWorklist(
             cr_receipt_id=uuid.UUID(receipt_id) if receipt_id else None,
             sample_id=sample_id, barcode=barcode,
-            order_id=uuid.UUID(order_id), order_number=order_number,
-            patient_id=uuid.UUID(patient_id),
+            order_id=uuid.UUID(order_id) if order_id else uuid.uuid4(),
+            order_number=order_number,
+            patient_id=uuid.UUID(patient_id) if patient_id else uuid.uuid4(),
             patient_name=patient_name, patient_uhid=patient_uhid,
             test_code=test_code, test_name=test_name,
             sample_type=sample_type, department=department,

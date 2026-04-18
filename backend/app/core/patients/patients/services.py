@@ -39,7 +39,7 @@ class PatientService:
             gender=data.gender,
             primary_phone=data.primary_phone,
             email=data.email,
-            org_id=self.user.org_id if self.user and getattr(self.user, 'org_id', None) else None
+            org_id=self.user.org_id if self.user and getattr(self.user, 'org_id', None) else uuid.UUID('550e8400-e29b-41d4-a716-446655440000')
         )
         self.db.add(patient)
         await self.db.flush()

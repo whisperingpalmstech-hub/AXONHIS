@@ -17,7 +17,7 @@ class BIAnalyticsEngine:
             (SELECT COUNT(*) FROM patients WHERE DATE(created_at) = CURRENT_DATE) as new_patients,
             (SELECT COUNT(*) FROM visit_master WHERE DATE(created_at) = CURRENT_DATE) as opd_visits,
             (SELECT COUNT(*) FROM visit_master WHERE status = 'in_queue' OR status = 'waiting') as waiting_count,
-            (SELECT COUNT(*) FROM visit_master WHERE status = 'with_doctor') as consult_count
+            (SELECT COUNT(*) FROM visit_master WHERE status = 'in_progress') as consult_count
         """
         res = await self.db.execute(text(query))
         row = res.fetchone()
@@ -32,10 +32,10 @@ class BIAnalyticsEngine:
 
     async def get_doctor_productivity_analytics(self) -> List[dict]:
         query = """
-        SELECT u.full_name as name, v.department, COUNT(v.id) as visits 
+        SELECT CONCAT(u.first_name, ' ', u.last_name) as name, v.department, COUNT(v.id) as visits 
         FROM visit_master v 
         LEFT JOIN users u ON v.doctor_id = u.id 
-        GROUP BY u.full_name, v.department
+        GROUP BY u.first_name, u.last_name, v.department
         ORDER BY visits DESC LIMIT 10
         """
         res = await self.db.execute(text(query))
@@ -57,8 +57,8 @@ class BIAnalyticsEngine:
 
     async def get_financial_analytics(self) -> List[dict]:
         query = """
-        SELECT 'Core Medical' as dept, SUM(COALESCE(b.amount, b.total_price, 0)) as total
-        FROM billing_entries b
+        SELECT 'Core Medical' as dept, SUM(COALESCE(b.net_amount, 0)) as total
+        FROM rcm_billing_master b
         """
         res = await self.db.execute(text(query))
         row = res.fetchone()

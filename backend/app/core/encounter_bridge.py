@@ -252,6 +252,8 @@ class EncounterBridgeService:
                     price = 100.0 # Default pharmacy placeholder if NOT in tariff
                 elif department == "Diagnostics" and price == 0:
                     price = 800.0 # Default lab placeholder if NOT in tariff
+                elif department == "OPD" and price == 0:
+                    price = 500.0 # Default OPD placeholder if NOT in tariff
 
                 charges.append({
                     "service_name": service_name,

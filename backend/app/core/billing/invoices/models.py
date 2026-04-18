@@ -13,4 +13,4 @@ class Invoice(Base):
     invoice_number = Column(String(100), unique=True, nullable=False, index=True)
     total_amount = Column(Numeric(12, 2), nullable=False)
     status = Column(String(50), nullable=False, default="draft")  # draft, issued, paid, partially_paid, cancelled
-    generated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

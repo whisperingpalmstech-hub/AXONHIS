@@ -308,6 +308,7 @@ export default function EnterpriseSchedulingPage() {
         ...bookForm, booking_date: selectedSlot.slot_date,
       });
       setShowBookModal(false);
+      setSelectedSlot(null);
       setBookingSuccess(result);
       loadSlots();
     } catch (e: any) { setError(e.message); }
@@ -400,7 +401,7 @@ export default function EnterpriseSchedulingPage() {
       )}
 
       {/* ═════════ QUICK BOOK WIZARD (when patient_id is in URL) ═════════ */}
-      {urlPatientId && !showBookModal && (
+      {urlPatientId && !showBookModal && !bookingSuccess && (
         <div className="mb-6 bg-gradient-to-br from-indigo-50 via-white to-violet-50 border-2 border-indigo-100 rounded-3xl p-8 shadow-lg">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-500/30">

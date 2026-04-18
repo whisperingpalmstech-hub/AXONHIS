@@ -365,8 +365,10 @@ class PhlebotomyWorklistService:
         self.db = db
 
     async def get_worklist(self) -> List[PhlebotomyWorklistItem]:
+        from sqlalchemy.orm import selectinload
         res = await self.db.execute(
             select(LISTestOrder)
+            .options(selectinload(LISTestOrder.items))
             .where(LISTestOrder.status.in_([
                 TestOrderStatus.CONFIRMED,
                 TestOrderStatus.BILLED
@@ -379,13 +381,26 @@ class PhlebotomyWorklistService:
         )
         orders = res.scalars().all()
 
+        patient_ids = list(set(order.patient_id for order in orders))
+        patients_map = {}
+        if patient_ids:
+            from app.core.patients.patients.models import Patient
+            pres = await self.db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
+            patients_map = {p.id: p for p in pres.scalars().all()}
+
         worklist = []
         for order in orders:
+            patient = patients_map.get(order.patient_id)
+            patient_name = f"{patient.first_name} {patient.last_name}" if patient else None
+            patient_uhid = patient.patient_uuid if patient else None
+            
             for item in order.items:
                 worklist.append(PhlebotomyWorklistItem(
                     order_id=order.id,
                     order_number=order.order_number,
                     patient_id=order.patient_id,
+                    patient_name=patient_name,
+                    patient_uhid=patient_uhid,
                     test_name=item.test_name,
                     test_code=item.test_code,
                     sample_type=item.sample_type,

@@ -863,25 +863,54 @@ class OPDAnalyticsService:
                 dept_break[dept] = {"visits": 0}
             dept_break[dept]["visits"] += 1
 
-        analytics = OPDDailyAnalytics(
-            org_id=org_id,
-            analytics_date=for_date,
-            total_appointments=total_appointments,
-            total_walkins=walkins,
-            total_checkins=total,
-            total_visits=total,
-            completed_visits=completed,
-            cancelled_visits=cancelled,
-            no_show_count=no_shows,
-            avg_wait_time_min=avg_wait,
-            max_wait_time_min=max_wait,
-            total_revenue=total_revenue,
-            total_deposits=total_deposits,
-            department_breakdown=dept_break,
-            peak_hour=peak_hour,
-            hourly_distribution=hourly,
+        # Check if analytics already exists for this date and org
+        stmt = select(OPDDailyAnalytics).where(
+            and_(
+                OPDDailyAnalytics.analytics_date == for_date,
+                OPDDailyAnalytics.org_id == org_id
+            )
         )
-        self.db.add(analytics)
+        existing = (await self.db.execute(stmt)).scalar_one_or_none()
+        
+        if existing:
+            analytics = existing
+            analytics.total_appointments = total_appointments
+            analytics.total_walkins = walkins
+            analytics.total_checkins = total
+            analytics.total_visits = total
+            analytics.completed_visits = completed
+            analytics.cancelled_visits = cancelled
+            analytics.no_show_count = no_shows
+            analytics.avg_wait_time_min = avg_wait
+            analytics.max_wait_time_min = max_wait
+            analytics.total_revenue = total_revenue
+            analytics.total_deposits = total_deposits
+            analytics.department_breakdown = dept_break
+            analytics.peak_hour = peak_hour
+            analytics.hourly_distribution = hourly
+            analytics.computed_at = datetime.now(timezone.utc)
+        else:
+            analytics = OPDDailyAnalytics(
+                org_id=org_id,
+                analytics_date=for_date,
+                total_appointments=total_appointments,
+                total_walkins=walkins,
+                total_checkins=total,
+                total_visits=total,
+                completed_visits=completed,
+                cancelled_visits=cancelled,
+                no_show_count=no_shows,
+                avg_wait_time_min=avg_wait,
+                max_wait_time_min=max_wait,
+                total_revenue=total_revenue,
+                total_deposits=total_deposits,
+                department_breakdown=dept_break,
+                peak_hour=peak_hour,
+                hourly_distribution=hourly,
+                computed_at=datetime.now(timezone.utc)
+            )
+            self.db.add(analytics)
+            
         await self.db.commit()
         await self.db.refresh(analytics)
         return analytics

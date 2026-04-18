@@ -26,6 +26,7 @@ interface Account {
   account_name: string;
   account_type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
   current_balance: string;
+  status: string;
 }
 
 export default function ChartOfAccountsPage() {

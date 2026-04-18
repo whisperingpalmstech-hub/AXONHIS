@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useTranslation } from "@/i18n";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -50,7 +50,7 @@ const MODALITY_ICONS: Record<string, string> = {
   mri: "🧲", ct: "🔬", xray: "☢️", ultrasound: "📡",
 };
 
-export default function EnterpriseSchedulingPage() {
+function EnterpriseSchedulingContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const TABS = [
@@ -1220,5 +1220,13 @@ export default function EnterpriseSchedulingPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function EnterpriseSchedulingPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-slate-500 font-bold">Loading scheduling module...</div>}>
+      <EnterpriseSchedulingContent />
+    </Suspense>
   );
 }

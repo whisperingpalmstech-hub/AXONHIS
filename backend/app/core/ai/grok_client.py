@@ -64,6 +64,21 @@ async def grok_chat(
         raise Exception(f"AnythingLLM API error: {str(e)}") from e
 
 
+def _strip_markdown_json(text: str) -> str:
+    """Strip markdown code block wrappers from JSON responses."""
+    text = text.strip()
+    # Remove ```json ... ``` or ``` ... ```
+    if text.startswith("```"):
+        # Remove opening fence
+        first_newline = text.find("\n")
+        if first_newline != -1:
+            text = text[first_newline + 1:]
+        # Remove closing fence
+        if text.rstrip().endswith("```"):
+            text = text.rstrip()[:-3].rstrip()
+    return text
+
+
 async def grok_json(
     messages: list[dict[str, str]],
     temperature: float = 0.2,
@@ -72,10 +87,13 @@ async def grok_json(
     """Call Grok and parse the response as JSON. Falls back to empty dict on parse error."""
     try:
         result = await grok_chat(messages, temperature=temperature, max_tokens=max_tokens, response_format="json")
+        content = result.get("content", "")
+        # Strip markdown code blocks if present
+        content = _strip_markdown_json(content)
         try:
-            return json.loads(result["content"])
+            return json.loads(content)
         except (json.JSONDecodeError, KeyError) as e:
-            logger.warning("Grok JSON parse error: %s | content=%s", e, result.get("content", ""))
+            logger.warning("Grok JSON parse error: %s | content=%s", e, content[:500])
             return {}
     except Exception as e:
         logger.error(f"Grok JSON API call failed: {str(e)}")

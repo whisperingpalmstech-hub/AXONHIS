@@ -196,35 +196,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Billing & Compliance", href: "/dashboard/pharmacy-billing", roles: ["pharmacist", "admin"] },
     ],
   },
-  {
-    section: "Hospital Operations",
-    icon: (
-      <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-      </svg>
-    ),
-    roles: ["admin", "director", "nurse"],
-    children: [
-      { label: "Procurement & Purchasing", href: "/dashboard/procurement", badge: "SCM", roles: ["admin", "director"] },
-      { label: "Inventory & Stores", href: "/dashboard/inventory", badge: "SCM", roles: ["admin", "director", "nurse"] },
-      { label: "Queue Analytics & Signage", href: "/dashboard/kiosk", badge: "FLOW", roles: ["admin", "front_desk"] },
-      { label: "Linen & Laundry", href: "/dashboard/linen", badge: "OPS" },
-      { label: "CSSD", href: "/dashboard/cssd", badge: "STERILE" },
-    ],
-  },
-  {
-    section: "Finance & Billing",
-    icon: Icon.finance,
-    roles: ["admin", "front_desk", "director"],
-    children: [
-      { label: "Billing Hub", href: "/dashboard/billing", badge: "HUB" },
-      { label: "Billing Masters", href: "/dashboard/billing-masters", badge: "CONFIG" },
-      { label: "RCM Billing", href: "/dashboard/rcm-billing", badge: "FINANCE" },
-      { label: "Accounting Dashboard", href: "/dashboard/accounting", badge: "ERP" },
-      { label: "Chart of Accounts", href: "/dashboard/accounting/chart-of-accounts" },
-      { label: "Financial Reports", href: "/dashboard/accounting/reports" },
-    ],
-  },
+
   {
     section: "Administration",
     icon: Icon.admin,
@@ -238,6 +210,23 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Notifications", href: "/dashboard/notifications" },
       { label: "Language Management", href: "/dashboard/admin/languages", badge: "i18n", roles: ["admin"] },
       { label: "Communication", href: "/communication" },
+    ],
+  },
+  {
+    section: "Clinical AI Engine",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5" />
+      </svg>
+    ),
+    roles: ["admin", "doctor", "nurse", "director"],
+    children: [
+      { label: "Workflow Dashboard", href: "/dashboard/clinical-workflow", badge: "AI" },
+      { label: "Clinical Navigator", href: "/dashboard/clinical-workflow/navigator" },
+      { label: "Actionable Scribe", href: "/dashboard/clinical-workflow/scribe" },
+      { label: "Safety Guardian", href: "/dashboard/clinical-workflow/guardian" },
+      { label: "Handover Engine", href: "/dashboard/clinical-workflow/handover" },
+      { label: "Patient Translator", href: "/dashboard/clinical-workflow/translator" },
     ],
   },
   {
@@ -448,7 +437,7 @@ export function Sidebar() {
       )}
       {collapsed && (
         <div className="px-2 pb-2 flex justify-center">
-            <LanguageSelector />
+          <LanguageSelector />
         </div>
       )}
 

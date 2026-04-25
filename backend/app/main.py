@@ -81,6 +81,9 @@ from app.core.administration.tenants.routes import router as multitenancy_router
 # Accounting & ERP Subsystem
 from app.core.accounting.routes import router as accounting_router
 
+# Clinical Workflow Engine (5 AI modules)
+from app.core.clinical_workflow.routes import router as clinical_workflow_router
+
 # Force load all models for SQLAlchemy registry
 from app.core.patients.patients.models import Patient
 from app.core.patient_portal.patient_accounts.models import PatientAccount
@@ -297,6 +300,9 @@ def create_app() -> FastAPI:
 
     # Accounting & ERP Subsystem
     app.include_router(accounting_router, prefix="/api/v1")
+
+    # Clinical Workflow Engine (Navigator, Scribe, Guardian, Handover, Translator)
+    app.include_router(clinical_workflow_router)
 
     # Sprint 1: Billing Masters & Configuration Engine (FRD Gaps 5-15)
     from app.core.billing_masters.routes import router as billing_masters_router

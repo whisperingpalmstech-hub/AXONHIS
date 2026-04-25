@@ -6,12 +6,14 @@ import { api } from "@/lib/api";
 import {
   Stethoscope, Users, Activity, PenTool, Mic, BrainCircuit, Syringe, Pill,
   Target, Plus, CheckCircle, AlertTriangle, Heart, Thermometer, FileText,
-  History, Search, ClipboardList, Eye, X, ChevronDown, ChevronRight, RefreshCw
+  History, Search, ClipboardList, Eye, X, ChevronDown, ChevronRight, RefreshCw,
+  HeartPulse, MessageSquareText, ScrollText, ScanEye, Sparkles, Shield, Zap,
+  Clock, BadgeCheck, Send, Workflow, CircleDot
 } from "lucide-react";
 import { useTranslation } from "@/i18n";
 import { TopNav } from "@/components/ui/TopNav";
 
-type Tab = "notes" | "vitals" | "complaints" | "history" | "examination" | "diagnosis" | "orders" | "prescriptions";
+type Tab = "notes" | "vitals" | "complaints" | "history" | "examination" | "diagnosis" | "orders" | "prescriptions" | "ai_engine";
 
 export default function DoctorDeskPage() {
   const { t } = useTranslation();
@@ -62,6 +64,12 @@ export default function DoctorDeskPage() {
   // IPD Modal
   const [showIpdModal, setShowIpdModal] = useState(false);
   const [ipdNotes, setIpdNotes] = useState({ current_health: "", doses_to_give: "", plan_of_action: "" });
+
+  // AI Engine State
+  const [aiEngineModule, setAiEngineModule] = useState<"navigate" | "scribe" | "guard" | "pipeline">("navigate");
+  const [aiDoctorInput, setAiDoctorInput] = useState("");
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   // Timeline
   const [timelineMode, setTimelineMode] = useState(false);
@@ -195,6 +203,44 @@ export default function DoctorDeskPage() {
     }, 2000);
   };
 
+  // ── AI Engine (integrated) ──
+  const runDeskAI = async () => {
+    if (!activePatient) return;
+    setAiLoading(true);
+    setAiResult(null);
+    const pt = activePatient.detail || {};
+    const age = pt.date_of_birth ? String(new Date().getFullYear() - new Date(pt.date_of_birth).getFullYear()) : "";
+    try {
+      const resp = await fetch("http://localhost:9500/api/v1/clinical-workflow/desk/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
+        body: JSON.stringify({
+          patient_id: activePatient.patient_id,
+          visit_id: activePatient.visit_id,
+          doctor_input: aiDoctorInput || complaints.map(c => c.complaint_description).join(", ") || noteData.chief_complaint || "General check-up",
+          module: aiEngineModule,
+          vitals_override: vitalsHistory.length > 0 ? [{
+            name: "BP", value: `${vitalsHistory[vitalsHistory.length-1]?.bp_systolic || "-"}/${vitalsHistory[vitalsHistory.length-1]?.bp_diastolic || "-"}`
+          }, {
+            name: "HR", value: vitalsHistory[vitalsHistory.length-1]?.pulse_rate || ""
+          }, {
+            name: "SpO2", value: vitalsHistory[vitalsHistory.length-1]?.spo2 || ""
+          }, {
+            name: "Temp", value: vitalsHistory[vitalsHistory.length-1]?.temperature || ""
+          }, {
+            name: "RR", value: vitalsHistory[vitalsHistory.length-1]?.respiratory_rate || ""
+          }].filter(v => v.value) : [],
+          complaints_override: complaints.map(c => c.complaint_description),
+          history_override: medHistory.map(h => h.description),
+          allergies_override: medHistory.filter(h => h.category === "allergy").map(h => h.description),
+          medications_override: medHistory.filter(h => h.category === "medication").map(h => h.description),
+        }),
+      });
+      setAiResult(await resp.json());
+    } catch (e: any) { setAiResult({ error: e.message }); }
+    setAiLoading(false);
+  };
+
   const concludeConsultation = async () => {
     await doctorDeskApi.saveNote({ ...noteData, doctor_id: DOCTOR_ID, visit_id: activePatient.visit_id });
     await doctorDeskApi.updateStatus(activePatient.id, "completed");
@@ -220,37 +266,41 @@ export default function DoctorDeskPage() {
   };
 
   const TABS: { key: Tab; label: string; icon: any; color: string }[] = [
-    { key: "vitals", label: "Vitals", icon: Heart, color: "text-rose-600" },
-    { key: "complaints", label: "Complaints", icon: ClipboardList, color: "text-amber-600" },
-    { key: "history", label: "History", icon: History, color: "text-purple-600" },
-    { key: "examination", label: "Examination", icon: Eye, color: "text-teal-600" },
-    { key: "diagnosis", label: "Diagnosis (ICD-10)", icon: Target, color: "text-red-600" },
-    { key: "notes", label: "SOAP Notes", icon: PenTool, color: "text-indigo-600" },
-    { key: "prescriptions", label: "Prescriptions", icon: Pill, color: "text-emerald-600" },
-    { key: "orders", label: "Orders (CPOE)", icon: Syringe, color: "text-sky-600" },
+    { key: "vitals", label: "Vitals", icon: HeartPulse, color: "text-rose-600" },
+    { key: "complaints", label: "Complaints", icon: MessageSquareText, color: "text-amber-600" },
+    { key: "history", label: "History", icon: ScrollText, color: "text-purple-600" },
+    { key: "examination", label: "Examination", icon: ScanEye, color: "text-teal-600" },
+    { key: "diagnosis", label: "Diagnosis", icon: CircleDot, color: "text-red-600" },
+    { key: "notes", label: "SOAP", icon: PenTool, color: "text-indigo-600" },
+    { key: "prescriptions", label: "Rx", icon: Pill, color: "text-emerald-600" },
+    { key: "orders", label: "CPOE", icon: Syringe, color: "text-sky-600" },
+    { key: "ai_engine", label: "AI Engine", icon: Sparkles, color: "text-fuchsia-600" },
   ];
 
   return (
-    <div className="p-4 md:p-6 max-w-[1800px] mx-auto h-screen overflow-hidden flex flex-col">
+    <div className="p-3 md:p-4 max-w-[1900px] mx-auto h-screen overflow-hidden flex flex-col">
       <TopNav title="nav.doctorDesk" />
-      <div className="flex justify-between items-center shrink-0 mb-4">
-        <div>
-          <h1 className="text-2xl font-black flex items-center gap-3 text-indigo-900"><BrainCircuit className="text-indigo-600" size={28} /> EMR Doctor Desk</h1>
-          <p className="text-slate-500 text-sm">Complete Clinical Consultation • CPOE • Billing Integration</p>
+      <div className="flex justify-between items-center shrink-0 mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-200"><Stethoscope className="text-white" size={20} /></div>
+          <div>
+            <h1 className="text-xl font-black text-slate-800 tracking-tight">Doctor Desk</h1>
+            <p className="text-slate-400 text-[11px]">EMR • CPOE • Clinical AI</p>
+          </div>
         </div>
       </div>
 
       <div className="flex-1 min-h-0 flex gap-4">
         {/* LEFT: WORKLIST */}
-        <div className="w-72 bg-white border border-slate-200 rounded-xl flex flex-col overflow-hidden shadow-sm shrink-0">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-3">
-            <h3 className="font-bold flex items-center gap-2 text-sm mb-2"><Users size={16}/> Patient Worklist</h3>
+        <div className="w-64 bg-white border border-slate-200/80 rounded-2xl flex flex-col overflow-hidden shadow-sm shrink-0">
+          <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-950 text-white p-3">
+            <h3 className="font-bold flex items-center gap-2 text-xs uppercase tracking-wider mb-2"><Users size={14} className="text-indigo-400"/> Worklist</h3>
             <div className="flex items-center gap-1.5">
-              <select className="border border-slate-700 bg-slate-800 rounded text-xs px-1.5 py-1 flex-1" value={simPatientId} onChange={e => setSimPatientId(e.target.value)}>
+              <select className="border border-slate-600/50 bg-slate-700/50 backdrop-blur rounded-lg text-[11px] px-2 py-1.5 flex-1 outline-none focus:ring-1 focus:ring-indigo-500" value={simPatientId} onChange={e => setSimPatientId(e.target.value)}>
                 <option value="">Latest Patient</option>
                 {patients.slice().reverse().map(p => <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>)}
               </select>
-              <button onClick={seedDoctorQueue} className="bg-indigo-600 hover:bg-indigo-500 text-white p-1.5 rounded"><Plus size={14}/></button>
+              <button onClick={seedDoctorQueue} className="bg-indigo-500 hover:bg-indigo-400 text-white p-1.5 rounded-lg transition-colors shadow-sm"><Plus size={14}/></button>
             </div>
           </div>
           <div className="overflow-y-auto flex-1 p-2 space-y-1.5">
@@ -274,43 +324,48 @@ export default function DoctorDeskPage() {
         </div>
 
         {/* RIGHT: EMR CONSULTATION */}
-        <div className="flex-1 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
+        <div className="flex-1 bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm flex flex-col">
           {!activePatient ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 space-y-3">
-              <Stethoscope size={56} className="text-slate-200" />
-              <h2 className="text-lg font-bold">Waiting for Patient</h2>
-              <p className="text-sm">Select from worklist to begin consultation</p>
+            <div className="flex-1 flex flex-col items-center justify-center text-slate-300 space-y-4">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-100 to-indigo-50 flex items-center justify-center"><Stethoscope size={36} className="text-indigo-300" /></div>
+              <h2 className="text-base font-bold text-slate-400">Select a patient</h2>
+              <p className="text-xs text-slate-300">Pick from worklist to begin consultation</p>
             </div>
           ) : (
             <>
               {/* PATIENT HEADER */}
-              <div className="bg-gradient-to-r from-slate-50 to-indigo-50/30 border-b px-5 py-3 flex justify-between items-center shrink-0">
+              <div className="bg-gradient-to-r from-white via-indigo-50/40 to-violet-50/30 border-b border-slate-100 px-5 py-3 flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold">
+                  <div className="w-11 h-11 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-200">
                     {activePatient.detail?.first_name?.[0]}{activePatient.detail?.last_name?.[0]}
                   </div>
                   <div>
-                    <h2 className="text-lg font-black text-slate-800">{activePatient.detail?.first_name} {activePatient.detail?.last_name}</h2>
-                    <p className="text-slate-500 text-xs">UHID: {activePatient.detail?.uhid} • Age: {activePatient.detail?.date_of_birth ? new Date().getFullYear() - new Date(activePatient.detail.date_of_birth).getFullYear() : '--'} • Blood: {activePatient.detail?.blood_group || '--'}</p>
+                    <h2 className="text-base font-black text-slate-800 tracking-tight">{activePatient.detail?.first_name} {activePatient.detail?.last_name}</h2>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium">UHID: {activePatient.detail?.uhid}</span>
+                      <span className="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-medium">Age: {activePatient.detail?.date_of_birth ? new Date().getFullYear() - new Date(activePatient.detail.date_of_birth).getFullYear() : '--'}</span>
+                      <span className="text-[10px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded font-medium">Blood: {activePatient.detail?.blood_group || '--'}</span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={()=>setTimelineMode(!timelineMode)} className={`text-xs px-3 py-1.5 rounded-lg border font-medium ${timelineMode ? 'bg-indigo-100 border-indigo-300 text-indigo-700' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`}><Activity size={14} className="inline mr-1"/>Timeline</button>
-                  <button onClick={()=>setShowIpdModal(true)} className="text-xs px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 font-bold hover:bg-rose-100"><AlertTriangle size={14} className="inline mr-1"/>Admit IPD</button>
-                  <button onClick={concludeConsultation} className="text-xs px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-sm"><CheckCircle size={14} className="inline mr-1"/>Complete & Generate Summary</button>
+                  <button onClick={()=>setTimelineMode(!timelineMode)} className={`text-[11px] px-3 py-1.5 rounded-lg border font-semibold flex items-center gap-1.5 transition-all ${timelineMode ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}><Activity size={13}/>Timeline</button>
+                  <button onClick={()=>setShowIpdModal(true)} className="text-[11px] px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 font-semibold flex items-center gap-1.5 hover:bg-rose-100 transition-colors"><AlertTriangle size={13}/>Admit IPD</button>
+                  <button onClick={concludeConsultation} className="text-[11px] px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold flex items-center gap-1.5 hover:opacity-90 transition-all shadow-sm shadow-emerald-200"><BadgeCheck size={13}/>Complete & Generate Summary</button>
                 </div>
               </div>
 
               {/* TAB BAR */}
-              <div className="flex border-b bg-slate-50 px-2 shrink-0 overflow-x-auto">
+              <div className="flex border-b border-slate-100 bg-white px-3 shrink-0 overflow-x-auto gap-0.5 pt-1">
                 {TABS.map(tab => (
                   <button key={tab.key} onClick={()=>setActiveTab(tab.key)}
-                    className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === tab.key ? `border-indigo-600 ${tab.color} bg-white` : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-                    <tab.icon size={14}/> {tab.label}
-                    {tab.key === "complaints" && complaints.length > 0 && <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 rounded-full">{complaints.length}</span>}
-                    {tab.key === "diagnosis" && diagnoses.length > 0 && <span className="bg-red-100 text-red-700 text-[10px] px-1.5 rounded-full">{diagnoses.length}</span>}
-                    {tab.key === "prescriptions" && rxs.length > 0 && <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 rounded-full">{rxs.length}</span>}
-                    {tab.key === "orders" && orders.length > 0 && <span className="bg-sky-100 text-sky-700 text-[10px] px-1.5 rounded-full">{orders.length}</span>}
+                    className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold rounded-t-lg transition-all whitespace-nowrap border-b-2 ${activeTab === tab.key ? `border-indigo-600 ${tab.color} bg-indigo-50/50` : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}>
+                    <tab.icon size={13}/> {tab.label}
+                    {tab.key === "complaints" && complaints.length > 0 && <span className="bg-amber-100 text-amber-700 text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{complaints.length}</span>}
+                    {tab.key === "diagnosis" && diagnoses.length > 0 && <span className="bg-red-100 text-red-700 text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{diagnoses.length}</span>}
+                    {tab.key === "prescriptions" && rxs.length > 0 && <span className="bg-emerald-100 text-emerald-700 text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{rxs.length}</span>}
+                    {tab.key === "orders" && orders.length > 0 && <span className="bg-sky-100 text-sky-700 text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{orders.length}</span>}
+                    {tab.key === "ai_engine" && <span className="relative flex h-2 w-2"><span className="animate-ping absolute h-full w-full rounded-full bg-fuchsia-400 opacity-75"></span><span className="relative rounded-full h-2 w-2 bg-fuchsia-500"></span></span>}
                   </button>
                 ))}
               </div>
@@ -516,6 +571,195 @@ export default function DoctorDeskPage() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="border rounded-xl p-3"><h4 className="text-[10px] font-bold text-slate-500 uppercase mb-2">AI Suggested Lab Tests</h4><div className="space-y-1">{aiSuggestions.recommended_lab_tests?.map((lb:string,i:number)=>(<div key={i} className="flex justify-between items-center text-xs bg-slate-50 p-2 rounded">{lb}<button onClick={()=>commitOrder(lb,"lab")} className="text-indigo-600 font-bold">Order +</button></div>))}</div></div>
                           <div className="border rounded-xl p-3"><h4 className="text-[10px] font-bold text-slate-500 uppercase mb-2">AI Suggested Imaging</h4><div className="space-y-1">{aiSuggestions.recommended_imaging_studies?.map((img:string,i:number)=>(<div key={i} className="flex justify-between items-center text-xs bg-slate-50 p-2 rounded">{img}<button onClick={()=>commitOrder(img,"radiology")} className="text-indigo-600 font-bold">Order +</button></div>))}</div></div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* AI ENGINE TAB */}
+                  {activeTab === "ai_engine" && (
+                    <div className="space-y-4">
+                      <div className="border border-fuchsia-100 rounded-2xl overflow-hidden shadow-sm">
+                        <div className="bg-gradient-to-r from-fuchsia-600 via-violet-600 to-indigo-600 p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center"><Sparkles size={20} className="text-white"/></div>
+                            <div>
+                              <h3 className="font-bold text-white text-sm tracking-tight">Clinical AI Engine</h3>
+                              <p className="text-[10px] text-white/60">Live patient context \u2022 Navigate \u2022 Scribe \u2022 Guard \u2022 Pipeline</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-4 space-y-3 bg-gradient-to-b from-fuchsia-50/30 to-white">
+                          {/* Context chips */}
+                          <div className="flex flex-wrap gap-1.5">
+                            {vitalsHistory.length > 0 && <span className="text-[10px] bg-rose-50 text-rose-600 border border-rose-200 px-2 py-1 rounded-lg font-semibold flex items-center gap-1"><HeartPulse size={10}/> Vitals ({vitalsHistory.length})</span>}
+                            {complaints.length > 0 && <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-2 py-1 rounded-lg font-semibold flex items-center gap-1"><MessageSquareText size={10}/> Complaints ({complaints.length})</span>}
+                            {medHistory.length > 0 && <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-200 px-2 py-1 rounded-lg font-semibold flex items-center gap-1"><ScrollText size={10}/> History ({medHistory.length})</span>}
+                            {diagnoses.length > 0 && <span className="text-[10px] bg-red-50 text-red-600 border border-red-200 px-2 py-1 rounded-lg font-semibold flex items-center gap-1"><CircleDot size={10}/> Dx ({diagnoses.length})</span>}
+                            {vitalsHistory.length === 0 && <span className="text-[10px] bg-slate-50 text-slate-400 border border-slate-200 px-2 py-1 rounded-lg flex items-center gap-1"><HeartPulse size={10}/> No vitals</span>}
+                            {complaints.length === 0 && <span className="text-[10px] bg-slate-50 text-slate-400 border border-slate-200 px-2 py-1 rounded-lg flex items-center gap-1"><MessageSquareText size={10}/> No complaints</span>}
+                          </div>
+                          <textarea value={aiDoctorInput} onChange={e => setAiDoctorInput(e.target.value)} rows={2}
+                            placeholder="Doctor's clinical input (or leave empty to use loaded complaints)..."
+                            className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-fuchsia-500/30 focus:border-fuchsia-400 outline-none transition-all resize-none" />
+                          <div className="flex gap-1.5 bg-slate-50 p-1 rounded-xl">
+                            {([["navigate", "Compass", Workflow], ["scribe", "Scribe", PenTool], ["guard", "Guard", Shield], ["pipeline", "Full Pipeline", Zap]] as const).map(([m, label, Icon]) => (
+                              <button key={m} onClick={() => setAiEngineModule(m as any)}
+                                className={`flex-1 text-[11px] px-2 py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                                  aiEngineModule === m ? "bg-white text-fuchsia-700 shadow-sm border border-fuchsia-100" : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                                }`}>
+                                <Icon size={12}/> {label}
+                              </button>
+                            ))}
+                          </div>
+                          <button onClick={runDeskAI} disabled={aiLoading}
+                            className="w-full py-2.5 bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white rounded-xl font-semibold text-sm hover:shadow-lg hover:shadow-fuchsia-200 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                            {aiLoading ? <><RefreshCw size={14} className="animate-spin"/> Processing...</> : <><Sparkles size={14}/> Run {aiEngineModule.charAt(0).toUpperCase() + aiEngineModule.slice(1)}</>}
+                          </button>
+                        </div>
+                      </div>
+
+                      {aiLoading && <div className="bg-gradient-to-r from-fuchsia-50 to-violet-50 rounded-2xl border border-fuchsia-100 p-10 text-center"><div className="w-12 h-12 mx-auto rounded-xl bg-fuchsia-100 flex items-center justify-center mb-3 animate-pulse"><BrainCircuit size={24} className="text-fuchsia-600"/></div><p className="text-fuchsia-700 text-sm font-medium">AI analyzing patient data...</p><p className="text-fuchsia-400 text-xs mt-1">{aiEngineModule === "pipeline" ? "Running all 5 modules..." : `Running ${aiEngineModule}...`}</p></div>}
+
+                      {aiResult && !aiLoading && (
+                        <div className="space-y-3">
+                          {/* Navigator results */}
+                          {(aiResult.module_output?.triage || aiResult.navigator?.module_output?.triage) && (() => {
+                            const nav = aiResult.module_output || aiResult.navigator?.module_output || {};
+                            const triage = nav.triage || {};
+                            return (
+                              <>
+                                <div className="grid grid-cols-3 gap-2">
+                                  <div className="bg-blue-50 rounded-lg p-3 text-center border border-blue-200"><p className="text-[10px] text-blue-500 font-bold">FOCUS</p><p className="font-bold text-blue-900 text-sm">{nav.focus_area}</p></div>
+                                  <div className={`rounded-lg p-3 text-center text-white ${nav.risk_level === "High" ? "bg-red-600" : nav.risk_level === "Medium" ? "bg-amber-500" : "bg-green-500"}`}><p className="text-[10px] text-white/70 font-bold">RISK</p><p className="font-black text-lg">{nav.risk_level}</p></div>
+                                  <div className="bg-slate-800 rounded-lg p-3 text-center text-white"><p className="text-[10px] text-slate-400 font-bold">CONFIDENCE</p><p className="font-black text-lg">{nav.confidence_score ? `${Math.round(nav.confidence_score * 100)}%` : "?"}</p></div>
+                                </div>
+                                {triage.level && <div className={`rounded-xl p-4 text-white ${triage.level === "ESI-1" ? "bg-red-600" : triage.level === "ESI-2" ? "bg-orange-500" : "bg-yellow-500"}`}><div className="flex justify-between"><div><p className="text-white/70 text-xs">TRIAGE</p><p className="text-xl font-black">{triage.level}</p></div><div className="text-right"><p className="text-white/70 text-xs">SEVERITY</p><p className="text-xl font-black">{triage.severity_score}/10</p></div></div><p className="text-sm text-white/80 mt-1">{triage.primary_impression}</p></div>}
+                                {nav.ask_next?.length > 0 && <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200"><h4 className="font-bold text-indigo-800 text-xs mb-2">🧠 Ask Patient Next:</h4>{nav.ask_next.map((q: string, i: number) => <p key={i} className="text-sm text-indigo-800 py-0.5">• {q}</p>)}</div>}
+                                {nav.red_flags?.length > 0 && <div className="bg-red-50 rounded-xl p-3 border border-red-200"><h4 className="font-bold text-red-800 text-xs mb-1">🚨 Red Flags</h4>{nav.red_flags.map((f: string, i: number) => <p key={i} className="text-xs text-red-700">• {f}</p>)}</div>}
+                                {nav.suggested_exam?.length > 0 && <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200"><h4 className="font-bold text-emerald-800 text-xs mb-1">🩺 Suggested Exams</h4>{nav.suggested_exam.map((e: string, i: number) => <p key={i} className="text-xs text-emerald-700">• {e}</p>)}</div>}
+                              </>
+                            );
+                          })()}
+
+                          {/* Scribe results */}
+                          {(aiResult.module_output?.items || aiResult.scribe?.module_output?.items) && (() => {
+                            const scr = aiResult.module_output || aiResult.scribe?.module_output || {};
+                            return (
+                              <>
+                                <div className="bg-violet-50 rounded-xl p-4 border border-violet-200">
+                                  <h4 className="font-bold text-violet-800 text-sm mb-2">📝 {scr.order_set_name} <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full ${scr.priority_level === "Emergency" ? "bg-red-200 text-red-800" : "bg-green-200 text-green-800"}`}>{scr.priority_level}</span></h4>
+                                  <div className="space-y-1">
+                                    {scr.items?.filter((i: any) => i.selected).map((item: any, idx: number) => (
+                                      <div key={idx} className="flex items-center gap-2 text-xs bg-white rounded-lg p-2 border">
+                                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${item.category === "Medication" ? "bg-emerald-100 text-emerald-700" : item.category === "Lab" ? "bg-cyan-100 text-cyan-700" : "bg-violet-100 text-violet-700"}`}>{item.category}</span>
+                                        <span className="font-semibold text-slate-800">{item.label}</span>
+                                        {item.dose && <span className="text-blue-600">{item.dose}</span>}
+                                        {item.priority === "stat" && <span className="text-[9px] bg-red-100 text-red-700 px-1 rounded font-bold">STAT</span>}
+                                        <button onClick={() => { commitOrder(item.label, item.category === "Lab" ? "lab" : item.category === "Imaging" ? "radiology" : "procedure"); }} className="ml-auto text-[10px] text-indigo-600 font-bold hover:underline">+ Add to CPOE</button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                {scr.draft_soap && (
+                                  <div className="bg-white rounded-xl border overflow-hidden">
+                                    <div className="bg-slate-800 text-white px-4 py-2 text-sm font-bold">📄 SOAP Note</div>
+                                    <div className="p-3 space-y-2 text-xs">
+                                      <div className="bg-blue-50 rounded p-2"><span className="font-bold text-blue-700">S:</span> {scr.draft_soap.subjective}</div>
+                                      <div className="bg-green-50 rounded p-2"><span className="font-bold text-green-700">O:</span> {scr.draft_soap.objective}</div>
+                                      <div className="bg-amber-50 rounded p-2"><span className="font-bold text-amber-700">A:</span> {scr.draft_soap.assessment}</div>
+                                      <div className="bg-red-50 rounded p-2"><span className="font-bold text-red-700">P:</span> {scr.draft_soap.plan}</div>
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+
+                          {/* Guardian results */}
+                          {(aiResult.guardian?.module_output?.overall_safety || aiResult.pipeline_output?.guardian?.module_output?.overall_safety) && (() => {
+                            const g = aiResult.guardian?.module_output || aiResult.pipeline_output?.guardian?.module_output || {};
+                            return (
+                              <div className={`rounded-xl p-4 text-white ${g.overall_safety === "safe" ? "bg-emerald-600" : g.overall_safety === "caution" ? "bg-amber-500" : "bg-red-600"}`}>
+                                <p className="text-white/70 text-xs">SAFETY GUARDIAN</p>
+                                <p className="text-2xl font-black">{g.overall_safety?.toUpperCase()}</p>
+                                <p className="text-sm text-white/80 mt-1">{g.guardian_summary}</p>
+                                {g.allergy_alerts?.length > 0 && <div className="mt-2 space-y-1">{g.allergy_alerts.map((a: any, i: number) => <p key={i} className="text-xs">🚨 {a.proposed_drug} ↔ {a.allergen}: {a.recommendation}</p>)}</div>}
+                                {g.drug_interactions?.length > 0 && <div className="mt-2 space-y-1">{g.drug_interactions.map((d: any, i: number) => <p key={i} className="text-xs">💊 {d.drug_a} + {d.drug_b}: {d.description}</p>)}</div>}
+                                {g.contraindications?.length > 0 && <div className="mt-2 space-y-1">{g.contraindications.map((c: any, i: number) => <p key={i} className="text-xs">⛔ {c.order} ↔ {c.condition}: {c.recommendation}</p>)}</div>}
+                              </div>
+                            );
+                          })()}
+
+                          {/* ── ORCHESTRATOR: System Summary ── */}
+                          {aiResult.system_summary && (
+                            <div className="bg-slate-800 rounded-xl p-4 text-white">
+                              <p className="text-slate-400 text-[10px] font-bold">SYSTEM SUMMARY — MASTER ORCHESTRATOR</p>
+                              <div className="grid grid-cols-4 gap-2 mt-2">
+                                <div className="bg-slate-700 rounded-lg p-2 text-center"><p className="text-[10px] text-slate-400">RISK</p><p className={`font-black text-sm ${aiResult.system_summary.overall_risk === "High" ? "text-red-400" : aiResult.system_summary.overall_risk === "Medium" ? "text-amber-400" : "text-emerald-400"}`}>{aiResult.system_summary.overall_risk}</p></div>
+                                <div className="bg-slate-700 rounded-lg p-2 text-center"><p className="text-[10px] text-slate-400">TRIAGE</p><p className="font-black text-sm text-white">{aiResult.system_summary.triage || "—"}</p></div>
+                                <div className="bg-slate-700 rounded-lg p-2 text-center"><p className="text-[10px] text-slate-400">ORDERS</p><p className="font-black text-sm text-sky-400">{aiResult.system_summary.orders_count}</p></div>
+                                <div className="bg-slate-700 rounded-lg p-2 text-center"><p className="text-[10px] text-slate-400">SAFETY</p><p className={`font-black text-sm ${aiResult.system_summary.safety_status === "safe" ? "text-emerald-400" : "text-red-400"}`}>{aiResult.system_summary.safety_status?.toUpperCase()}</p></div>
+                              </div>
+                              {aiResult.system_summary.primary_impression && <p className="text-sm text-slate-300 mt-2">📋 {aiResult.system_summary.primary_impression}</p>}
+                            </div>
+                          )}
+
+                          {/* ── ORCHESTRATOR: Patient Instructions ── */}
+                          {aiResult.patient_instructions && (
+                            <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl border border-teal-200 overflow-hidden">
+                              <div className="bg-teal-600 text-white px-4 py-2 text-sm font-bold flex items-center gap-2">🗣️ Patient-Friendly Instructions</div>
+                              <div className="p-4">
+                                <pre className="text-sm text-slate-800 whitespace-pre-wrap font-sans leading-relaxed">{aiResult.patient_instructions}</pre>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* ── ORCHESTRATOR: Handover Card ── */}
+                          {aiResult.pipeline_output?.handover?.module_output?.patients?.[0] && (() => {
+                            const hp = aiResult.pipeline_output.handover.module_output.patients[0];
+                            return (
+                              <div className="bg-orange-50 rounded-xl border border-orange-200 overflow-hidden">
+                                <div className="bg-orange-600 text-white px-4 py-2 text-sm font-bold">🔄 Shift Handover Card</div>
+                                <div className="p-3 space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white ${hp.status_summary === "Deteriorating" ? "bg-red-500" : hp.status_summary === "Guarded" ? "bg-amber-500" : "bg-emerald-500"}`}>{hp.status_summary}</span>
+                                    <span className="text-xs text-slate-600">{hp.vitals_trend?.direction && `Vitals: ${hp.vitals_trend.direction}`}</span>
+                                  </div>
+                                  {hp.one_liner && <p className="text-sm text-orange-800 font-medium">{hp.one_liner}</p>}
+                                  {hp.critical_changes?.length > 0 && <div className="bg-red-50 rounded-lg p-2 border border-red-200">{hp.critical_changes.map((c: string, i: number) => <p key={i} className="text-xs text-red-700">• {c}</p>)}</div>}
+                                  {hp.pending_tasks?.length > 0 && <div className="bg-amber-50 rounded-lg p-2 border border-amber-200">{hp.pending_tasks.map((t: string, i: number) => <div key={i} className="flex items-center gap-1.5 text-xs text-amber-800"><input type="checkbox" className="w-3 h-3"/>{t}</div>)}</div>}
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* ── ORCHESTRATOR: Pipeline Progress ── */}
+                          {aiResult.modules_executed && (
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {["navigator", "scribe", "guardian", "handover", "translator"].map((mod) => (
+                                <span key={mod} className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                  aiResult.modules_executed?.includes(mod)
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : aiResult.modules_failed?.includes(mod)
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-slate-100 text-slate-400"
+                                }`}>
+                                  {aiResult.modules_executed?.includes(mod) ? "✅" : aiResult.modules_failed?.includes(mod) ? "❌" : "⏳"} {mod}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* ── ORCHESTRATOR: Validation ── */}
+                          {aiResult.validation?.inconsistencies?.length > 0 && (
+                            <div className="bg-yellow-50 rounded-xl p-3 border border-yellow-200">
+                              <h4 className="font-bold text-yellow-800 text-xs mb-1">⚠️ Consistency Issues</h4>
+                              {aiResult.validation.inconsistencies.map((c: string, i: number) => <p key={i} className="text-xs text-yellow-700">• {c}</p>)}
+                            </div>
+                          )}
+
+                          <details className="text-xs"><summary className="cursor-pointer text-slate-500 font-medium">View raw JSON</summary><pre className="mt-1 bg-slate-900 text-green-400 p-3 rounded-xl overflow-auto max-h-60 text-[10px]">{JSON.stringify(aiResult, null, 2)}</pre></details>
                         </div>
                       )}
                     </div>

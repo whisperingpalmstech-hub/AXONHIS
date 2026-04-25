@@ -1,8 +1,9 @@
 """
-Module 1: Clinical Navigator — Intake Intelligence Engine.
+Module 1: Clinical Navigator — Guided Discovery & Intake Intelligence Engine.
 
-Analyzes patient symptoms/complaints → produces structured triage output
-with severity, differential diagnoses, and routing recommendations.
+Analyzes patient symptoms → extracts clinical signals → maps body system →
+cross-checks history → stratifies risk → generates guided questions +
+exam suggestions + context flags. Acts as senior triage physician + diagnostic strategist.
 """
 import json
 import logging
@@ -13,42 +14,106 @@ from app.core.ai.grok_client import grok_json
 logger = logging.getLogger(__name__)
 
 
-NAVIGATOR_SYSTEM_PROMPT = """You are a Clinical Navigator AI — an expert triage and intake intelligence system.
+NAVIGATOR_SYSTEM_PROMPT = """You are the Clinical Navigator Module — a senior triage physician and diagnostic strategist AI.
 
-Given a patient's presenting complaint, vitals, demographics, and medical history, you MUST return a JSON object with this EXACT structure:
+Your role is to guide the doctor during patient intake by:
+- Interpreting patient narration
+- Cross-checking medical history
+- Identifying risks and missing information
+- Suggesting next best clinical questions and exams
+
+PROCESSING LOGIC (follow these steps exactly):
+
+STEP 1: EXTRACT CLINICAL SIGNALS
+From the narrative, identify: primary symptoms, duration, severity indicators, associated symptoms, risk factors (age, history).
+
+STEP 2: SYSTEM MAPPING
+Map symptoms to: Cardiovascular, Respiratory, Neurological, Gastrointestinal, Musculoskeletal, Endocrine, or General/Unknown.
+
+STEP 3: CONTEXT CROSS-CHECK (CRITICAL)
+Compare narrative vs history. Identify: missing links (important symptoms not mentioned), risk amplifiers (e.g., diabetes + infection), contradictions.
+
+STEP 4: RISK STRATIFICATION
+- Low → Mild symptoms, no risk history
+- Medium → Symptoms + moderate risk factors
+- High → Red flags or dangerous comorbid history
+
+STEP 5: GENERATE GUIDED QUESTIONS (MAX 4)
+High diagnostic value, no redundancy, prioritize life-threatening exclusions.
+Types: symptom clarification, timeline probing, risk exposure, red flag screening.
+
+STEP 6: SUGGEST PHYSICAL EXAMS (2-4)
+Relevant to suspected system, practical in real clinical setting.
+
+STEP 7: CONTEXT FLAGS
+Generate alerts: recent hospitalization, high-risk comorbidity, symptom mismatch, missing data.
+
+EDGE CASES:
+- Vague narrative → ask clarifying questions, reduce confidence
+- Empty narrative → return structured prompt requesting input
+- Contradictory info → flag inconsistency
+- Missing history → add validation warning, reduce confidence
+
+Return a JSON object with this EXACT structure:
 
 {
-  "triage_level": "ESI-1|ESI-2|ESI-3|ESI-4|ESI-5",
-  "triage_color": "red|orange|yellow|green|blue",
-  "severity_score": 1-10,
-  "primary_impression": "Most likely diagnosis",
-  "differential_diagnoses": [
-    {"diagnosis": "", "icd10": "", "probability": 0.0, "reasoning": ""}
+  "focus_area": "Primary body system affected",
+
+  "clinical_summary": {
+    "primary_symptoms": [],
+    "suspected_conditions": [
+      {"condition": "", "icd10": "", "probability": 0.0, "reasoning": ""}
+    ],
+    "risk_factors": []
+  },
+
+  "triage": {
+    "level": "ESI-1|ESI-2|ESI-3|ESI-4|ESI-5",
+    "color": "red|orange|yellow|green|blue",
+    "severity_score": 1-10,
+    "primary_impression": "Most likely diagnosis"
+  },
+
+  "red_flags": [],
+
+  "ask_next": [
+    "Question 1 — highest diagnostic value",
+    "Question 2",
+    "Question 3",
+    "Question 4"
   ],
-  "red_flags": ["List of critical findings requiring immediate attention"],
+
+  "suggested_exam": [
+    "Physical exam 1 with rationale",
+    "Physical exam 2 with rationale"
+  ],
+
+  "context_flags": [
+    "Flag about history, risks, or missing data"
+  ],
+
   "recommended_routing": {
     "department": "",
     "urgency": "immediate|urgent|semi_urgent|routine",
     "specialist": ""
   },
+
   "recommended_workup": {
-    "labs": [""],
-    "imaging": [""],
-    "procedures": [""]
+    "labs": [],
+    "imaging": [],
+    "procedures": []
   },
-  "risk_assessment": {
-    "sepsis_risk": "low|moderate|high",
-    "cardiac_risk": "low|moderate|high",
-    "falls_risk": "low|moderate|high",
-    "overall_acuity": "critical|high|moderate|low"
-  },
-  "clinical_summary": "Brief 2-3 sentence clinical summary"
+
+  "risk_level": "Low|Medium|High",
+  "confidence_score": 0.0,
+  "clinical_narrative": "2-3 sentence clinical reasoning summary"
 }
 
-RULES:
-- NEVER assume missing data — flag it as missing
-- ALWAYS check for red flags first
-- Consider patient age, gender, and history in your assessment
+HARD CONSTRAINTS:
+- Do NOT exceed 4 questions in ask_next
+- Do NOT hallucinate or assume history not provided
+- Do NOT ignore risk factors
+- Do NOT output unstructured text
 - Return valid JSON ONLY
 """
 
@@ -67,9 +132,8 @@ async def navigate(
         system_context: {protocols[], hospital_rules[]}
     
     Returns:
-        Structured triage and routing output.
+        Structured guided discovery + triage output.
     """
-    # Build clinical context message
     user_message = _build_navigator_prompt(patient, encounter, system_context)
     
     messages = [
@@ -78,7 +142,7 @@ async def navigate(
     ]
     
     try:
-        result = await grok_json(messages, temperature=0.2, max_tokens=1500)
+        result = await grok_json(messages, temperature=0.2, max_tokens=2000)
         
         # Validate output
         validation = _validate_navigator_output(result, patient)
@@ -91,7 +155,9 @@ async def navigate(
             "improvements": [
                 "Add protocol-specific triage rules for local hospital",
                 "Integrate real-time lab results for dynamic re-triage",
-                "Add NEWS2/MEWS scoring integration"
+                "Add NEWS2/MEWS scoring integration",
+                "Better questioning strategies based on symptom clusters",
+                "Missing clinical signals detection via NLP"
             ],
             "next_step": "actionable_scribe"
         }
@@ -117,46 +183,66 @@ def _build_navigator_prompt(
     encounter: dict[str, Any],
     system_context: dict[str, Any] | None,
 ) -> str:
-    """Build the user prompt for the Navigator."""
+    """Build the user prompt for the Navigator using the input contract."""
     parts = []
     
-    # Patient demographics
-    parts.append(f"PATIENT: Age {patient.get('age', 'unknown')}, Gender {patient.get('gender', 'unknown')}")
+    # Patient narrative
+    narrative = encounter.get("narrative", "") or encounter.get("doctor_input", "")
+    if narrative:
+        parts.append(f"PATIENT NARRATIVE: {narrative}")
+    else:
+        parts.append("PATIENT NARRATIVE: (empty — request structured input from doctor)")
+
+    # Patient history block
+    parts.append("\nPATIENT HISTORY:")
     
-    # History
+    # Demographics
+    parts.append(f"  Age: {patient.get('age', 'unknown')}")
+    parts.append(f"  Gender: {patient.get('gender', 'unknown')}")
+    
+    # Conditions / PMH
     history = patient.get("history", [])
     if history:
-        parts.append(f"MEDICAL HISTORY: {', '.join(history)}")
+        parts.append(f"  Conditions: {', '.join(history)}")
     else:
-        parts.append("MEDICAL HISTORY: None reported (FLAG: incomplete history)")
+        parts.append("  Conditions: [] (FLAG: no history provided — incomplete)")
+    
+    # Surgeries
+    surgeries = patient.get("surgeries", [])
+    if surgeries:
+        parts.append(f"  Surgeries: {', '.join(surgeries)}")
+    
+    # Medications
+    medications = patient.get("medications", [])
+    if medications:
+        parts.append(f"  Medications: {', '.join(medications)}")
+    else:
+        parts.append("  Medications: [] (FLAG: no medications reported)")
     
     # Allergies
     allergies = patient.get("allergies", [])
     if allergies:
-        parts.append(f"ALLERGIES: {', '.join(allergies)}")
+        parts.append(f"  Allergies: {', '.join(allergies)}")
     else:
-        parts.append("ALLERGIES: NKDA (No Known Drug Allergies)")
+        parts.append("  Allergies: NKDA")
     
-    # Current medications
-    medications = patient.get("medications", [])
-    if medications:
-        parts.append(f"CURRENT MEDICATIONS: {', '.join(medications)}")
-    
-    # Presenting complaint
-    narrative = encounter.get("narrative", "")
-    if narrative:
-        parts.append(f"PRESENTING COMPLAINT: {narrative}")
-    
-    # Doctor input
-    doctor_input = encounter.get("doctor_input", "")
-    if doctor_input:
-        parts.append(f"DOCTOR NOTES: {doctor_input}")
+    # Recent visits
+    recent_visits = patient.get("recent_visits", [])
+    if recent_visits:
+        parts.append(f"  Recent Visits: {', '.join(recent_visits)}")
     
     # Vitals
     vitals = encounter.get("vitals", [])
     if vitals:
         vitals_str = ", ".join([f"{v.get('name', '')}: {v.get('value', '')}" for v in vitals])
-        parts.append(f"VITALS: {vitals_str}")
+        parts.append(f"\nVITALS: {vitals_str}")
+    else:
+        parts.append("\nVITALS: Not recorded (FLAG: vitals missing)")
+    
+    # Notes
+    notes = encounter.get("notes", [])
+    if notes:
+        parts.append(f"ADDITIONAL NOTES: {'; '.join(notes)}")
     
     # System context
     if system_context:
@@ -168,36 +254,59 @@ def _build_navigator_prompt(
 
 
 def _validate_navigator_output(result: dict, patient: dict) -> dict:
-    """Validate the Navigator output for safety and completeness."""
+    """Validate the Navigator output for safety, completeness, and logic."""
     missing = []
     issues = []
     safety_flags = []
     
-    # Schema checks
-    required_fields = ["triage_level", "severity_score", "primary_impression", 
-                       "differential_diagnoses", "recommended_routing"]
+    # Schema checks — new fields
+    required_fields = [
+        "focus_area", "clinical_summary", "triage", "ask_next",
+        "suggested_exam", "risk_level", "confidence_score"
+    ]
     for field in required_fields:
         if field not in result:
             missing.append(field)
     
-    # Clinical logic checks
-    severity = result.get("severity_score", 0)
-    triage = result.get("triage_level", "")
+    # Also accept legacy format
+    if "triage_level" in result and "triage" not in result:
+        result["triage"] = {
+            "level": result.get("triage_level", ""),
+            "color": result.get("triage_color", ""),
+            "severity_score": result.get("severity_score", 0),
+            "primary_impression": result.get("primary_impression", ""),
+        }
+        missing = [m for m in missing if m != "triage"]
     
-    if severity >= 8 and triage not in ["ESI-1", "ESI-2"]:
-        issues.append(f"Severity {severity} but triage {triage} — mismatch")
+    # Question quality check
+    questions = result.get("ask_next", [])
+    if len(questions) > 4:
+        issues.append(f"Too many questions ({len(questions)}) — max 4 allowed")
     
-    if severity <= 3 and triage in ["ESI-1", "ESI-2"]:
-        issues.append(f"Low severity {severity} with high triage {triage} — verify")
+    # Risk level logic
+    triage = result.get("triage", {})
+    severity = triage.get("severity_score", 0) if isinstance(triage, dict) else 0
+    risk_level = result.get("risk_level", "")
     
-    # Safety checks
+    if severity >= 8 and risk_level == "Low":
+        issues.append(f"Severity {severity} but risk_level=Low — mismatch")
+    if severity <= 3 and risk_level == "High":
+        issues.append(f"Severity {severity} but risk_level=High — verify")
+    
+    # Confidence check
+    confidence = result.get("confidence_score", 0)
+    if confidence < 0.5:
+        safety_flags.append(f"Low confidence ({confidence:.0%}) — clinical judgment needed")
+    
+    # Red flags check
     red_flags = result.get("red_flags", [])
-    if red_flags and triage not in ["ESI-1", "ESI-2", "ESI-3"]:
+    triage_level = triage.get("level", "") if isinstance(triage, dict) else ""
+    if red_flags and triage_level not in ["ESI-1", "ESI-2", "ESI-3"]:
         safety_flags.append("Red flags present but triage level may be too low")
     
+    # Context flags check
     if not patient.get("history"):
         safety_flags.append("Incomplete medical history — triage may be inaccurate")
-    
     if not patient.get("allergies"):
         safety_flags.append("Allergy status unconfirmed — verify before ordering")
     
@@ -213,18 +322,27 @@ def _generate_test_cases(patient: dict, encounter: dict) -> list[dict]:
     """Generate test cases for this Navigator run."""
     return [
         {
-            "name": "Normal triage case",
-            "input": {"narrative": "Mild headache for 2 days", "age": 35},
-            "expected_behavior": "ESI-4 or ESI-5, low severity, outpatient routing"
+            "name": "Normal case — fever with cough",
+            "input": {
+                "patient_narrative": "Low grade fever for 3 days with dry cough",
+                "patient_history": {"conditions": [], "medications": [], "allergies": []}
+            },
+            "expected_behavior": "focus_area=Respiratory, risk_level=Low, 3-4 clarifying questions, chest exam suggested"
         },
         {
-            "name": "Edge case — chest pain with cardiac history",
-            "input": {"narrative": "Crushing chest pain", "history": ["MI 2022"]},
-            "expected_behavior": "ESI-1 or ESI-2, cardiac red flags, immediate ER"
+            "name": "High-risk case — chest pain + cardiac history",
+            "input": {
+                "patient_narrative": "Crushing chest pain for 30 minutes radiating to arm",
+                "patient_history": {"conditions": ["MI 2022", "Hypertension"], "medications": ["Aspirin 81mg"]}
+            },
+            "expected_behavior": "focus_area=Cardiovascular, risk_level=High, ESI-1, red flags flagged, immediate cardiology routing"
         },
         {
-            "name": "Failure case — empty narrative",
-            "input": {"narrative": "", "age": 50},
-            "expected_behavior": "Return partial output with missing_fields warning"
+            "name": "Edge case — vague/empty narrative",
+            "input": {
+                "patient_narrative": "Not feeling well",
+                "patient_history": {"conditions": []}
+            },
+            "expected_behavior": "Low confidence, clarifying questions generated, context_flags about missing data"
         },
     ]

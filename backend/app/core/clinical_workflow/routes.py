@@ -12,6 +12,7 @@ from app.core.clinical_workflow.scribe import scribe
 from app.core.clinical_workflow.guardian import guard
 from app.core.clinical_workflow.handover import handover
 from app.core.clinical_workflow.translator import translate
+from app.core.clinical_workflow.orchestrator import run_full_pipeline
 
 router = APIRouter(prefix="/api/v1/clinical-workflow", tags=["Clinical Workflow Engine"])
 
@@ -167,50 +168,17 @@ async def api_translate(req: TranslateRequest):
 @router.post("/pipeline")
 async def api_full_pipeline(req: FullPipelineRequest):
     """
-    Full Pipeline: Navigator → Scribe → Guardian → Translator.
+    Master Orchestrator Pipeline: Navigator → Scribe → Guardian → Handover → Translator.
     
-    Runs all modules sequentially, passing context between them.
+    Runs all 5 modules sequentially with state preservation.
     """
     patient = req.patient.model_dump()
-    encounter = req.encounter.model_dump()
-    system_ctx = req.system_context.model_dump() if req.system_context else None
-    
-    pipeline_results = {}
-    
-    # Step 1: Navigate
-    nav_result = await navigate(patient, encounter, system_ctx)
-    pipeline_results["navigator"] = nav_result
-    
-    # Step 2: Scribe (uses navigator output)
-    scribe_result = await scribe(patient, encounter, nav_result, system_ctx)
-    pipeline_results["scribe"] = scribe_result
-    
-    # Step 3: Guard (validates scribe's orders)
-    scribe_orders = scribe_result.get("module_output", {}).get("suggested_orders", {})
-    guard_result = await guard(patient, scribe_orders, system_ctx)
-    pipeline_results["guardian"] = guard_result
-    
-    # Step 4: Translate (patient-friendly output)
-    translate_result = await translate(
-        clinical_content=scribe_result.get("module_output", {}),
-        patient=patient,
-    )
-    pipeline_results["translator"] = translate_result
-    
-    # Aggregate safety flags
-    all_safety_flags = []
-    for module_name, module_result in pipeline_results.items():
-        flags = module_result.get("validation", {}).get("safety_flags", [])
-        for flag in flags:
-            all_safety_flags.append(f"[{module_name.upper()}] {flag}")
-    
-    return {
-        "pipeline": "complete",
-        "modules_executed": list(pipeline_results.keys()),
-        "results": pipeline_results,
-        "aggregate_safety_flags": all_safety_flags,
-        "overall_status": "unsafe" if any("CRITICAL" in f for f in all_safety_flags) else "safe",
+    interaction = {
+        "patient_narrative": req.encounter.narrative,
+        "doctor_narration": req.encounter.doctor_input,
     }
+    
+    return await run_full_pipeline(patient, interaction)
 
 
 @router.get("/status")
@@ -230,3 +198,80 @@ async def api_status():
         "ai_provider": "AnythingLLM",
         "status": "operational"
     }
+
+
+# ── Doctor Desk Integration: Patient-Context-Aware Endpoints ─────────────
+
+class DeskAIRequest(BaseModel):
+    """Request from Doctor Desk — auto-fetches patient context from DB."""
+    patient_id: str
+    visit_id: str = ""
+    doctor_input: str = ""
+    module: str = "navigate"  # navigate | scribe | guard | pipeline
+    # Optional overrides (if doctor desk already has data loaded)
+    vitals_override: list[dict[str, Any]] = []
+    complaints_override: list[str] = []
+    history_override: list[str] = []
+    allergies_override: list[str] = []
+    medications_override: list[str] = []
+
+
+@router.post("/desk/ai")
+async def api_desk_ai(req: DeskAIRequest):
+    """
+    Doctor Desk Integration — run AI modules with real patient context.
+    
+    The frontend passes patient_id + doctor_input + any loaded EMR data.
+    This endpoint assembles the full context and runs the requested module.
+    """
+    # Build patient context from overrides (already loaded in frontend)
+    patient = {
+        "id": req.patient_id,
+        "age": "",
+        "gender": "",
+        "history": req.history_override,
+        "allergies": req.allergies_override,
+        "medications": req.medications_override,
+    }
+    
+    encounter = {
+        "narrative": req.doctor_input,
+        "doctor_input": req.doctor_input,
+        "vitals": req.vitals_override,
+        "notes": req.complaints_override,
+    }
+    
+    if req.module == "navigate":
+        return await navigate(patient, encounter)
+    
+    elif req.module == "scribe":
+        return await scribe(patient, encounter)
+    
+    elif req.module == "guard":
+        # For guard, we first run scribe to get orders, then validate
+        scribe_result = await scribe(patient, encounter)
+        scribe_items = scribe_result.get("module_output", {}).get("items", [])
+        medications = [
+            {"drug": i.get("label", ""), "dose": i.get("dose", "")}
+            for i in scribe_items if i.get("category") == "Medication" and i.get("selected")
+        ]
+        guard_result = await guard(patient, {"medications": medications})
+        return {
+            "scribe": scribe_result,
+            "guardian": guard_result,
+        }
+    
+    elif req.module == "pipeline":
+        # Master Orchestrator: all 5 modules with state preservation
+        interaction = {
+            "patient_narrative": req.doctor_input,
+            "doctor_narration": req.doctor_input,
+        }
+        clinical_stream = {
+            "vitals_12h": req.vitals_override,
+        }
+        return await run_full_pipeline(patient, interaction, clinical_stream)
+    
+    else:
+        raise HTTPException(400, f"Unknown module: {req.module}")
+
